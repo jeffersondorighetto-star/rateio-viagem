@@ -2,6 +2,10 @@
 // Pré-requisito: PostgREST em http://localhost:54402 (ver README em supabase/test). Uso: NODE_PATH=<dir com @supabase/supabase-js> node postgrest.test.js
 const fs = require('fs'), path = require('path'), assert = require('assert'), crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+const { execFileSync } = require('child_process');
+// lista de organizadores: o teste grava direto no banco (no Supabase real isso é feito no SQL Editor)
+const sql = q => execFileSync('psql', ['-X', '-q', '-d', process.env.REST_DB || 'rest', '-c', q], { env: { PGHOST: '/tmp', PGPORT: '54329', PGUSER: 'postgres', ...process.env } });
+const allow = (u, login, listed = true) => sql(`insert into auth.identities values ('${u.id}', 'github', '{"user_name":"${login}"}'); ${listed ? `insert into public.organizer_allowlist (github_login) values ('${login}') on conflict do nothing;` : ''}`);
 const html = fs.readFileSync(path.join(__dirname, '..', '..', 'index.html'), 'utf8');
 const src = html.split('// ===== LOGIC-START')[1].split('// ===== LOGIC-END')[0];
 const L = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {computeSplit,stateToRows,rowsToState,createSync,genEventCode};')();
@@ -17,13 +21,16 @@ const dev = (u, eventId, st) => { const d = { state: st || { families: [], expen
 const nets = s => Object.fromEntries(L.computeSplit(s).families.map(f => [f.id, Math.round(f.net * 100) / 100]));
 const ok = m => console.log('  ✓ ' + m);
 (async () => {
-  const O = user(false), A = user(), B = user(), C = user();
+  const O = user(false), A = user(), B = user(), C = user(), G = user(false), O2 = user(false);
+  allow(O, 'org-rest'); allow(O2, 'org-rest-2'); allow(G, 'intruso-rest', false);
   const code = L.genEventCode();
   let r = await A.sb.rpc('create_event', { p_name: 'x', p_code: code, p_display_name: 'Ana' }); assert(r.error && /organizer_login_required/.test(r.error.message)); ok('anônimo não cria evento');
-  r = await O.sb.rpc('create_event', { p_name: 'Teste REST', p_code: code, p_display_name: 'Jeff' }); assert.ifError(r.error); const ev = r.data;
-  const sample = { splitMode: 'porcoes', includeUnconfirmed: true, kittyPerFamily: 300, weights: { crianca: 0.5 }, trip: { start: '2026-10-10', end: '2026-10-12', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
+  r = await G.sb.rpc('create_event', { p_name: 'x', p_code: L.genEventCode(), p_display_name: 'G' }); assert(r.error && /organizer_only/.test(r.error.message)); ok('GitHub fora da lista de organizadores não cria evento');
+  r = await G.sb.from('organizer_allowlist').select('*'); assert(r.error); ok('lista de organizadores ilegível pela API');
+  r = await O.sb.rpc('create_event', { p_name: 'Teste REST', p_code: code, p_display_name: 'Org' }); assert.ifError(r.error); const ev = r.data;
+  const sample = { splitMode: 'porcoes', includeUnconfirmed: true, kittyPerFamily: 300, weights: { crianca: 0.5 }, trip: { start: '2031-03-03', end: '2031-03-05', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
     families: [{ id: 'fa', name: 'Família A', members: [{ id: 'a1', name: 'Ana', drinks: true }, { id: 'a2', name: 'Lia', type: 'crianca', diet: { alergia: 'amendoim' } }] },
-      { id: 'fb', name: 'Família B', arrive: '2026-10-11', arriveMeal: 'almoco', members: [{ id: 'b1', name: 'Beto', drinks: true }] }],
+      { id: 'fb', name: 'Família B', arrive: '2031-03-04', arriveMeal: 'almoco', members: [{ id: 'b1', name: 'Beto', drinks: true }] }],
     expenses: [{ id: 'e1', amount: 250.35, category: 'groceries', description: 'Mercado', payerId: 'a1', items: 'carne', ts: 2, photo: 'data:image/jpeg;base64,AA' },
       { id: 'e2', amount: 90, category: 'alcohol', description: 'Cerveja', payerId: 'b1', proof: 'none', confirmedBy: 'fa', confirmedAt: Date.now(), ts: 1 }],
     settled: { fa_fb: { amount: 12.5, at: 1 } }, plan: {}, recipes: [] };
@@ -34,6 +41,7 @@ const ok = m => console.log('  ✓ ' + m);
   ok('organizador (GitHub) criou o evento e gravou tudo por apply_ops; eco real (numeric/jsonb/timestamptz) sem pendências');
   r = await B.sb.rpc('join_event', { p_code: 'AAAA2222', p_display_name: 'Beto' }); assert.strictEqual(r.data.error, 'invalid_code'); ok('código errado recusado');
   r = await B.sb.rpc('join_event', { p_code: code.toLowerCase(), p_display_name: 'Beto' }); assert.ifError(r.error); assert.strictEqual(r.data.status, 'pending'); assert.strictEqual(r.data.event_id, ev);
+  assert(!('event_name' in r.data)); r = await B.sb.rpc('my_membership', { p_event: ev }); assert(!('event_name' in r.data) && !('locked' in r.data)); ok('pendente não recebe o nome do evento (join_event e my_membership)');
   const DB = dev(B, ev); await assert.rejects(DB.sync.load(), e => e.code === 'pending'); ok('B entra e fica pendente (load recusado)');
   r = await B.sb.from('expenses').select('*').eq('event_id', ev); assert.strictEqual(r.data.length, 0); ok('pendente lê 0 gastos pela API');
   r = await B.sb.rpc('approve_member', { p_event: ev, p_user: B.id }); assert(r.error && /organizer_only/.test(r.error.message));
@@ -43,6 +51,26 @@ const ok = m => console.log('  ✓ ' + m);
   assert(!DB.state.families[0].members[1].diet && !DB.state.expenses.find(e => e.id === 'e1').photo); assert.strictEqual(DB.state.expenses.find(e => e.id === 'e2').confirmedBy, 'fa');
   assert.strictEqual(DB.state.families[1].arriveMeal, 'almoco'); assert.strictEqual(DB.state.kittyPerFamily, 300); assert.strictEqual(DB.state.settled.fa_fb.amount, 12.5); assert.strictEqual(DB.state.weights.crianca, 0.5);
   ok('aprovado: B vê os mesmos saldos, confirmação e pesos; sem dieta/foto');
+  // PostgREST direto: privilégios por coluna, configurações do organizador, membros e dieta
+  r = await O.sb.from('events').select('version').eq('id', ev); const ev1v = r.data[0].version;
+  r = await B.sb.from('events').update({ split_mode: 'igual', kitty_per_family: 1, version: ev1v + 1 }).eq('id', ev).select();
+  assert(!r.error && r.data.length === 0, JSON.stringify(r)); r = await O.sb.from('events').select('split_mode,kitty_per_family').eq('id', ev);
+  assert.strictEqual(r.data[0].split_mode, 'porcoes'); assert.strictEqual(Number(r.data[0].kitty_per_family), 300); ok('membro não muda modo de divisão nem caixinha por PATCH (0 linhas)');
+  r = await B.sb.from('expenses').update({ confirmed_by_family_id: 'fb', version: 99 }).eq('event_id', ev).eq('id', 'e2'); assert(r.error && r.error.code === '42501', JSON.stringify(r.error)); ok('PATCH confirmed_by_family_id = 42501');
+  r = await B.sb.from('expenses').update({ id: 'zz' }).eq('event_id', ev).eq('id', 'e2'); assert(r.error && r.error.code === '42501'); ok('PATCH id = 42501');
+  r = await B.sb.from('event_members').update({ family_id: 'fa' }).eq('event_id', ev).eq('user_id', B.id); assert(r.error && r.error.code === '42501'); ok('membro não muda a própria família por PATCH (42501)');
+  r = await B.sb.from('expenses').insert({ event_id: ev, id: 'ins1', amount: 1, category: 'food', version: 50 }); assert(r.error && r.error.code === '42501'); ok('INSERT com version = 42501');
+  r = await B.sb.from('person_diet').select('*'); assert(r.error); r = await B.sb.from('person_diet').insert({ event_id: ev, person_id: 'a2' }); assert(r.error); ok('não existe person_diet na API (dieta só no aparelho)');
+  // usuário em dois eventos
+  const code3 = L.genEventCode(); r = await O2.sb.rpc('create_event', { p_name: 'Outro REST', p_code: code3, p_display_name: 'Org2' }); assert.ifError(r.error); const ev2 = r.data;
+  r = await B.sb.rpc('join_event', { p_code: code3, p_display_name: 'Beto' }); r = await O2.sb.rpc('approve_member', { p_event: ev2, p_user: B.id }); assert.ifError(r.error);
+  r = await B.sb.from('events').select('id'); assert.strictEqual(r.data.length, 2);
+  r = await B.sb.from('expenses').update({ event_id: ev2, version: 99 }).eq('event_id', ev).eq('id', 'e1'); assert(r.error && r.error.code === '42501', JSON.stringify(r.error));
+  r = await B.sb.from('families').update({ event_id: ev2, version: 99 }).eq('event_id', ev).eq('id', 'fa'); assert(r.error && r.error.code === '42501');
+  r = await O2.sb.from('expenses').select('id').eq('event_id', ev); assert.strictEqual(r.data.length, 0);
+  r = await O2.sb.rpc('apply_ops', { p_event: ev, p_ops: [{ op_id: crypto.randomUUID(), table: 'expenses', row: { id: 'h2', amount: 1, category: 'food' } }] }); assert.strictEqual(r.data[0].status, 'error');
+  r = await B.sb.rpc('approve_member', { p_event: ev2, p_user: C.id }); assert(r.error && /organizer_only/.test(r.error.message));
+  ok('usuário nos dois eventos não move linhas entre eles (event_id por coluna); organizador de um não lê nem grava no outro');
   // concurrent: different fields merge; same field server wins + notice
   await DO.edit(st => { st.expenses.find(e => e.id === 'e1').amount = 260; });
   await DB.edit(st => { st.expenses.find(e => e.id === 'e1').description = 'Mercado grande'; });
@@ -57,6 +85,9 @@ const ok = m => console.log('  ✓ ' + m);
   await DB.edit(st => { const e = st.expenses.find(e => e.id === 'e2'); e.payerId = 'a1'; delete e.confirmedBy; });
   r = await O.sb.from('expense_confirmations').select('*').eq('event_id', ev); assert(r.data.every(c => c.voided_at)); ok('troca de pagador anula a confirmação no servidor');
   await DB.edit(st => { const e = st.expenses.find(e => e.id === 'e2'); e.confirmedBy = 'fb'; });
+  assert(DB.notices.some(n => n.kind === 'family')); r = await O.sb.from('expense_confirmations').select('*').eq('event_id', ev); assert(r.data.every(c => c.voided_at)); ok('sem família definida, o membro não confirma (aviso)');
+  r = await O.sb.rpc('set_member_family', { p_event: ev, p_user: B.id, p_family: 'fb' }); assert.ifError(r.error);
+  await DB.edit(st => { const e = st.expenses.find(e => e.id === 'e2'); e.confirmedBy = 'fb'; });
   await DO.sync.load(); assert.strictEqual(DO.state.expenses.find(e => e.id === 'e2').confirmedBy, 'fb'); ok('nova confirmação (só inserção) chega ao organizador');
   r = await B.sb.from('expense_confirmations').update({ family_id: 'fa' }).eq('event_id', ev); assert(r.error); ok('confirmação não é editável pela API');
   // outsider
@@ -66,9 +97,11 @@ const ok = m => console.log('  ✓ ' + m);
   // lock
   r = await O.sb.rpc('lock_event', { p_event: ev, p_locked: true }); assert.ifError(r.error);
   await DB.sync.load(); assert.strictEqual(DB.state.eventLocked, true);
-  await DB.edit(st => { st.kittyPerFamily = 999; }); assert.strictEqual(DB.state.kittyPerFamily, 300); assert(DB.notices.some(n => n.kind === 'locked'));
-  await O.sb.rpc('lock_event', { p_event: ev, p_locked: false }); await DB.sync.load(); await DB.edit(st => { st.kittyPerFamily = 450; });
-  await DO.sync.load(); assert.strictEqual(DO.state.kittyPerFamily, 450); ok('travado: edição desfeita com aviso; destravado grava');
+  await DB.edit(st => { st.expenses.find(e => e.id === 'e1').note = 'travado'; }); assert.notStrictEqual(DB.state.expenses.find(e => e.id === 'e1').note, 'travado'); assert(DB.notices.some(n => n.kind === 'locked'));
+  await O.sb.rpc('lock_event', { p_event: ev, p_locked: false }); await DB.sync.load(); await DB.edit(st => { st.expenses.find(e => e.id === 'e1').note = 'ok'; });
+  await DO.sync.load(); assert.strictEqual(DO.state.expenses.find(e => e.id === 'e1').note, 'ok'); ok('travado: edição desfeita com aviso; destravado grava');
+  await DB.edit(st => { st.kittyPerFamily = 999; }); assert.strictEqual(DB.state.kittyPerFamily, 300); assert(DB.notices.some(n => n.kind === 'settings')); ok('membro: caixinha só leitura (aviso)');
+  await DO.edit(st => { st.kittyPerFamily = 450; }); await DB.sync.load(); assert.strictEqual(DB.state.kittyPerFamily, 450); ok('organizador muda a caixinha');
   // rotate + revoke
   const code2 = L.genEventCode(); r = await O.sb.rpc('rotate_code', { p_event: ev, p_new_code: code2, p_repend: true }); assert.strictEqual(r.data, 2);
   await assert.rejects(DB.sync.load(), e => e.code === 'pending'); r = await C.sb.rpc('join_event', { p_code: code, p_display_name: 'Caio' }); assert.strictEqual(r.data.error, 'invalid_code');
