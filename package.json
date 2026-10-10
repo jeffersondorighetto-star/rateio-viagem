@@ -4,7 +4,7 @@
   "private": true,
   "description": "Rateatouille: planejar e dividir gastos de eventos entre famílias",
   "scripts": {
-    "test": "node tests/test.js && node tests/sync.test.js",
+    "test": "node tests/test.js && node tests/sync.test.js && node tests/privacy.test.js",
     "test:e2e": "node tests/e2e/shared.e2e.js",
     "test:sql": "bash supabase/test/run.sh",
     "test:contrast": "node tests/contrast.js",

@@ -170,3 +170,17 @@ const rot = R.kitchenRota({ ...rs, trip: { start: '2026-12-01', end: '2026-12-04
 const cooks = Object.values(rot.rota).map(x => x.cook); assert.equal(cooks.length, 8); assert(cooks.includes('A') && cooks.includes('B'));
 assert(Object.values(rot.rota).every(x => x.cook !== x.clean));
 console.log('RECIPE TESTS PASSED (parser: fractions, units, ranges, a gosto, yields; scaling; diet; rota)');
+
+// Governança 2.9: textos que vão para o WhatsApp nunca carregam dieta/alergia
+{
+  const T = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {computeSplit,settle,kitty,summaryText,shoppingList,shoppingText};')();
+  const sd = { splitMode: 'porcoes', includeUnconfirmed: true, kittyPerFamily: 100, weights: {}, prices: {}, planQty: {}, recipes: [],
+    trip: { start: '2031-03-03', end: '2031-03-05', meals: { cafe: true, almoco: true, lanche: false, jantar: true } }, plan: {}, settled: {},
+    families: [{ id: 'fa', name: 'Família A', members: [{ id: 'a1', name: 'Ana', drinks: true, diet: { veg: true, lactose: true, alergia: 'castanhaxyz' } }, { id: 'a2', name: 'Lia', type: 'crianca', diet: { alergia: 'amendoimxyz', gluten: true } }] },
+      { id: 'fb', name: 'Família B', members: [{ id: 'b1', name: 'Beto', drinks: true, diet: { veg: true } }] }],
+    expenses: [{ id: 'e1', amount: 200, category: 'groceries', description: 'Mercado', payerId: 'a1', proof: 'nf', ts: 1 }, { id: 'e2', amount: 50, category: 'food', description: 'Pão', payerId: 'b1', proof: 'none', ts: 2 }] };
+  const sp = T.computeSplit(sd), tr = T.settle(sp.families), kt = T.kitty(sd, sp);
+  const out = T.summaryText(sd, sp, tr, kt) + '\n' + T.shoppingText(sd, T.shoppingList(sd));
+  for (const bad of ['amendoimxyz', 'castanhaxyz', 'alergia', 'Alergia', 'veg', 'lactose', 'glúten', 'gluten']) assert(!out.includes(bad), 'texto compartilhado vazou: ' + bad);
+  console.log('PRIVACY TEXT TESTS PASSED (summaryText/shoppingText sem dieta/alergia)');
+}
