@@ -28,6 +28,15 @@ if git -C .. cat-file -e 6154b28:supabase/supabase.sql 2>/dev/null; then
   $P -d rateio_up2 -f ../supabase.sql >/dev/null 2>&1 && \
   [ "$(psql -X -tA -d rateio_up2 -c "select to_regclass('public.person_diet') is null and not has_column_privilege('authenticated','public.expenses','event_id','UPDATE')")" = t ] && echo "atualização a partir do rascunho com dieta: ok (person_diet removida, grants por coluna)"
 fi
+# atualização a partir de b6f4fa7 (lista de organizadores por login): vira por id numérico
+if git -C .. cat-file -e b6f4fa7:supabase/supabase.sql 2>/dev/null; then
+  $P -c "drop database if exists rateio_up3" -c "create database rateio_up3" >/dev/null 2>&1
+  $P -d rateio_up3 -f stub.sql >/dev/null 2>&1
+  git -C .. show b6f4fa7:supabase/supabase.sql | $P -d rateio_up3 >/dev/null 2>&1
+  psql -X -q -d rateio_up3 -c "insert into public.organizer_allowlist (github_login) values ('alguem')" >/dev/null 2>&1
+  $P -d rateio_up3 -f ../supabase.sql >/dev/null 2>&1 && \
+  [ "$(psql -X -tA -d rateio_up3 -c "select exists (select 1 from information_schema.columns where table_name = 'organizer_allowlist' and column_name = 'github_id') and not exists (select 1 from information_schema.columns where table_name = 'organizer_allowlist' and column_name = 'github_login')")" = t ] && echo "atualização a partir de b6f4fa7: ok (organizer_allowlist por id numérico)"
+fi
 pass=$(echo "$out" | grep -c '^PASS' || true); fail=$(echo "$out" | grep -c -E '^(FAIL|psql:.*ERROR)' || true)
 echo "RESULTADO: $pass PASS, $fail FAIL"
 [ "$fail" = 0 ]

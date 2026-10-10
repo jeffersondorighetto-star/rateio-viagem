@@ -24,15 +24,21 @@ create function pg_temp.n(q text) returns bigint language plpgsql as $$ declare 
 \set F 'ffffffff-0000-0000-0000-00000000000f'
 \set G '99999999-0000-0000-0000-000000000009'
 -- O e F entram com GitHub e estão na lista de organizadores; G entra com GitHub mas não está na lista
-insert into auth.identities values (:'O', 'github', '{"user_name":"org-teste"}'), (:'F', 'github', '{"user_name":"Flor-Teste"}'), (:'G', 'github', '{"user_name":"intruso"}');
-insert into public.organizer_allowlist (github_login) values ('org-teste'), ('flor-teste') on conflict do nothing;
+-- G tem o MESMO login que O (login trocado e reaproveitado), mas outro id numérico: não pode organizar
+insert into auth.identities (user_id, provider, identity_data, provider_id) values
+  (:'O', 'github', '{"user_name":"org-teste"}', '1001'), (:'F', 'github', '{"user_name":"flor-teste"}', '1002'), (:'G', 'github', '{"user_name":"org-teste"}', '9009');
+insert into public.organizer_allowlist (github_id, note) values (1001, 'org-teste'), (1002, 'flor-teste') on conflict do nothing;
+-- Storage API: apaga com a RLS de quem chama e liga storage.allow_delete_query na transação (como o servidor do Supabase)
+create function pg_temp.api_del(w text) returns bigint language plpgsql as $$ declare n bigint; begin
+  perform set_config('storage.allow_delete_query', 'true', true); execute 'delete from storage.objects where ' || w; get diagnostics n = row_count;
+  perform set_config('storage.allow_delete_query', 'false', true); return n; end $$;
 set role authenticated;
 
 \echo '--- criação e papéis'
 select pg_temp.u(:'G', false);
-select pg_temp.err($$select public.create_event('X', 'GGGG2345', 'Intruso')$$, 'organizer_only', 'GitHub fora da lista de organizadores não cria evento');
+select pg_temp.err($$select public.create_event('X', 'GGGG2345', 'Intruso')$$, 'organizer_only', 'mesmo login do GitHub com outro id numérico não cria evento (lista por id)');
 select pg_temp.err($$select * from public.organizer_allowlist$$, 'permission denied', 'lista de organizadores ilegível para clientes');
-select pg_temp.err($$insert into public.organizer_allowlist values ('intruso')$$, 'permission denied', 'cliente não se coloca na lista');
+select pg_temp.err($$insert into public.organizer_allowlist (github_id) values (9009)$$, 'permission denied', 'cliente não se coloca na lista');
 select pg_temp.u(:'A', true);
 select pg_temp.err($$select public.create_event('X', 'ABCD2345', 'Ana')$$, 'organizer_login_required', 'anônimo não cria evento');
 select pg_temp.u(:'O', false);
@@ -146,8 +152,7 @@ insert into storage.objects (bucket_id, name) values ('comprovantes', :'ev' || '
 select pg_temp.ok(pg_temp.n($$select * from storage.objects where bucket_id = 'comprovantes'$$) = 1, 'aprovado envia e lê <evento>/<gasto>.jpg');
 select pg_temp.err($$insert into storage.objects (bucket_id, name) values ('comprovantes', 'qualquer/e1.jpg')$$, 'row-level security', 'caminho fora do padrão recusado');
 select pg_temp.err(format($$insert into storage.objects (bucket_id, name) values ('comprovantes', %L)$$, :'ev' || '/e1.png'), 'row-level security', 'extensão diferente de .jpg recusada');
-delete from storage.objects where bucket_id = 'comprovantes';
-select pg_temp.ok(pg_temp.n($$select * from storage.objects$$) = 1, 'membro não apaga comprovante');
+select pg_temp.ok(pg_temp.api_del($$bucket_id = 'comprovantes'$$) = 0 and pg_temp.n($$select * from storage.objects$$) = 1, 'membro não apaga comprovante (Storage API)');
 update storage.objects set metadata = '{"x":1}' where bucket_id = 'comprovantes';
 select pg_temp.ok((select metadata is null from storage.objects), 'membro não substitui comprovante (update = 0 linhas)');
 select pg_temp.u(:'O', false);
@@ -158,7 +163,7 @@ select pg_temp.u(:'A', true);
 \echo '--- dieta fora do servidor no piloto (Astreia 2.1)'
 select pg_temp.ok(to_regclass('public.person_diet') is null, 'tabela person_diet não existe no banco');
 select pg_temp.err(format($$insert into public.person_diet (event_id, person_id) values (%L, 'p1')$$, :'ev'), 'does not exist', 'membro aprovado não grava dieta (não há onde)');
-select pg_temp.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname ~ 'purge|health'), 'sem funções de expurgo de saúde no build');
+select pg_temp.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname ~ 'purge_health|purge_expired_health|health_purge'), 'sem funções de expurgo de saúde no build');
 select pg_temp.u(:'C', true);
 select pg_temp.ok((public.join_event('ABCD2345', 'Caio') ->> 'status') = 'pending', 'C pendente');
 select pg_temp.u(:'B', true);
@@ -217,8 +222,8 @@ select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e8","amount":1,"categor
 select public.lock_event(:'ev', false);
 select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e8","amount":1,"category":"food"}') ->> 'status') = 'ok', 'destravado: grava de novo');
 select pg_temp.ok((select version from public.events) >= 3, 'trava/código sobem a versão do evento (servidor)');
-delete from storage.objects where bucket_id = 'comprovantes';
-select pg_temp.ok(pg_temp.n('select * from storage.objects') = 0, 'organizador apaga comprovante');
+select pg_temp.err($$delete from storage.objects where bucket_id = 'comprovantes'$$, 'Direct deletion', 'DELETE direto por SQL em storage.objects é bloqueado (como no Supabase)');
+select pg_temp.ok(pg_temp.api_del($$bucket_id = 'comprovantes'$$) = 1 and pg_temp.n('select * from storage.objects') = 0, 'organizador apaga comprovante (Storage API)');
 
 \echo '--- limite de tentativas de código'
 select pg_temp.u('eeeeeeee-0000-0000-0000-00000000000e', true);
@@ -308,4 +313,34 @@ select pg_temp.ok((pg_temp.op(:'ev', 'expenses', format('{"id":"e1","event_id":"
 select pg_temp.ok(pg_temp.n(format($$select * from public.expenses where event_id = %L and id = 'e1'$$, :'ev2')) = 0, 'nada vazou para ev2');
 select pg_temp.ok((pg_temp.op(:'ev2', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.5}') ->> 'status') = 'error', 'membro (não organizador) de ev2 não mexe em configurações de ev2');
 select pg_temp.err(format($$select public.approve_member(%L, %L)$$, :'ev2', :'D'), 'organizer_only', 'membro dos dois não aprova em ev2');
+
+\echo '--- retenção dos comprovantes: purge_event_photos (só organizador, outros eventos intactos)'
+select pg_temp.u(:'O', false);
+insert into storage.objects (bucket_id, name) values ('comprovantes', :'ev' || '/e1.jpg'), ('comprovantes', :'ev' || '/e3.jpg');
+select pg_temp.ok((pg_temp.op(:'ev', 'expenses', format('{"id":"e3","photo_path":"%s/e3.jpg"}', :'ev')::jsonb, (select version from public.expenses where event_id = :'ev' and id = 'e3')) ->> 'status') = 'ok', 'gasto e3 com foto');
+select pg_temp.u(:'F', false);
+insert into storage.objects (bucket_id, name) values ('comprovantes', :'ev2' || '/k1.jpg');
+select pg_temp.ok((pg_temp.op(:'ev2', 'expenses', format('{"id":"k1","photo_path":"%s/k1.jpg"}', :'ev2')::jsonb, (select version from public.expenses where event_id = :'ev2' and id = 'k1')) ->> 'status') = 'ok', 'gasto k1 (outro evento) com foto');
+select pg_temp.err(format($$select public.purge_event_photos(%L)$$, :'ev'), 'organizer_only', 'organizador de outro evento não apaga fotos deste');
+select pg_temp.err(format($$select public.event_photo_status(%L)$$, :'ev'), 'organizer_only', 'nem vê o status');
+select pg_temp.u(:'B', true);
+select pg_temp.err(format($$select public.purge_event_photos(%L)$$, :'ev'), 'organizer_only', 'membro não apaga as fotos do evento');
+select pg_temp.u('12121212-0000-0000-0000-000000000012', true);
+select pg_temp.err(format($$select public.purge_event_photos(%L)$$, :'ev'), 'organizer_only', 'de fora não apaga');
+reset role; set role anon;
+select pg_temp.err(format($$select public.purge_event_photos(%L)$$, :'ev'), 'permission denied', 'anon não chama');
+reset role; set role authenticated;
+select pg_temp.u(:'O', false);
+select pg_temp.ok((public.event_photo_status(:'ev') ->> 'remaining') = '2', 'status: 2 fotos no evento');
+select public.purge_event_photos(:'ev') as pr \gset
+select pg_temp.ok(jsonb_array_length(:'pr'::jsonb -> 'paths') = 2 and (:'pr'::jsonb ->> 'cleared_refs')::int >= 1, 'purge devolve as 2 fotos do evento e limpa as referências');
+select pg_temp.ok(pg_temp.n(format($$select * from public.expenses where event_id = %L and photo_path is not null$$, :'ev')) = 0, 'nenhum gasto do evento aponta para foto');
+select pg_temp.ok(pg_temp.api_del(format($$name = any (array(select jsonb_array_elements_text(%L::jsonb -> 'paths')))$$, :'pr')) = 2, 'organizador apaga os arquivos devolvidos (Storage API)');
+select pg_temp.ok((public.event_photo_status(:'ev') ->> 'remaining') = '0' and jsonb_array_length(public.purge_event_photos(:'ev') -> 'paths') = 0, 'depois: 0 fotos restantes (rodar de novo é inofensivo)');
+select pg_temp.u(:'F', false);
+select pg_temp.ok(pg_temp.n(format($$select * from storage.objects where name = %L$$, :'ev2' || '/k1.jpg')) = 1, 'foto do outro evento intacta');
+select pg_temp.ok((select photo_path is not null from public.expenses where event_id = :'ev2' and id = 'k1'), 'referência do outro evento intacta');
+select pg_temp.u(:'O', false);
+select public.update_event_settings(:'ev', format('{"start_date":"%s","end_date":"%s"}', current_date - 12, current_date - 10)::jsonb, (select version from public.events where id = :'ev')) is not null as x \gset
+select pg_temp.ok((public.event_photo_status(:'ev') ->> 'due') = 'true' and (public.event_photo_status(:'ev') ->> 'purge_by')::date = current_date + 20, 'prazo = fim + 30 dias; lembrete devido depois do fim');
 

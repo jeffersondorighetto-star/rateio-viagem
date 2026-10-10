@@ -274,19 +274,27 @@ create or replace function public._is_anonymous() returns boolean
 language sql stable set search_path = '' as $$ select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, true) $$;
 
 -- Quem pode criar evento: lista fechada (cota do projeto Free). Sem acesso de clientes; editar no SQL Editor:
---   insert into public.organizer_allowlist (github_login) values ('seu-usuario-github');
--- O login vem de auth.identities (dado do GitHub, não editável pelo usuário; user_metadata é editável e NÃO é usado).
+--   insert into public.organizer_allowlist (github_id, note) values (<id numérico do GitHub>, 'login');
+-- Chave = id NUMÉRICO do GitHub (auth.identities.provider_id). O login pode ser trocado e reaproveitado por outra
+-- pessoa; o id não muda. Descubra o id em https://api.github.com/users/<login> (campo "id").
+do $$
+begin -- rascunho b6f4fa7 usava github_login (texto): não dá para converter login em id, então a tabela recomeça vazia
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'organizer_allowlist' and column_name = 'github_login') then
+    drop table public.organizer_allowlist;
+    raise notice 'organizer_allowlist recriada por id numérico do GitHub: insira de novo (veja SETUP-CELULAR.md, passo 5.6)';
+  end if;
+end $$;
 create table if not exists public.organizer_allowlist (
-  github_login text primary key check (github_login ~ '^[A-Za-z0-9-]{1,39}$'),
-  note         text,
-  added_at     timestamptz not null default now()
+  github_id bigint primary key check (github_id > 0),
+  note      text check (note is null or char_length(note) <= 80),
+  added_at  timestamptz not null default now()
 );
 alter table public.organizer_allowlist enable row level security;
 revoke all on public.organizer_allowlist from anon, authenticated;
 create or replace function public._may_organize() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from auth.identities i join public.organizer_allowlist a
-                   on lower(a.github_login) = lower(i.identity_data ->> 'user_name')
+                   on i.provider_id = a.github_id::text
                   where i.user_id = auth.uid() and i.provider = 'github');
 $$;
 revoke all on function public._may_organize() from public, anon, authenticated;
@@ -997,5 +1005,45 @@ begin
 end $$;
 revoke all on function public.set_member_family(uuid, uuid, text) from public, anon;
 grant execute on function public.set_member_family(uuid, uuid, text) to authenticated;
+
+-- >>>>> migrations/0014_photo_retention.sql
+-- 0014 — Retenção dos comprovantes (revisão de governança N1): o organizador apaga as fotos do evento
+-- até 30 dias depois do fim (end_date). O app lembra o organizador e faz tudo com um toque.
+--
+-- Por que duas etapas: no Supabase, DELETE direto em storage.objects por SQL é bloqueado
+-- (gatilho storage.protect_delete) e, se passasse, deixaria o arquivo órfão no armazenamento.
+-- Então:
+--   1) purge_event_photos(evento): só organizador; tira a referência da foto dos gastos do evento e
+--      devolve a lista de arquivos do evento no bucket;
+--   2) o app apaga esses arquivos pela Storage API (remove), que a política comprovantes_delete permite
+--      só ao organizador. Rodar de novo devolve o que ainda sobrar (0 = concluído).
+-- event_photo_status(evento): quantas fotos restam e o prazo (fim + 30 dias), para o lembrete.
+
+create or replace function public.event_photo_status(p_event uuid)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare v_end date; v_n int;
+begin
+  perform public._require_organizer(p_event);
+  select end_date into v_end from public.events where id = p_event;
+  select count(*) into v_n from storage.objects o where o.bucket_id = 'comprovantes' and public.proof_event_id(o.name) = p_event;
+  return jsonb_build_object('remaining', v_n, 'end_date', v_end, 'purge_by', v_end + 30,
+                            'due', v_end is not null and current_date > v_end);
+end $$;
+revoke all on function public.event_photo_status(uuid) from public, anon;
+grant execute on function public.event_photo_status(uuid) to authenticated;
+
+create or replace function public.purge_event_photos(p_event uuid)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_paths text[]; v_cleared int;
+begin
+  perform public._require_organizer(p_event); perform public._server_write();
+  update public.expenses set photo_path = null where event_id = p_event and photo_path is not null;
+  get diagnostics v_cleared = row_count;
+  select coalesce(array_agg(o.name order by o.name), '{}') into v_paths
+    from storage.objects o where o.bucket_id = 'comprovantes' and public.proof_event_id(o.name) = p_event;
+  return jsonb_build_object('paths', to_jsonb(v_paths), 'cleared_refs', v_cleared);
+end $$;
+revoke all on function public.purge_event_photos(uuid) from public, anon;
+grant execute on function public.purge_event_photos(uuid) to authenticated;
 
 -- Pronto. Confira em Table Editor que todas as tabelas aparecem com "RLS enabled".

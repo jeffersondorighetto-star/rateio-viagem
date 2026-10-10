@@ -10,19 +10,27 @@ create or replace function public._is_anonymous() returns boolean
 language sql stable set search_path = '' as $$ select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, true) $$;
 
 -- Quem pode criar evento: lista fechada (cota do projeto Free). Sem acesso de clientes; editar no SQL Editor:
---   insert into public.organizer_allowlist (github_login) values ('seu-usuario-github');
--- O login vem de auth.identities (dado do GitHub, não editável pelo usuário; user_metadata é editável e NÃO é usado).
+--   insert into public.organizer_allowlist (github_id, note) values (<id numérico do GitHub>, 'login');
+-- Chave = id NUMÉRICO do GitHub (auth.identities.provider_id). O login pode ser trocado e reaproveitado por outra
+-- pessoa; o id não muda. Descubra o id em https://api.github.com/users/<login> (campo "id").
+do $$
+begin -- rascunho b6f4fa7 usava github_login (texto): não dá para converter login em id, então a tabela recomeça vazia
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'organizer_allowlist' and column_name = 'github_login') then
+    drop table public.organizer_allowlist;
+    raise notice 'organizer_allowlist recriada por id numérico do GitHub: insira de novo (veja SETUP-CELULAR.md, passo 5.6)';
+  end if;
+end $$;
 create table if not exists public.organizer_allowlist (
-  github_login text primary key check (github_login ~ '^[A-Za-z0-9-]{1,39}$'),
-  note         text,
-  added_at     timestamptz not null default now()
+  github_id bigint primary key check (github_id > 0),
+  note      text check (note is null or char_length(note) <= 80),
+  added_at  timestamptz not null default now()
 );
 alter table public.organizer_allowlist enable row level security;
 revoke all on public.organizer_allowlist from anon, authenticated;
 create or replace function public._may_organize() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from auth.identities i join public.organizer_allowlist a
-                   on lower(a.github_login) = lower(i.identity_data ->> 'user_name')
+                   on i.provider_id = a.github_id::text
                   where i.user_id = auth.uid() and i.provider = 'github');
 $$;
 revoke all on function public._may_organize() from public, anon, authenticated;

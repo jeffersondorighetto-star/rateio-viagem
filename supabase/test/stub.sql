@@ -29,4 +29,15 @@ do $$ begin
   if not exists (select 1 from pg_publication where pubname='supabase_realtime') then create publication supabase_realtime; end if;
 end $$;
 -- identidades do Auth (o Supabase guarda aqui o login do GitHub em identity_data.user_name)
-create table if not exists auth.identities (user_id uuid, provider text, identity_data jsonb);
+create table if not exists auth.identities (user_id uuid, provider text, identity_data jsonb, provider_id text);
+alter table auth.identities add column if not exists provider_id text;
+-- igual ao Supabase: DELETE em storage.objects só pela Storage API (que liga storage.allow_delete_query na transação)
+create or replace function storage.protect_delete() returns trigger language plpgsql as $$
+begin
+  if coalesce(current_setting('storage.allow_delete_query', true), 'false') <> 'true' then
+    raise exception 'Direct deletion from storage tables is not allowed. Use the Storage API instead.' using errcode = '42501';
+  end if;
+  return null;
+end $$;
+drop trigger if exists protect_objects_delete on storage.objects;
+create trigger protect_objects_delete before delete on storage.objects for each statement execute function storage.protect_delete();
