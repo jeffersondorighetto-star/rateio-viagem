@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f4f6ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1d16" media="(prefers-color-scheme: dark)">
-<title>Rateio da Viagem</title>
+<title>Rateatouille</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f5d2f'/><path d='M10 16h12M16 10v12' stroke='white' stroke-width='3' stroke-linecap='round'/></svg>">
 <style>
 :root{
@@ -384,14 +384,41 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .toast{bottom:calc(92px + var(--sab))}@media(min-width:920px){.toast{bottom:calc(24px + var(--sab))}}
+/* ---- evento compartilhado ---- */
+[hidden]{display:none!important}
+.syncpill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.syncpill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--text-3);flex:none}
+.syncpill[data-s="synced"]::before{background:var(--pos)}
+.syncpill[data-s="saving"]::before,.syncpill[data-s="pending"]::before{background:var(--warn)}
+.syncpill[data-s="offline"],.syncpill[data-s="error"]{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 40%,var(--border))}
+.syncpill[data-s="offline"]::before,.syncpill[data-s="error"]::before{background:var(--neg)}
+.syncpill + .toptotal{margin-left:12px}
+@media(max-width:480px){.syncpill{font-size:0;gap:0;width:32px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
+.syncbanner{max-width:1120px;margin:8px auto 0;padding:0 16px}
+.syncbanner .callout{overflow-wrap:anywhere}
+dialog.gate{width:min(560px,100%);max-height:100%;border:0;border-radius:var(--r-lg);padding:20px;background:var(--bg);color:var(--text);overflow:auto}
+dialog.gate::backdrop{background:rgba(0,0,0,.55)}
+dialog.gate h2{margin:0 0 4px;font-size:20px}
+dialog.gate h3{margin:0 0 12px;font-size:15px}
+dialog.gate .card+.card{margin-top:12px}
+dialog.gate .field{margin-bottom:12px}
+.gateerr{color:var(--neg);font-size:14px;margin:0 0 12px;overflow-wrap:anywhere}
+.codebig{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.12em;overflow-wrap:anywhere}
+.datalist{display:grid;gap:8px;font-size:14px;color:var(--text-2);margin:0 0 12px}
+.datalist b{color:var(--text)}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+.cmp th,.cmp td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--border)}
+.cmp td.num,.cmp th.num{text-align:right}
 </style>
 </head>
 <body data-view="inicio">
 <header class="top" id="top"><div class="in">
-  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Rateio da Viagem</span></div>
+  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Rateatouille</span></div>
+  <button class="syncpill" id="syncPill" type="button" hidden aria-live="polite"></button>
   <div class="toptotal" aria-hidden="true"><small>Total</small><b class="num" id="topTotal">R$ 0,00</b></div>
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
+<div class="syncbanner" id="syncBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="syncBannerText"></span></div></div>
 
 <nav class="tabbar" id="tabbar" role="tablist" aria-label="Seções">
   <button role="tab" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
@@ -447,6 +474,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 
 <!-- ============ PLANEJAR ============ -->
 <section class="view" id="v-planejar" role="tabpanel" hidden>
+  <p class="callout" id="localOnlyNote" hidden style="margin:0 0 16px"><span data-i="alert"></span><span>Cardápio, receitas, compras e dieta/alergia ficam <b>só neste aparelho</b> (não vão para o evento compartilhado). No evento, a divisão «por porções» usa os dias de presença e o tipo de cada pessoa.</span></p>
   <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
     <button role="tab" data-sub="cardapio" aria-selected="true">Cardápio</button>
     <button role="tab" data-sub="receitas" aria-selected="false">Receitas</button>
@@ -646,18 +674,37 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <a class="btn secondary" id="waLink" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a>
         </div></div>
       </section>
+      <section class="card" aria-labelledby="dataTitle" id="dataCard">
+        <div class="ch"><h2 id="dataTitle">Dados</h2><span class="meta" id="dataMeta">só neste aparelho</span></div>
+        <div id="dataBody"></div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </section>
     </div>
   </div>
 </section>
 </main>
 <footer>
-  <span>Protótipo local · dados salvos apenas neste navegador · sem servidor e sem dados bancários</span>
+  <span id="footNote">Rateatouille · dados salvos apenas neste navegador · sem dados bancários</span>
   <button class="btn text" id="resetBtn"><span data-i="reset"></span>Restaurar exemplo</button>
 </footer>
 
 <dialog class="cook" id="cookDlg" aria-labelledby="cookTitle"><div class="cookin" id="cookBody"></div></dialog>
 <dialog class="photo" id="photoDlg"><form method="dialog"><button class="iconbtn" style="position:absolute;top:8px;right:8px" aria-label="Fechar"><span data-i="x"></span></button></form><img id="photoBig" alt="Foto do gasto"></dialog>
+<dialog class="gate" id="gateDlg" aria-labelledby="gateTitle"><div id="gateBody"></div></dialog>
+<dialog class="gate" id="importDlg" aria-labelledby="impTitle"><div id="importBody"></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+// ===================== CONFIGURAÇÃO DO BANCO COMPARTILHADO (Supabase) =====================
+// Cole aqui SÓ a Project URL e a chave publishable (sb_publishable_...) ou anon.
+// Essas duas são públicas por desenho: quem protege os dados é a RLS do supabase/supabase.sql.
+// NUNCA coloque aqui a chave secret (sb_secret_...), a service_role nem a senha do banco.
+// Com os dois valores em null o app funciona como antes, só neste aparelho.
+window.RATEIO_CONFIG = {
+  SUPABASE_URL: null,       // ex.: 'https://abcdefghijkl.supabase.co'
+  SUPABASE_ANON_KEY: null,  // ex.: 'sb_publishable_...'
+};
+// ===========================================================================================
+</script>
 <script>
 // ===== LOGIC-START (pure functions; tested in test.js) =====
 const CATEGORIES = {
@@ -684,7 +731,8 @@ function computeSplit(state) {
   const drinkerIds = people.filter(p => p.drinks).map(p => p.id);
   const catTotals = Object.fromEntries(Object.keys(CATEGORIES).map(k => [k, 0]));
   const warnings = [];
-  const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state) : null;
+  // In a shared event the meal grid stays local-only, so portions use presence + type weights (same on every device).
+  const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state.syncMode ? { ...state, plan: {} } : state) : null;
   const wCache = {};
   let total = 0;
   for (const e of countedExpenses(state)) {
@@ -1027,7 +1075,7 @@ function shoppingList(state, opts) {
 const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
   : (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L` : `${Math.round(q)} ml`);
 function shoppingText(state, S) {
-  const L = ['*Lista de compras — Rateio da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
+  const L = ['*Lista de compras — Rateatouille*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
     L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
@@ -1246,7 +1294,7 @@ const brl = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', c
 
 function summaryText(state, split, xfers, k) {
   const L = [];
-  L.push('*Rateio da Viagem — resumo*');
+  L.push('*Rateatouille — resumo*');
   L.push(`Total: *${brl(split.total)}*`);
   L.push(`${split.persons.length} pessoas · média ${brl(split.avg)} por pessoa`);
   if (state.splitMode && SPLIT_MODES[state.splitMode]) L.push(`Divisão: ${SPLIT_MODES[state.splitMode]}`);
@@ -1279,9 +1327,266 @@ function summaryText(state, split, xfers, k) {
   }
   return L.join('\n');
 }
+// ===================== Evento compartilhado (Supabase): mapeamento estado <-> linhas =====================
+// O servidor só guarda linhas; todo cálculo continua aqui no cliente.
+// NUNCA vão para o servidor: receitas, cardápio (plan), preços, quantidades, dieta/alergia (member.diet) e fotos (expense.photo).
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sem 0/O, 1/I/L
+function genEventCode(rand) {
+  const out = [];
+  const next = rand || (() => { const a = new Uint8Array(1); crypto.getRandomValues(a); return a[0]; });
+  while (out.length < 8) { const b = next(); if (b < 248) out.push(CODE_ALPHABET[b % 31]); } // 248 = 8*31: sem viés
+  return out.join('');
+}
+const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const validCode = s => new RegExp('^[' + CODE_ALPHABET + ']{8}$').test(s);
+const SYNC_TABLES = ['families', 'people', 'expenses', 'settlement_marks'];
+const SYNC_PK = { families: ['event_id', 'id'], people: ['event_id', 'id'], expenses: ['event_id', 'id'], settlement_marks: ['event_id', 'from_family', 'to_family'] };
+const SYNC_COLS = {
+  events: ['id', 'name', 'start_date', 'end_date', 'meals', 'split_mode', 'include_unconfirmed', 'kitty_per_family', 'weights'],
+  families: ['event_id', 'id', 'name', 'color', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
+  people: ['event_id', 'id', 'family_id', 'first_name', 'type', 'drinks', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
+  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmed_by_family_id', 'confirmed_at', 'client_ts', 'deleted_at'],
+  settlement_marks: ['event_id', 'from_family', 'to_family', 'amount', 'deleted_at'],
+};
+const TS_COLS = new Set(['deleted_at', 'confirmed_at']);
+const NUM_COLS = new Set(['amount', 'kitty_per_family', 'pos', 'client_ts']);
+const MEAL_KEYS = ['cafe', 'almoco', 'lanche', 'jantar'];
+const clip = (s, n) => s == null || s === '' ? null : String(s).slice(0, n);
+const dateOrNull = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? String(d) : null;
+const mealOrNull = m => MEAL_KEYS.includes(m) ? m : null;
+const isoOrNull = v => { if (v == null || v === '') return null; const d = new Date(typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v); return isNaN(d) ? null : d.toISOString(); };
+// Canonical form of a row: only client-owned columns, normalized types (so server echo == local row).
+function pickRow(table, r) {
+  const o = {};
+  for (const c of SYNC_COLS[table]) {
+    let v = r[c] === undefined ? null : r[c];
+    if (TS_COLS.has(c)) v = isoOrNull(v);
+    else if (NUM_COLS.has(c) && v != null) v = Number(v);
+    o[c] = v;
+  }
+  return o;
+}
+const rowKey = (table, r) => SYNC_PK[table].map(c => r[c]).join('|');
+// Split "<de>_<para>" using the known family ids (ids may contain "_").
+function splitSettleKey(k, famIds) {
+  for (const a of famIds) if (k.startsWith(a + '_') && famIds.includes(k.slice(a.length + 1))) return [a, k.slice(a.length + 1)];
+  const i = k.indexOf('_'); return i > 0 ? [k.slice(0, i), k.slice(i + 1)] : null;
+}
+function stateToRows(state, eventId, eventName) {
+  const ev = { id: eventId, name: clip(eventName || state.eventName || 'Evento', 80),
+    start_date: dateOrNull(state.trip && state.trip.start), end_date: dateOrNull(state.trip && state.trip.end),
+    meals: Object.fromEntries(MEAL_KEYS.map(m => [m, !!(state.trip && state.trip.meals && state.trip.meals[m])])),
+    split_mode: ['porcoes', 'pessoa', 'igual'].includes(state.splitMode) ? state.splitMode : 'pessoa',
+    include_unconfirmed: state.includeUnconfirmed !== false,
+    kitty_per_family: Math.max(0, Math.round((Number(state.kittyPerFamily) || 0) * 100) / 100),
+    weights: Object.fromEntries(Object.entries(state.weights || {}).filter(([k, v]) => typeof v === 'number' && isFinite(v) && v >= 0 && ['adulto', 'adolescente', 'crianca', 'bebe'].includes(k))) };
+  if (ev.start_date && ev.end_date && ev.end_date < ev.start_date) ev.end_date = null;
+  const rows = { events: pickRow('events', ev), families: [], people: [], expenses: [], settlement_marks: [] };
+  (state.families || []).forEach((f, fi) => {
+    rows.families.push(pickRow('families', { event_id: eventId, id: f.id, name: clip(f.name, 60) || 'Família', color: clip(f.color, 40), pos: fi,
+      arrive: dateOrNull(f.arrive), arrive_meal: mealOrNull(f.arriveMeal), depart: dateOrNull(f.depart), depart_meal: mealOrNull(f.departMeal) }));
+    (f.members || []).forEach((m, mi) => rows.people.push(pickRow('people', { event_id: eventId, id: m.id, family_id: f.id,
+      first_name: (clip(String(m.name || '').trim(), 40) || '?'), type: ['adulto', 'adolescente', 'crianca', 'bebe'].includes(m.type) ? m.type : 'adulto',
+      drinks: !!m.drinks, pos: mi, arrive: dateOrNull(m.arrive), arrive_meal: mealOrNull(m.arriveMeal), depart: dateOrNull(m.depart), depart_meal: mealOrNull(m.departMeal) })));
+  });
+  for (const e of state.expenses || []) {
+    const amount = Math.round((Number(e.amount) || 0) * 100) / 100; if (!(amount > 0)) continue;
+    rows.expenses.push(pickRow('expenses', { event_id: eventId, id: e.id, description: String(e.description || '').slice(0, 120), amount,
+      category: CATEGORIES[e.category] ? e.category : 'food', payer_person_id: e.payerId || null,
+      participants: Array.isArray(e.participants) ? e.participants.slice(0, 100) : null,
+      proof: ['nf', 'comp', 'none'].includes(e.proof) ? e.proof : 'nf', estimated: !!e.estimated, note: clip(e.note, 300),
+      items: e.items == null || e.items === '' ? null : (typeof e.items === 'string' ? e.items.slice(0, 2000) : e.items),
+      confirmed_by_family_id: e.confirmedBy || null, confirmed_at: e.confirmedBy ? isoOrNull(e.confirmedAt) : null,
+      client_ts: Number.isFinite(Number(e.ts)) ? Math.round(Number(e.ts)) : null }));
+  }
+  const famIds = (state.families || []).map(f => f.id);
+  for (const [k, v] of Object.entries(state.settled || {})) {
+    const p = splitSettleKey(k, famIds); if (!p || !v) continue;
+    rows.settlement_marks.push(pickRow('settlement_marks', { event_id: eventId, from_family: p[0], to_family: p[1], amount: Math.round((Number(v.amount) || 0) * 100) / 100 }));
+  }
+  return rows;
+}
+const SYNCED_KEYS = {
+  family: ['id', 'name', 'color', 'arrive', 'arriveMeal', 'depart', 'departMeal', 'members'],
+  member: ['id', 'name', 'type', 'drinks', 'arrive', 'arriveMeal', 'depart', 'departMeal'],
+  expense: ['id', 'description', 'amount', 'category', 'payerId', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmedBy', 'confirmedAt', 'ts'],
+};
+// Keep only local-only fields (diet, photo, anything unknown) of the previous object.
+const localPart = (prev, kind) => { const o = {}; if (prev) for (const k in prev) if (!SYNCED_KEYS[kind].includes(k)) o[k] = prev[k]; return o; };
+const setIf = (o, k, v) => { if (v !== null && v !== undefined && v !== '') o[k] = v; };
+// rows (server shape) + previous local state -> app state. Local-only parts of prev are preserved.
+function rowsToState(rows, prev) {
+  prev = prev || {};
+  const live = t => (rows[t] || []).filter(r => !r.deleted_at);
+  const ev = rows.events || {};
+  const pf = Object.fromEntries((prev.families || []).map(f => [f.id, f]));
+  const pm = {}; (prev.families || []).forEach(f => (f.members || []).forEach(m => { pm[m.id] = m; }));
+  const pe = Object.fromEntries((prev.expenses || []).map(e => [e.id, e]));
+  const fams = live('families').slice().sort((a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id))).map(r => {
+    const f = { ...localPart(pf[r.id], 'family'), id: r.id, name: r.name, members: [] };
+    setIf(f, 'arrive', r.arrive); setIf(f, 'arriveMeal', r.arrive_meal); setIf(f, 'depart', r.depart); setIf(f, 'departMeal', r.depart_meal);
+    return f;
+  });
+  const byFam = Object.fromEntries(fams.map(f => [f.id, f]));
+  live('people').slice().sort((a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id))).forEach(r => {
+    const f = byFam[r.family_id]; if (!f) return;
+    const m = { ...localPart(pm[r.id], 'member'), id: r.id, name: r.first_name, drinks: !!r.drinks, type: ['adulto', 'adolescente', 'crianca', 'bebe'].includes(r.type) ? r.type : 'adulto' };
+    setIf(m, 'arrive', r.arrive); setIf(m, 'arriveMeal', r.arrive_meal); setIf(m, 'depart', r.depart); setIf(m, 'departMeal', r.depart_meal);
+    f.members.push(m);
+  });
+  const expenses = live('expenses').map(r => {
+    const e = { ...localPart(pe[r.id], 'expense'), id: r.id, amount: Number(r.amount), category: CATEGORIES[r.category] ? r.category : 'food', description: r.description || '', payerId: r.payer_person_id || null, proof: ['nf', 'comp', 'none'].includes(r.proof) ? r.proof : 'nf' };
+    if (r.estimated) e.estimated = true; setIf(e, 'note', r.note); setIf(e, 'items', r.items); setIf(e, 'participants', r.participants);
+    if (r.confirmed_by_family_id) { e.confirmedBy = r.confirmed_by_family_id; if (r.confirmed_at) e.confirmedAt = Date.parse(r.confirmed_at); }
+    if (r.client_ts != null) e.ts = Number(r.client_ts);
+    return e;
+  }).sort((a, b) => (b.ts || 0) - (a.ts || 0) || String(a.id).localeCompare(String(b.id)));
+  const settled = {};
+  for (const r of live('settlement_marks')) settled[r.from_family + '_' + r.to_family] = { amount: Number(r.amount), at: (prev.settled && prev.settled[r.from_family + '_' + r.to_family] || {}).at || Date.now() };
+  const meals = ev.meals || (prev.trip && prev.trip.meals) || { cafe: true, almoco: true, lanche: false, jantar: true };
+  return { ...prev, eventName: ev.name || prev.eventName, families: fams, expenses, settled,
+    trip: { ...(prev.trip || {}), start: ev.start_date || '', end: ev.end_date || '', meals: { ...meals } },
+    splitMode: ev.split_mode || prev.splitMode || 'pessoa', includeUnconfirmed: ev.include_unconfirmed !== false,
+    kittyPerFamily: ev.kitty_per_family != null ? Number(ev.kitty_per_family) : (prev.kittyPerFamily || 0), weights: { ...(ev.weights || {}) },
+    // local-only (never synced): recipes, plan, prices, planQty
+    recipes: prev.recipes || [], plan: prev.plan || {}, prices: prev.prices || {}, planQty: prev.planQty || {}, syncMode: true };
+}
+const stableStr = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(stableStr).join(',') + ']' : '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}') : JSON.stringify(v === undefined ? null : v);
+const sameRow = (a, b) => stableStr(a) === stableStr(b);
+// What must be written: changed/new rows, and soft-deletes for rows that disappeared locally.
+function diffRows(base, cur) {
+  const out = { events: null, upserts: {} };
+  if (cur.events && (!base.events || !sameRow(base.events, cur.events))) out.events = cur.events;
+  const curFams = new Set((cur.families || []).map(f => f.id));
+  for (const t of SYNC_TABLES) {
+    const b = base[t] || {}, list = [], seen = new Set();
+    for (const r of cur[t] || []) { const k = rowKey(t, r); seen.add(k); if (!b[k] || !sameRow(b[k], r)) list.push(r); }
+    for (const k in b) {
+      if (seen.has(k) || b[k].deleted_at) continue;
+      if (t === 'people' && !curFams.has(b[k].family_id)) continue; // orphan (family not loaded/removed): never delete what we could not show
+      list.push({ ...b[k], deleted_at: new Date().toISOString() });
+    }
+    if (list.length) out.upserts[t] = list;
+  }
+  return out;
+}
+const indexRows = (t, list) => Object.fromEntries((list || []).map(r => { const p = pickRow(t, r); return [rowKey(t, p), p]; }));
+
+// Sync engine: last write wins per row; edits made offline stay pending in memory+cache and are retried.
+// client: a supabase-js v2 client (or the fake one in tests). Hooks: getState(), setState(s), onStatus(status, info).
+function createSync({ client, eventId, getState, setState, onStatus, loadBase, saveBase, debounceMs = 600, retryMs = 15000, timers }) {
+  const T = timers || { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) };
+  const base = { events: null }; SYNC_TABLES.forEach(t => { base[t] = {}; });
+  let timer = null, flushing = false, again = false, status = 'idle', channel = null, eventName = '', createdBy = null;
+  const set = (s, info) => { status = s; onStatus && onStatus(s, info || {}); };
+  const curRows = () => stateToRows(getState(), eventId, eventName);
+  const pendingCount = () => { const d = diffRows(base, curRows()); return (d.events ? 1 : 0) + Object.values(d.upserts).reduce((s, l) => s + l.length, 0); };
+  const baseLists = () => { const o = { events: base.events }; SYNC_TABLES.forEach(t => { o[t] = Object.values(base[t]); }); return o; };
+  // Rebuild local state from server rows, keeping rows that still have unsent local edits.
+  const persist = () => { if (saveBase) try { saveBase(JSON.parse(JSON.stringify(base))); } catch (e) {} };
+  function rebuild(localEdits) {
+    const cur = curRows(), merged = { events: base.events };
+    const d = localEdits || diffRows(base, cur);
+    if (d.events) merged.events = d.events;
+    for (const t of SYNC_TABLES) {
+      const m = { ...base[t] };
+      for (const r of d.upserts[t] || []) m[rowKey(t, r)] = r;
+      merged[t] = Object.values(m);
+    }
+    setState(rowsToState(merged, getState()));
+  }
+  async function load() {
+    set('saving', { phase: 'load' });
+    const evq = await client.from('events').select('*').eq('id', eventId);
+    if (evq.error) throw evq.error;
+    if (!evq.data || !evq.data.length) { const e = new Error('not_member'); e.code = 'not_member'; throw e; }
+    // Edits made on this device since the last server ack (from the saved base); null = first load, server wins.
+    const prevBase = loadBase ? loadBase() : null;
+    const edits = prevBase && prevBase.events ? diffRows(prevBase, curRows()) : { events: null, upserts: {} };
+    eventName = evq.data[0].name; createdBy = evq.data[0].created_by; base.events = pickRow('events', evq.data[0]);
+    for (const t of SYNC_TABLES) {
+      const q = await client.from(t).select('*').eq('event_id', eventId);
+      if (q.error) throw q.error;
+      base[t] = indexRows(t, q.data);
+    }
+    rebuild(edits); persist(); set(pendingCount() ? 'pending' : 'synced');
+    return { name: eventName, createdBy };
+  }
+  function applyRemote(t, row) {
+    if (!row) return;
+    const edits = diffRows(base, curRows()); // local edits relative to the base BEFORE the remote change
+    if (t === 'events') { if (row.id !== eventId) return; eventName = row.name; base.events = pickRow('events', row); }
+    else { if (row.event_id !== eventId) return; const p = pickRow(t, row); base[t][rowKey(t, p)] = p; }
+    rebuild(edits); persist();
+  }
+  function subscribe() {
+    channel = client.channel('evento-' + eventId);
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => applyRemote('events', p.new));
+    for (const t of SYNC_TABLES) channel.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'event_id=eq.' + eventId }, p => applyRemote(t, p.new));
+    channel.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') set('offline', { pending: pendingCount() }); else if (st === 'SUBSCRIBED') resync(); });
+  }
+  async function resync() { try { await load(); await flush(); } catch (e) { set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() }); } }
+  const isNet = e => !e || /fetch|network|Failed|timeout|offline/i.test(String(e.message || e)) || e.status === 0;
+  function schedule() { if (timer) T.clear(timer); set('saving'); timer = T.set(() => { timer = null; return flush(); }, debounceMs); }
+  async function flush() {
+    if (flushing) { again = true; return; }
+    flushing = true;
+    try {
+      const d = diffRows(base, curRows());
+      if (d.events) {
+        const { id, ...patch } = d.events;
+        const r = await client.from('events').update(patch).eq('id', eventId);
+        if (r.error) throw r.error; base.events = d.events;
+      }
+      for (const t of SYNC_TABLES) {
+        const list = d.upserts[t]; if (!list) continue;
+        for (let i = 0; i < list.length; i += 200) {
+          const chunk = list.slice(i, i + 200);
+          const r = await client.from(t).upsert(chunk, { onConflict: SYNC_PK[t].join(',') });
+          if (r.error) throw r.error;
+          chunk.forEach(row => { base[t][rowKey(t, row)] = row; });
+        }
+      }
+      persist(); set(pendingCount() ? 'pending' : 'synced');
+    } catch (e) {
+      set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() });
+      if (timer) T.clear(timer); timer = T.set(() => { timer = null; return flush(); }, retryMs);
+    } finally {
+      flushing = false;
+      if (again) { again = false; await flush(); }
+    }
+  }
+  return { load, subscribe, schedule, flush, resync, applyRemote, pendingCount, status: () => status,
+    info: () => ({ eventId, name: eventName, createdBy }), base, stop: () => { if (channel && client.removeChannel) client.removeChannel(channel); } };
+}
+
+// Import validation: counts and per-family balances before/after the round trip (tolerance R$ 0,01).
+function importCheck(imported) {
+  const errs = [];
+  if (!imported || !Array.isArray(imported.families) || !Array.isArray(imported.expenses)) return { ok: false, errs: ['Arquivo sem famílias ou gastos'] };
+  const ids = new Set();
+  for (const f of imported.families) { if (!f || !f.id || !Array.isArray(f.members)) errs.push('Família inválida'); else { if (ids.has(f.id)) errs.push('Id repetido: ' + f.id); ids.add(f.id); f.members.forEach(m => { if (!m || !m.id) errs.push('Pessoa sem id'); else if (ids.has(m.id)) errs.push('Id repetido: ' + m.id); else ids.add(m.id); }); } }
+  for (const e of imported.expenses) { if (!e || !e.id) errs.push('Gasto sem id'); else if (!(Number(e.amount) > 0) || Number(e.amount) > 1e6) errs.push('Valor inválido em ' + (e.description || e.id)); }
+  const okId = id => /^[A-Za-z0-9_-]{1,40}$/.test(String(id));
+  [...ids].forEach(id => { if (!okId(id)) errs.push('Id fora do padrão: ' + id); });
+  imported.expenses.forEach(e => { if (e && e.id && !okId(e.id)) errs.push('Id fora do padrão: ' + e.id); });
+  const sum = s => Math.round(s.expenses.reduce((a, e) => a + (Number(e.amount) || 0), 0) * 100) / 100;
+  const count = s => ({ families: s.families.length, people: s.families.reduce((a, f) => a + f.members.length, 0), expenses: s.expenses.length, total: sum(s), marks: Object.keys(s.settled || {}).length });
+  const shared = { ...imported, syncMode: true };
+  const before = count(imported), back = rowsToState(stateToRows(shared, 'check', 'check'), shared);
+  const after = count(back);
+  const nb = computeSplit(shared).families, na = computeSplit(back).families;
+  let maxDiff = 0; nb.forEach(f => { const g = na.find(x => x.id === f.id); maxDiff = Math.max(maxDiff, g ? Math.abs(g.net - f.net) : Infinity); });
+  if (before.families !== after.families || before.people !== after.people || before.expenses !== after.expenses) errs.push('Contagem diferente depois da conversão');
+  if (Math.abs(before.total - after.total) > 0.01) errs.push('Soma dos gastos diferente');
+  if (!(maxDiff <= 0.01)) errs.push('Saldos diferentes depois da conversão');
+  const nl = computeSplit({ ...imported, syncMode: false }).families;
+  let planDiff = 0; nl.forEach(f => { const g = nb.find(x => x.id === f.id); planDiff = Math.max(planDiff, g ? Math.abs(g.net - f.net) : 0); });
+  return { ok: !errs.length, errs: [...new Set(errs)].slice(0, 8), before, after, maxDiff, planDiff };
+}
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = { parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
+  module.exports = { genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, diffRows, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
 }
 </script>
 <script>
@@ -1435,20 +1740,40 @@ Corte as frutas e monte a mesa com pães e frios.`,
     s.splitMode = s.splitMode || 'porcoes'; if (s.includeUnconfirmed === undefined) s.includeUnconfirmed = true;
     return s;
   }
+  // ---------- modo: só neste aparelho (padrão) ou evento compartilhado (Supabase) ----------
+  const CFG = window.RATEIO_CONFIG || {};
+  const SESSION_KEY = 'rateio-e2-session', MODE_KEY = 'rateio-e2-mode';
+  const backendOn = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) && !new URLSearchParams(location.search).has('offline');
+  let session = null; try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) {}
+  if (!session || !session.eventId) session = null;
+  const hashCode = normCode(decodeURIComponent(location.hash.slice(1)));
+  const linkCode = validCode(hashCode) ? hashCode : null;
+  const shared = backendOn && !!session && (!linkCode || linkCode === session.code);
+  const CACHE_KEY = shared ? `rateio-evento-${session.eventId}-cache` : KEY;   // modo local continua em racha-viagem-v3
+  const BASE_KEY = shared ? `rateio-evento-${session.eventId}-base` : null;
   let state;
-  try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  if (!state || !Array.isArray(state.families)) state = example();
+  try { state = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) {}
+  if (!state || !Array.isArray(state.families)) state = shared
+    ? { families: [], expenses: [], settled: {}, splitMode: 'pessoa', includeUnconfirmed: true, kittyPerFamily: 0, trip: { start: '', end: '', meals: { cafe: true, almoco: true, lanche: false, jantar: true } } }
+    : example();
+  if (shared) state.syncMode = true; else delete state.syncMode;
   normalize(state);
   let ui = { view: 'inicio', sub: 'cardapio', day: null, shopRange: 'all', expFilter: 'all' };
   try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY)) || {}); } catch (e) {}
   const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} };
   let storageWarned = false;
+  let sync = null;
   const save = () => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return; }
+    if (!writeLocal()) return;
+    if (shared && sync) sync.schedule(); else if (shared) paintSync('pending');
+  };
+  function writeLocal() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }
+    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return false; }
     const used = JSON.stringify(state).length;
     if (used > 3.5e6 && !storageWarned) { storageWarned = true; toast('Armazenamento quase cheio (fotos)', 'alert'); }
-  };
+    return true;
+  }
 
   // theme
   const sysDark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
@@ -2143,7 +2468,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let lastText = '';
   function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
-  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateio da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
+  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
   $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
 
   // ---------- MODO COZINHA ----------
@@ -2183,6 +2508,207 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#cookDlg').addEventListener('close', () => { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } });
   $('#photoDlg').addEventListener('click', e => { if (e.target === $('#photoDlg')) $('#photoDlg').close(); });
 
+  // ---------- EVENTO COMPARTILHADO: status, entrada, dados (export/import) ----------
+  const STATUS_TXT = { idle: 'Conectando…', saving: 'Salvando…', synced: 'Sincronizado', pending: 'Pendente', offline: 'Offline', error: 'Erro' };
+  let syncInfo = { name: session && session.name, createdBy: null }, myUserId = null, lastStatus = 'idle';
+  function paintSync(st, info = {}) {
+    lastStatus = st;
+    const pill = $('#syncPill'); if (!pill) return;
+    pill.hidden = !shared; pill.dataset.s = st; pill.textContent = STATUS_TXT[st] || st;
+    const n = info.pending != null ? info.pending : (sync ? sync.pendingCount() : 0);
+    let msg = '';
+    if (st === 'offline') msg = n ? `Sem conexão com o servidor: ${n} ${n === 1 ? 'alteração está' : 'alterações estão'} só neste aparelho e ${n === 1 ? 'será enviada' : 'serão enviadas'} quando a internet voltar. Evite editar o mesmo gasto em outro celular até lá.` : 'Sem conexão com o servidor. Você vê a última cópia deste aparelho; o que lançar agora fica pendente até a internet voltar.';
+    else if (st === 'error') { const e = info.error || {}; const perm = e.code === '42501' || /row-level|permission/i.test(e.message || '');
+      msg = perm ? 'Este aparelho não tem permissão neste evento. Entre de novo com o código (Acertos › Dados).' : `Erro ao salvar (${String(e.message || e).slice(0, 120)}). Suas alterações estão guardadas neste aparelho e serão reenviadas.`; }
+    $('#syncBanner').hidden = !msg; $('#syncBannerText').textContent = msg;
+    pill.setAttribute('aria-label', 'Sincronização: ' + pill.textContent);
+  }
+  $('#syncPill').onclick = () => { if (sync) sync.resync(); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); };
+  const shareUrl = code => location.origin + location.pathname + '#' + code;
+  const fmtCode = c => c ? c.slice(0, 4) + '-' + c.slice(4) : '';
+  const errMsg = e => { const m = String((e && (e.message || e.error_description)) || e || '');
+    if (/invalid_code/.test(m)) return 'Código não confere. Confira as 8 letras e números.';
+    if (/anonymous.*disabled|Anonymous sign-ins are disabled/i.test(m)) return 'O login anônimo está desligado no Supabase (Authentication › Sign In / Providers).';
+    if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o servidor. Tente de novo com internet.';
+    if (/too_many_events/.test(m)) return 'Limite de eventos criados neste aparelho.';
+    return 'Erro: ' + m.slice(0, 160); };
+
+  // gate: criar evento / entrar com código
+  let sbClient = null, sbReady = null;
+  function openGate(opts = {}) {
+    if (!backendOn) return;
+    const code = opts.code || linkCode || '';
+    $('#gateBody').innerHTML = `<h2 id="gateTitle">Evento compartilhado</h2>
+      <p class="hint" style="margin-bottom:16px">As famílias veem e lançam os mesmos gastos ao vivo. Sem cadastro: entra quem tiver o código do evento.</p>
+      ${opts.msg ? `<p class="gateerr" role="alert">${esc(opts.msg)}</p>` : ''}
+      <form class="card" id="joinForm" novalidate>
+        <h3>Entrar com código</h3>
+        <div class="field"><label for="gCode">Código do evento</label><input class="inp" id="gCode" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="ABCD-2345" value="${esc(fmtCode(code))}"></div>
+        <div class="field"><label for="gName">Seu nome</label><input class="inp" id="gName" maxlength="24" autocomplete="given-name" placeholder="Ex.: Ana" value="${esc((session && session.me) || '')}"></div>
+        <div class="field"><label for="gFam">Sua família (opcional)</label><input class="inp" id="gFam" maxlength="14" placeholder="Ex.: Botelho"></div>
+        <p class="gateerr" id="joinErr" hidden></p>
+        <button class="btn primary block" type="submit">Entrar no evento</button>
+      </form>
+      <form class="card" id="createForm" novalidate>
+        <h3>Criar um evento novo</h3>
+        <div class="field"><label for="cName">Nome do evento</label><input class="inp" id="cName" maxlength="60" placeholder="Ex.: Feriado na chácara"></div>
+        <div class="field"><label for="cMe">Seu nome</label><input class="inp" id="cMe" maxlength="24" autocomplete="given-name" placeholder="Ex.: Jefferson"></div>
+        <p class="gateerr" id="createErr" hidden></p>
+        <button class="btn secondary block" type="submit">Criar evento</button>
+      </form>
+      <button class="btn text block" id="gateLocal" type="button" style="margin-top:12px">Continuar só neste aparelho</button>`;
+    const showErr = (id, m) => { const el = $(id); el.hidden = !m; el.textContent = m || ''; };
+    const busy = (form, on) => form.querySelectorAll('button,input').forEach(x => { x.disabled = on; });
+    $('#joinForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
+      const c = normCode($('#gCode').value), me = $('#gName').value.trim(), fam = $('#gFam').value.trim();
+      if (!validCode(c)) return showErr('#joinErr', 'O código tem 8 letras e números (sem 0, O, 1, I ou L).');
+      if (!me) return showErr('#joinErr', 'Digite seu nome.');
+      busy(f, true); showErr('#joinErr', '');
+      try { const sb = await sbReady; await ensureAuth(sb);
+        const display = (fam ? `${me} (${fam})` : me).slice(0, 40);
+        const r = await sb.rpc('join_event', { p_code: c, p_display_name: display }); if (r.error) throw r.error;
+        enterEvent({ eventId: r.data, code: c, me }); }
+      catch (e) { showErr('#joinErr', errMsg(e)); busy(f, false); } };
+    $('#createForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
+      const name = $('#cName').value.trim(), me = $('#cMe').value.trim();
+      if (!name || !me) return showErr('#createErr', 'Preencha o nome do evento e o seu nome.');
+      busy(f, true); showErr('#createErr', '');
+      try { const sb = await sbReady; await ensureAuth(sb); let r, code;
+        for (let i = 0; i < 4; i++) { code = genEventCode(); r = await sb.rpc('create_event', { p_name: name, p_code: code, p_display_name: me }); if (!r.error || !/code_taken/.test(r.error.message)) break; }
+        if (r.error) throw r.error;
+        enterEvent({ eventId: r.data, code, me, name, created: true }); }
+      catch (e) { showErr('#createErr', errMsg(e)); busy(f, false); } };
+    $('#gateLocal').onclick = () => { localStorage.setItem(MODE_KEY, 'local'); if (linkCode) history.replaceState(null, '', location.pathname + location.search); $('#gateDlg').close(); };
+    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+  }
+  function enterEvent(s) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ eventId: s.eventId, code: s.code, me: s.me, name: s.name || null, joinedAt: Date.now() }));
+    localStorage.removeItem(MODE_KEY);
+    if (s.created) sessionStorage.setItem('rateio-e2-created', '1');
+    location.replace(location.pathname + location.search + '#' + s.code); location.reload();
+  }
+  async function ensureAuth(sb) {
+    const { data } = await sb.auth.getSession();
+    if (data && data.session) { myUserId = data.session.user.id; return data.session.user; }
+    const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error;
+    myUserId = r.data.user.id; return r.data.user;
+  }
+  function leaveEvent() {
+    if (!confirm('Sair do evento neste aparelho? Os dados do evento continuam no servidor para as outras famílias; você pode entrar de novo com o código.')) return;
+    if (sync) sync.stop();
+    localStorage.removeItem(SESSION_KEY); localStorage.setItem(MODE_KEY, 'local');
+    location.replace(location.pathname); location.reload();
+  }
+  // called by the module script once supabase-js is loaded
+  async function attachBackend(sb) {
+    sbClient = sb;
+    if (!shared) return;
+    paintSync('idle');
+    try { await ensureAuth(sb); } catch (e) { paintSync(/fetch|network|Failed/i.test(String(e.message)) ? 'offline' : 'error', { error: e }); setTimeout(() => attachBackend(sb), 15000); return; }
+    sync = createSync({ client: sb, eventId: session.eventId, getState: () => state,
+      setState: s => { state = normalize(s); writeLocal(); render({ skipPeople: $('#people').contains(document.activeElement) }); },
+      onStatus: (st, info) => { paintSync(st, info); if (st !== 'saving') renderData(); },
+      loadBase: () => { try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; } },
+      saveBase: b => { try { localStorage.setItem(BASE_KEY, JSON.stringify(b)); } catch (e) {} } });
+    try { syncInfo = await sync.load(); }
+    catch (e) {
+      if (e && e.code === 'not_member') { localStorage.removeItem(SESSION_KEY); sync = null; return openGate({ code: session.code, msg: 'Este aparelho não está mais neste evento. Entre de novo com o código.' }); }
+      paintSync(/fetch|network|Failed/i.test(String(e && e.message)) ? 'offline' : 'error', { error: e });
+    }
+    if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+    sync.subscribe(); renderData();
+    addEventListener('online', () => sync.resync());
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync.resync(); });
+    if (sessionStorage.getItem('rateio-e2-created')) { sessionStorage.removeItem('rateio-e2-created'); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start' }), 80); toast('Evento criado. Compartilhe o link.'); }
+  }
+
+  // card "Dados"
+  const isCreator = () => shared && myUserId && syncInfo && syncInfo.createdBy === myUserId;
+  const hasLocalData = () => { try { const x = JSON.parse(localStorage.getItem(KEY)); return !!(x && Array.isArray(x.families)); } catch (e) { return false; } };
+  function renderData() {
+    const body = $('#dataBody'); if (!body) return;
+    $('#dataMeta').textContent = shared ? 'evento compartilhado' : 'só neste aparelho';
+    const code = shared ? session.code : null;
+    let h = '';
+    if (shared) {
+      h += `<div class="datalist"><span>Evento: <b>${esc(syncInfo.name || session.name || '—')}</b></span>
+        <span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>
+        <span>Você: <b>${esc(session.me || '—')}</b>${isCreator() ? ' · criou o evento' : ''}</span>
+        <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${sync && sync.pendingCount() ? ` · ${sync.pendingCount()} pendente(s)` : ''}</span>
+        <span>Sincronizam: famílias, pessoas, gastos e acertos. <b>Ficam só neste aparelho:</b> fotos, cardápio, receitas, compras e dieta/alergia.</span></div>
+        <div class="actwrap" style="margin-top:0"><div class="actions">
+          <button class="btn secondary" data-d="copylink"><span data-i="copy"></span><span>Copiar link</span></button>
+          <button class="btn secondary" data-d="sharelink"><span data-i="share"></span><span>Enviar link</span></button>
+        </div></div>
+        <p class="hint" style="margin-top:8px">Quem tiver o link ou o código entra e edita. Mande só no grupo das famílias.</p>`;
+    } else {
+      h += `<p class="hint" style="margin-bottom:12px">Os dados estão salvos só neste navegador.${backendOn ? ' Crie um evento compartilhado para as famílias lançarem juntas.' : ''}</p>`;
+      if (backendOn) h += `<button class="btn primary block" data-d="gate" style="margin-bottom:8px"><span data-i="users"></span><span>Criar ou entrar em evento</span></button>`;
+    }
+    h += `<div class="actwrap"><div class="actions">
+        <button class="btn secondary" data-d="export"><span data-i="receipt"></span><span>Exportar JSON</span></button>
+        <button class="btn secondary" data-d="import" ${shared && !isCreator() ? 'disabled' : ''}><span data-i="plus"></span><span>Importar JSON</span></button>
+      </div></div>`;
+    if (shared && !isCreator()) h += `<p class="hint" style="margin-top:8px">Só quem criou o evento pode importar dados.</p>`;
+    if (shared && isCreator() && hasLocalData()) h += `<button class="btn secondary block" data-d="importlocal" style="margin-top:8px"><span data-i="arrow"></span><span>Trazer os dados deste aparelho</span></button>`;
+    if (shared) h += `<button class="btn text block" data-d="leave" style="margin-top:8px">Sair do evento neste aparelho</button>`;
+    body.innerHTML = h; hydrate(body);
+  }
+  $('#dataBody').addEventListener('click', async e => {
+    const b = e.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
+    if (a === 'gate') openGate();
+    else if (a === 'leave') leaveEvent();
+    else if (a === 'copylink') { try { await navigator.clipboard.writeText(shareUrl(session.code)); toast('Link copiado'); } catch (x) { prompt('Copie o link:', shareUrl(session.code)); } }
+    else if (a === 'sharelink') { const url = shareUrl(session.code), text = `Entre no evento «${syncInfo.name || session.name || ''}» no Rateatouille: ${url}\nCódigo: ${fmtCode(session.code)}`;
+      if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text }); } catch (x) {} } else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+    else if (a === 'export') exportJson();
+    else if (a === 'import') $('#importFile').click();
+    else if (a === 'importlocal') { try { previewImport(JSON.parse(localStorage.getItem(KEY)), 'dados deste aparelho'); } catch (x) { toast('Não achei dados locais', 'alert'); } }
+  });
+  function exportJson() {
+    const st = JSON.parse(JSON.stringify(state)); delete st.syncMode;
+    const out = { schema: 'racha-viagem-v3', app: 'Rateatouille', exported_at: new Date().toISOString(), event: shared ? (syncInfo.name || session.name || null) : null, state: st };
+    const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rateatouille-${todayISO()}.export.json`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Arquivo exportado (guarde só com você: pode ter fotos e dieta)');
+  }
+  $('#importFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (f.size > 8e6) return toast('Arquivo grande demais', 'alert');
+    let obj; try { obj = JSON.parse(await f.text()); } catch (x) { return toast('Arquivo não é um JSON válido', 'alert'); }
+    previewImport(obj && obj.state ? obj.state : obj, f.name);
+  };
+  function previewImport(raw, label) {
+    let imp; try { imp = normalize(JSON.parse(JSON.stringify(raw))); delete imp.syncMode; } catch (x) { return toast('Arquivo inválido', 'alert'); }
+    const chk = importCheck(imp);
+    const cur = { families: state.families.length, people: state.families.reduce((a, f) => a + f.members.length, 0), expenses: state.expenses.length, total: Math.round(state.expenses.reduce((a, x) => a + (Number(x.amount) || 0), 0) * 100) / 100 };
+    const row = (l, a, b, c) => `<tr><th>${l}</th><td class="num">${a}</td><td class="num">${b}</td>${c != null ? `<td class="num">${c}</td>` : ''}</tr>`;
+    const B = chk.before || {}, A = chk.after || {};
+    $('#importBody').innerHTML = `<h2 id="impTitle">Importar ${esc(label || 'arquivo')}</h2>
+      ${chk.ok ? '' : `<p class="gateerr" role="alert">Não dá para importar: ${chk.errs.map(esc).join('; ')}</p>`}
+      ${chk.before ? `<table class="cmp"><thead><tr><th></th><th class="num">Hoje</th><th class="num">Arquivo</th><th class="num">Depois</th></tr></thead><tbody>
+        ${row('Famílias', cur.families, B.families, A.families)}${row('Pessoas', cur.people, B.people, A.people)}${row('Gastos', cur.expenses, B.expenses, A.expenses)}
+        ${row('Total', brlWrap(cur.total), brlWrap(B.total), brlWrap(A.total))}</tbody></table>
+        <p class="hint">Saldos por família conferidos antes e depois da conversão: diferença máxima <b>${brlWrap(chk.maxDiff || 0)}</b> (limite R$ 0,01).</p>` : ''}
+      ${shared && chk.planDiff > 0.01 ? `<p class="callout" style="margin-top:8px"><span>No evento, a divisão «por porções» não usa o cardápio deste aparelho; alguns saldos mudam até ${esc(brlWrap(chk.planDiff))}.</span></p>` : ''}
+      <p class="callout" style="margin-top:12px"><span>${shared ? 'Isto <b>substitui</b> as famílias, pessoas, gastos e acertos do evento <b>para todos</b>. Fotos, cardápio, receitas e dieta ficam só neste aparelho e não são enviados.' : 'Isto substitui os dados deste aparelho.'}</span></p>
+      <div class="actions" style="margin-top:16px"><button class="btn secondary" data-imp="no">Cancelar</button><button class="btn primary" data-imp="yes" ${chk.ok ? '' : 'disabled'}>Importar</button></div>`;
+    $('#importBody').onclick = ev => { const b = ev.target.closest('[data-imp]'); if (!b) return; $('#importDlg').close();
+      if (b.dataset.imp !== 'yes' || !chk.ok) return;
+      if (shared && !isCreator()) return toast('Só quem criou o evento pode importar', 'alert');
+      if (shared) { const s2 = { ...imp, syncMode: true }; state = normalize(rowsToState(stateToRows(s2, session.eventId, syncInfo.name), s2)); }
+      else state = normalize(imp);
+      save(); render(); toast(`Importado: ${chk.after.expenses} gastos, ${brl(chk.after.total)}`);
+    };
+    $('#importDlg').showModal();
+  }
+  if (shared) {
+    $('#resetBtn').hidden = true; $('#localOnlyNote').hidden = false;
+    $('#footNote').textContent = 'Rateatouille · evento compartilhado · fotos, cardápio, receitas e dieta ficam só neste aparelho · sem dados bancários';
+    paintSync('idle');
+  }
+
   // ---------- render ----------
   function render(opts = {}) {
     C = compute();
@@ -2192,11 +2718,38 @@ Corte as frutas e monte a mesa com pães e frios.`,
     renderPayers(); renderExpenses();
     renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
     setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
+    renderData();
   }
-  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui };
+  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui,
+    backendOn, shared, attachBackend, openGate, sync: () => sync };
   hydrate(document); renderSeg(); renderProof(); renderQuick();
   render(); setView(ui.view, { keepScroll: true }); setSub(ui.sub);
+  if (backendOn && !shared && (linkCode || localStorage.getItem(MODE_KEY) !== 'local')) openGate({ code: linkCode,
+    msg: linkCode && session ? 'Este link é de outro evento. Entrar nele troca o evento deste aparelho.' : '' });
+  if (backendOn) sbReady = new Promise(res => { window.__rateioSbReady = res; });
 })();
+</script>
+<script type="module">
+// Carrega o supabase-js (versão fixa) só quando o banco compartilhado está configurado.
+const CFG = window.RATEIO_CONFIG || {};
+if (window.App && window.App.backendOn) {
+  let tries = 0;
+  const boot = async () => {
+    try {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
+      const sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rateio-e2-auth' } });
+      window.__rateioSbReady && window.__rateioSbReady(sb);
+      await window.App.attachBackend(sb);
+    } catch (e) {
+      // sem internet ao abrir: segue com a cópia do aparelho e tenta de novo (sem recarregar a página)
+      console.error(e);
+      const pill = document.getElementById('syncPill');
+      if (pill && window.App.shared) { pill.hidden = false; pill.dataset.s = 'offline'; pill.textContent = 'Offline'; }
+      setTimeout(boot, Math.min(60000, 5000 * ++tries));
+    }
+  };
+  boot();
+}
 </script>
 </body>
 </html>

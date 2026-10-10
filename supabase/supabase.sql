@@ -85,7 +85,7 @@ create table if not exists public.expenses (
   id                     text not null check (id ~ '^[A-Za-z0-9_-]{1,40}$'),
   description            text not null default '' check (char_length(description) <= 120),
   amount                 numeric(12,2) not null check (amount > 0 and amount <= 1000000),
-  category               text not null check (category ~ '^[a-z_]{1,20}$'),
+  category               text not null check (category in ('food','groceries','gas','alcohol')),
   payer_person_id        text check (payer_person_id is null or payer_person_id ~ '^[A-Za-z0-9_-]{1,40}$'),
   participants           jsonb check (participants is null or (jsonb_typeof(participants) = 'array'
                                       and jsonb_array_length(participants) <= 100 and pg_column_size(participants) <= 4096)),

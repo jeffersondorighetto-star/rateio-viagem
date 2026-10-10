@@ -50,7 +50,8 @@ update public.event_members set display_name = 'x' where user_id = 'aaaaaaaa-000
 select 'T11 nome de A intacto: ' || (display_name = 'Ana') from public.event_members where user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
 \echo '--- T12: C não muda created_by de evento (esperado erro de permissão)'
 update public.events set created_by = auth.uid();
-\echo '--- T13: limites (esperado 3 erros de check)'
+\echo '--- T13: limites (esperado 4 erros de check)'
+insert into public.expenses (event_id, id, amount, category) values (:'ev1', 'cat', 5, 'zzz');
 insert into public.expenses (event_id, id, amount, category) values (:'ev1', 'big', 2000000, 'food');
 insert into public.expenses (event_id, id, amount, category) values (:'ev1', 'neg', -5, 'food');
 insert into public.expenses (event_id, id, amount, category, description) values (:'ev1', 'long', 5, 'food', repeat('x', 500));

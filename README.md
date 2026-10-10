@@ -1,4 +1,4 @@
-# Rateio da Viagem · protótipo
+# Rateatouille · protótipo
 
 Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: cardápio por dia, receitas que geram a lista de compras, gastos com e sem nota e o acerto final. É **um único arquivo** (`index.html`) com HTML, CSS e JS embutidos: sem servidor, sem banco de dados, sem CDN e sem dados bancários. Tudo roda no navegador e fica salvo no próprio aparelho.
 
@@ -6,6 +6,17 @@ Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: card
 - Online: https://jeffersondorighetto-star.github.io/rateio-viagem/
 - Local: dê dois cliques em `index.html`, ou rode `python3 -m http.server 8080` e abra `http://localhost:8080`.
 - Testes da lógica: `npm test` (ou `node tests/test.js`) na raiz do repositório, sem dependências. São 4 blocos: divisão, lançamento rápido/comprovantes, planejamento e receitas.
+
+## Evento compartilhado (MVP com Supabase, branch `rateio-e2`)
+Opcional. Com `SUPABASE_URL` e `SUPABASE_ANON_KEY` em `null` (padrão), o app funciona como antes, só no aparelho.
+- **Onde configurar:** bloco `window.RATEIO_CONFIG` perto do fim do `index.html` (procure `CONFIGURAÇÃO DO BANCO COMPARTILHADO`). Só a Project URL e a chave publishable/anon, que são públicas por desenho. **Nunca** a secret/service_role nem a senha do banco.
+- **Banco:** `supabase/supabase.sql` (idempotente; colar no SQL Editor). Passo a passo pelo celular: [`SETUP-CELULAR.md`](SETUP-CELULAR.md).
+- **Entrada:** login anônimo + código de 8 caracteres (alfabeto sem 0/O/1/I/L). Link `…/rateio-viagem/#CÓDIGO`. Criar evento ou entrar fica numa tela inicial; «Continuar só neste aparelho» mantém o modo local.
+- **Sincroniza:** evento (datas, refeições ligadas, modo de divisão, caixinha, pesos), famílias, pessoas (só primeiro nome, tipo, bebe, chegada/saída), gastos e marcações de acerto. Tempo real por evento; a última gravação por linha vale; exclusão é lógica (`deleted_at`).
+- **Fica só no aparelho (nunca vai ao servidor):** fotos, cardápio, receitas, compras/preços e **dieta/alergia** (dado de saúde, aguardando revisão da Astreia). No evento, «por porções» usa presença e tipo da pessoa, não o cardápio local, para dar o mesmo saldo em todos os aparelhos.
+- **Sem internet:** pílula «Offline» + aviso; o que for lançado fica pendente no aparelho e é enviado quando a conexão volta (também depois de fechar e abrir o app).
+- **Dados (Acertos › Dados):** Exportar JSON, Importar JSON (só quem criou o evento, com prévia de contagens, total e saldos antes/depois, tolerância R$ 0,01) e «Trazer os dados deste aparelho» (lê `racha-viagem-v3` sem apagá-lo). `?offline=1` abre a versão local intacta.
+- **Fora deste MVP:** aprovação pelo organizador, revogação/rotação de código, fotos no servidor, versionamento/merge por campo, limite de tentativas de código.
 
 ## Navegação (barra inferior)
 | Aba | O que tem |
@@ -66,7 +77,7 @@ Tudo fica só no `localStorage` do navegador. Nada vai para servidor nenhum. Cad
 | `racha-viagem-v3-ui` | aba, sub-aba e filtros abertos |
 | `racha-viagem-v1-theme` | tema claro/escuro |
 
-> As chaves mantêm o prefixo antigo `racha-viagem` (nome anterior do protótipo) **de propósito**, para não perder dados já salvos nos aparelhos. O nome oficial agora é **Rateio da Viagem**. Para renomear as chaves, troque `KEY`, `UI_KEY` e `THEME_KEY` no script de UI. Os dados antigos não são migrados.
+> As chaves mantêm o prefixo antigo `racha-viagem` (nome anterior do protótipo) **de propósito**, para não perder dados já salvos nos aparelhos. O nome oficial agora é **Rateatouille**. Para renomear as chaves, troque `KEY`, `UI_KEY` e `THEME_KEY` no script de UI. Os dados antigos não são migrados.
 
 ## Visual e acessibilidade
 Paleta verde-exército suave (oliva `#4F5D2F` no claro, sálvia `#A9B88A` no escuro), saldos em verde-azulado e terracota, âmbar para pendências. Tem tema claro e escuro, barra inferior com áreas de toque de 52 px (vira barra superior no desktop) e safe-area do iPhone. `npm run test:contrast` audita **todas as abas**: todo texto ≥ 4,5:1 (AA). A captura (`npm run shots`) checa vazamento de layout em 320, 360, 375, 390 e 430 px, inclusive com fonte mais larga.
@@ -98,6 +109,10 @@ tests/shot3.js      capturas das telas + auditoria de layout, salvas em shots/ (
 ```
 
 ## Como rodar os testes
+- `node tests/sync.test.js`: mapeamento estado ⇄ linhas e motor de sincronização com cliente falso (2 aparelhos, tempo real, offline, recarga, conflito, não-membro, códigos, importação).
+- `node tests/e2e/shared.e2e.js`: ponta a ponta no Chrome a 375 px, com backend falso (`tests/e2e/fake-backend.js`): criar evento, importar, entrar por link, código errado, lançar e ver ao vivo, acerto, offline e volta, `?offline=1`, contraste AA e overflow.
+- `PGHOST=/tmp PGPORT=54329 PGUSER=postgres bash supabase/test/run.sh`: roda o `supabase.sql` 3 vezes num Postgres local com stub do Supabase e os testes de RLS.
+
 Os comandos rodam na raiz do repositório.
 - **Lógica** (sem instalar nada, só Node 18+): `npm test`
 - **Navegador** (contraste, vazamento de layout, capturas): precisam do `playwright-core` (devDependency) e de um Chrome/Chromium instalado.
