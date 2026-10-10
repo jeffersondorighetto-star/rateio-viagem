@@ -3,3 +3,6 @@ shots/
 *.png
 *.log
 .DS_Store
+*.export.json
+exports/
+.env
