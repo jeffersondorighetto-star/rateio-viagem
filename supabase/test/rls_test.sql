@@ -221,12 +221,12 @@ select pg_temp.err($$select * from public.expenses$$, 'permission denied', 'pape
 select pg_temp.err($$select public.join_event('WXYZ6789', 'X')$$, 'permission denied', 'papel anon não chama RPC');
 reset role;
 
-\echo '--- expurgo automático: opt-in'
+\echo '--- expurgo automático agendado (pg_cron)'
 set role authenticated;
 select pg_temp.u(:'O', false);
-select pg_temp.err($$select public.enable_health_purge()$$, 'permission denied', 'cliente não liga o expurgo agendado');
+select pg_temp.err($$select public.disable_health_purge()$$, 'permission denied', 'cliente não desliga o expurgo agendado');
 reset role;
-select pg_temp.ok(public.health_purge_status() like 'desligado%', 'expurgo agendado começa desligado');
+select pg_temp.ok(public.health_purge_status() = 'desligado (sem pg_cron)', 'sem pg_cron (Postgres local): migração passa e o status avisa');
 select pg_temp.ok(public.enable_health_purge() like 'pg_cron não está ligado%', 'sem pg_cron: enable explica como ligar');
 
 \echo '--- delta: updated_at em tudo que sincroniza'

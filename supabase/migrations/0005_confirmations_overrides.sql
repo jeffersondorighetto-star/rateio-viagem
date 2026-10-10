@@ -61,7 +61,7 @@ create policy confirmations_insert on public.expense_confirmations for insert to
 create table if not exists public.event_overrides (
   event_id   uuid not null references public.events(id) on delete cascade,
   kind       text not null check (kind in ('weight','price','plan_qty')),
-  key        text not null check (key ~ '^[A-Za-z0-9_:.-]{1,80}$'),
+  key        text not null check (key ~ '^[A-Za-z0-9_|:.-]{1,80}$'),
   value      jsonb not null check (jsonb_typeof(value) in ('number','string','boolean','object') and pg_column_size(value) <= 512),
   version    int not null default 1,
   updated_at timestamptz not null default now(),

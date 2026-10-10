@@ -74,4 +74,4 @@ begin
 end $$;
 revoke all on function public.purge_expired_health() from public, anon, authenticated;
 
--- Agendamento automático: opt-in em 0012_health_purge_optin.sql (enable_health_purge), só com o "sim" do Jefferson.
+-- Agendamento automático: 0012_health_purge_cron.sql (ligado por padrão; aprovado pelo Jefferson em 10/10).
