@@ -1,0 +1,15 @@
+{
+  "name": "rateio-viagem",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rateio da Viagem: protótipo client-side para planejar e dividir gastos de viagem entre famílias",
+  "scripts": {
+    "test": "node tests/test.js",
+    "test:contrast": "node tests/contrast.js",
+    "test:overflow": "node tests/overflow.js",
+    "shots": "node tests/shot3.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.0"
+  }
+}

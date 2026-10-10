@@ -1,11 +1,11 @@
-# Racha da Viagem · protótipo
+# Rateio da Viagem · protótipo
 
 Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: cardápio por dia, receitas que geram a lista de compras, gastos com e sem nota e o acerto final. É **um único arquivo** (`index.html`) com HTML, CSS e JS embutidos: sem servidor, sem banco de dados, sem CDN e sem dados bancários. Tudo roda no navegador e fica salvo no próprio aparelho.
 
 ## Como abrir
 - Online: https://jeffersondorighetto-star.github.io/rateio-viagem/
 - Local: dê dois cliques em `index.html`, ou rode `python3 -m http.server 8080` e abra `http://localhost:8080`.
-- Testes da lógica: `node test.js` (4 blocos: divisão, lançamento rápido/comprovantes, planejamento e receitas).
+- Testes da lógica: `npm test` (ou `node tests/test.js`) na raiz do repositório, sem dependências. São 4 blocos: divisão, lançamento rápido/comprovantes, planejamento e receitas.
 
 ## Navegação (barra inferior)
 | Aba | O que tem |
@@ -58,13 +58,21 @@ Em todos os modos, **saldo = pago − parte**. A soma dos saldos é zero. **Quem
 Viagem de 26/12/2026 a 03/01/2027 (9 dias; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. **Restaurar exemplo** (no rodapé) volta tudo ao início.
 
 ## Armazenamento
-Tudo fica só no `localStorage` do navegador: dados em `racha-viagem-v3`, aba/filtros em `racha-viagem-v3-ui` e tema em `racha-viagem-v1-theme`. Nada vai para servidor nenhum. Cada aparelho tem a própria cópia; para alinhar entre as famílias, use os textos para WhatsApp. (Para editar juntos em tempo real no futuro, dá para plugar um backend usando a ponte `window.App`.)
+Tudo fica só no `localStorage` do navegador. Nada vai para servidor nenhum. Cada aparelho tem a própria cópia; para alinhar entre as famílias, use os textos para WhatsApp. (Para editar juntos em tempo real no futuro, dá para plugar um backend usando a ponte `window.App`.)
+
+| Chave | Conteúdo |
+|---|---|
+| `racha-viagem-v3` | dados da viagem (famílias, gastos, cardápio, receitas, preços) |
+| `racha-viagem-v3-ui` | aba, sub-aba e filtros abertos |
+| `racha-viagem-v1-theme` | tema claro/escuro |
+
+> As chaves mantêm o prefixo antigo `racha-viagem` (nome anterior do protótipo) **de propósito**, para não perder dados já salvos nos aparelhos. O nome oficial agora é **Rateio da Viagem**. Para renomear as chaves, troque `KEY`, `UI_KEY` e `THEME_KEY` no script de UI. Os dados antigos não são migrados.
 
 ## Visual e acessibilidade
-Paleta verde-exército suave (oliva `#4F5D2F` no claro, sálvia `#A9B88A` no escuro), saldos em verde-azulado e terracota, âmbar para pendências. Tem tema claro e escuro, barra inferior com áreas de toque de 52 px (vira barra superior no desktop) e safe-area do iPhone. `node contrast.js` audita **todas as abas**: todo texto ≥ 4,5:1 (AA). A captura (`shot3.js`) checa vazamento de layout em 320, 360, 375, 390 e 430 px, inclusive com fonte mais larga.
+Paleta verde-exército suave (oliva `#4F5D2F` no claro, sálvia `#A9B88A` no escuro), saldos em verde-azulado e terracota, âmbar para pendências. Tem tema claro e escuro, barra inferior com áreas de toque de 52 px (vira barra superior no desktop) e safe-area do iPhone. `npm run test:contrast` audita **todas as abas**: todo texto ≥ 4,5:1 (AA). A captura (`npm run shots`) checa vazamento de layout em 320, 360, 375, 390 e 430 px, inclusive com fonte mais larga.
 
 ## Como estender (onde mexer no `index.html`)
-A lógica pura fica entre `// ===== LOGIC-START` e `// ===== LOGIC-END` (usada pelo `test.js`). A interface fica no segundo `<script>`.
+A lógica pura fica entre `// ===== LOGIC-START` e `// ===== LOGIC-END` (usada por `tests/test.js`). A interface fica no segundo `<script>`.
 - **Categoria de gasto**: `CATEGORIES` (`label`, `icon`, `color`, `scope: 'all' | 'drinkers'`).
 - **Regras de divisão**: `splitWeights(state, category, people, P)` (pesos por modo) e `SPLIT_MODES`. **Pesos das porções**: `MEMBER_TYPES` (ou edite em Pessoas).
 - **Refeições / modos**: `MEALS`, `MEAL_ORDER`, `MODES`. **Presença**: `presenceRange`. **Porções**: `portions(state)`.
@@ -76,9 +84,28 @@ A lógica pura fica entre `// ===== LOGIC-START` e `// ===== LOGIC-END` (usada p
 - **Dados de exemplo**: `example()` e `SEED_RECIPES` no script de UI.
 - Ao mudar o formato do estado, troque `KEY` para não carregar dados antigos.
 
-## Arquivos
-- `index.html`: o app inteiro
-- `test.js`: testes da lógica
-- `contrast.js`: auditoria de contraste WCAG (Playwright)
-- `shot3.js`: capturas e auditoria de layout (`THEME=light`, `W=320 WIDE=1`)
-- `shots/`: capturas
+## Estrutura do repositório
+```
+index.html          o app inteiro (HTML + CSS + JS, publicado no GitHub Pages)
+README.md           este arquivo
+.nojekyll           serve os arquivos como estão no Pages
+package.json        scripts npm (sem dependências de produção)
+.gitignore          ignora node_modules/, shots/ e *.png
+tests/test.js       testes da lógica (Node puro)
+tests/contrast.js   auditoria de contraste WCAG AA em todas as abas (Playwright)
+tests/overflow.js   auditoria de texto vazando / cortado em várias larguras (Playwright)
+tests/shot3.js      capturas das telas + auditoria de layout, salvas em shots/ (ignorada pelo git)
+```
+
+## Como rodar os testes
+Os comandos rodam na raiz do repositório.
+- **Lógica** (sem instalar nada, só Node 18+): `npm test`
+- **Navegador** (contraste, vazamento de layout, capturas): precisam do `playwright-core` (devDependency) e de um Chrome/Chromium instalado.
+  ```
+  npm install
+  CHROME_PATH=/caminho/do/chrome npm run test:contrast   # padrão: /usr/bin/google-chrome
+  npm run test:overflow
+  npm run shots            # opções: THEME=light, W=320 WIDE=1 (fonte mais larga), URL=https://… (testar a versão online)
+  ```
+
+Todos os dados do app são de exemplo (nomes fictícios de famílias e pessoas, valores inventados). Não há chaves, tokens nem dados bancários.

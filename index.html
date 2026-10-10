@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f4f6ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1d16" media="(prefers-color-scheme: dark)">
-<title>Racha da Viagem</title>
+<title>Rateio da Viagem</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f5d2f'/><path d='M10 16h12M16 10v12' stroke='white' stroke-width='3' stroke-linecap='round'/></svg>">
 <style>
 :root{
@@ -388,7 +388,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 </head>
 <body data-view="inicio">
 <header class="top" id="top"><div class="in">
-  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Racha da Viagem</span></div>
+  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Rateio da Viagem</span></div>
   <div class="toptotal" aria-hidden="true"><small>Total</small><b class="num" id="topTotal">R$ 0,00</b></div>
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
@@ -1027,7 +1027,7 @@ function shoppingList(state, opts) {
 const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
   : (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L` : `${Math.round(q)} ml`);
 function shoppingText(state, S) {
-  const L = ['*Lista de compras — Racha da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
+  const L = ['*Lista de compras — Rateio da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
     L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
@@ -1246,7 +1246,7 @@ const brl = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', c
 
 function summaryText(state, split, xfers, k) {
   const L = [];
-  L.push('*Racha da Viagem — resumo*');
+  L.push('*Rateio da Viagem — resumo*');
   L.push(`Total: *${brl(split.total)}*`);
   L.push(`${split.persons.length} pessoas · média ${brl(split.avg)} por pessoa`);
   if (state.splitMode && SPLIT_MODES[state.splitMode]) L.push(`Divisão: ${SPLIT_MODES[state.splitMode]}`);
@@ -2143,7 +2143,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let lastText = '';
   function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
-  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Racha da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
+  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateio da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
   $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
 
   // ---------- MODO COZINHA ----------
