@@ -101,6 +101,25 @@ drop policy if exists client_ops_insert on public.client_ops;
 create policy client_ops_insert on public.client_ops for insert to authenticated
   with check (user_id = auth.uid() and public.is_event_writable(event_id));
 
+-- Colunas que cada tabela aceita via apply_ops (as próximas migrações substituem estas funções ao criar tabelas).
+create or replace function public._op_columns(t text) returns text[]
+language sql immutable set search_path = '' as $$
+  select case t
+    when 'events'           then array['start_date','end_date','meals','split_mode','include_unconfirmed','kitty_per_family']
+    when 'families'         then array['name','color','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
+    when 'people'           then array['family_id','first_name','type','drinks','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
+    when 'expenses'         then array['description','amount','category','payer_person_id','participants','proof','estimated','note','items','client_ts','photo_path','deleted_at']
+    when 'settlement_marks' then array['amount','deleted_at']
+    when 'event_overrides'  then array['value','deleted_at']
+    when 'expense_confirmations' then array['expense_id','family_id']
+  end
+$$;
+create or replace function public._op_pk(t text) returns text[]
+language sql immutable set search_path = '' as $$
+  select case t when 'events' then array['id'] when 'settlement_marks' then array['event_id','from_family','to_family']
+                when 'event_overrides' then array['event_id','kind','key'] else array['event_id','id'] end
+$$;
+
 -- apply_ops(evento, [{op_id, table, row, expected_version}]) -> [{op_id, status: ok|dup|conflict|error, row, error}]
 -- SECURITY INVOKER: roda com as permissões e a RLS de quem chama. Cada operação numa subtransação.
 --   expected_version null  -> INSERT (row completa)
@@ -115,17 +134,8 @@ begin
   if jsonb_typeof(p_ops) <> 'array' or jsonb_array_length(p_ops) > 200 then raise exception 'too_many_ops' using errcode = '54000'; end if;
   for op in select value from jsonb_array_elements(p_ops) loop
     t := op->>'table';
-    allowed := case t
-      when 'events'           then array['start_date','end_date','meals','split_mode','include_unconfirmed','kitty_per_family']
-      when 'families'         then array['name','color','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
-      when 'people'           then array['family_id','first_name','type','drinks','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
-      when 'expenses'         then array['description','amount','category','payer_person_id','participants','proof','estimated','note','items','client_ts','photo_path','deleted_at']
-      when 'settlement_marks' then array['amount','deleted_at']
-      when 'event_overrides'  then array['value','deleted_at']
-      when 'expense_confirmations' then array['expense_id','family_id']
-      else null end;
-    pkc := case t when 'events' then array['id'] when 'settlement_marks' then array['event_id','from_family','to_family']
-                  when 'event_overrides' then array['event_id','kind','key'] else array['event_id','id'] end;
+    allowed := public._op_columns(t);
+    pkc := public._op_pk(t);
     v_op := nullif(op->>'op_id', '')::uuid;
     if allowed is null or v_op is null or jsonb_typeof(op->'row') <> 'object' then
       res := res || jsonb_build_array(jsonb_build_object('op_id', op->>'op_id', 'status', 'error', 'error', 'bad_op')); continue;
@@ -150,7 +160,12 @@ begin
         execute format('update public.%1$I x set (%2$s, version) = (select %2$s, $2 + 1 from jsonb_populate_record(null::public.%1$I, $1)) where %3$s and x.version = $2',
                        t, collist, pkw) using r, v_exp;
         get diagnostics n = row_count;
-        if n = 0 then raise exception 'version_conflict' using errcode = 'PT409'; end if;
+        if n = 0 then
+          -- linha visível na versão esperada e mesmo assim 0 linhas = a RLS não deixou (não é conflito)
+          execute format('select x.version from public.%I x where %s', t, pkw) into n using r;
+          if n = v_exp then raise exception 'not_allowed' using errcode = '42501'; end if;
+          raise exception 'version_conflict' using errcode = 'PT409';
+        end if;
       end if;
       insert into public.client_ops (op_id, event_id, user_id) values (v_op, p_event, auth.uid());
       execute format('select to_jsonb(x) from public.%I x where %s', t, pkw) into cur using r;

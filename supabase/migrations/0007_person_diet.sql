@@ -61,7 +61,7 @@ revoke all on function public.purge_health(uuid) from public, anon;
 grant execute on function public.purge_health(uuid) to authenticated;
 
 -- Expurgo automático: eventos terminados há mais de 30 dias (ou sem data e criados há mais de 90 dias).
--- Só para o servidor (pg_cron ou SQL Editor); clientes não executam.
+-- Só para o servidor (SQL Editor ou pg_cron, se ligado em 0012); clientes não executam.
 create or replace function public.purge_expired_health() returns int
 language plpgsql security definer set search_path = '' as $$
 declare n int;
@@ -74,10 +74,4 @@ begin
 end $$;
 revoke all on function public.purge_expired_health() from public, anon, authenticated;
 
--- Se a extensão pg_cron estiver ligada (Database › Extensions), agenda o expurgo diário às 04:00 UTC.
-do $$ begin
-  if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule(jobid) from cron.job where jobname = 'rateio_purge_health';
-    perform cron.schedule('rateio_purge_health', '0 4 * * *', 'select public.purge_expired_health()');
-  end if;
-end $$;
+-- Agendamento automático: opt-in em 0012_health_purge_optin.sql (enable_health_purge), só com o "sim" do Jefferson.

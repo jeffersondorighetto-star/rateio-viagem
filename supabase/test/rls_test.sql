@@ -76,7 +76,14 @@ select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e3","amount":5,"categor
 select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e3","amount":5,"category":"food"}', null, '11111111-1111-1111-1111-111111111111') ->> 'status') = 'dup', 'mesma op_id de novo = dup (idempotente)');
 select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e4","amount":5000000,"category":"food"}') ->> 'status') = 'error', 'limite de valor (check) dentro do apply_ops');
 select pg_temp.ok((pg_temp.op(:'ev', 'event_secrets', '{"event_id":"x"}') ->> 'error') = 'bad_op', 'apply_ops só aceita tabelas da lista');
-select pg_temp.ok((pg_temp.op(:'ev', 'events', '{"kitty_per_family":200}', 1) ->> 'status') = 'ok', 'membro ajusta caixinha do evento (v1->v2)');
+select pg_temp.ok((pg_temp.op(:'ev', 'events', '{"kitty_per_family":200}', 1) ->> 'status') = 'error', 'membro NÃO ajusta caixinha (configuração é do organizador)');
+select pg_temp.err(format($$update public.events set split_mode = 'igual', version = version + 1 where id = %L$$, :'ev') || '; select 1/(select count(*) - count(*) from public.events where split_mode = ''igual'')', 'division', 'membro não muda modo de divisão direto (0 linhas)');
+select pg_temp.err(format($$select public.update_event_settings(%L, '{"kitty_per_family":1}', 1)$$, :'ev'), 'organizer_only', 'membro não usa update_event_settings');
+select pg_temp.u(:'O', false);
+select pg_temp.ok((public.update_event_settings(:'ev', '{"kitty_per_family":200,"split_mode":"porcoes"}', 1) ->> 'version') = '2', 'organizador ajusta caixinha e modo (v1->v2)');
+select pg_temp.err(format($$select public.update_event_settings(%L, '{"kitty_per_family":300}', 1)$$, :'ev'), 'version_conflict', 'update_event_settings com versão velha = PT409');
+select pg_temp.ok((select kitty_per_family = 200 and split_mode = 'porcoes' from public.events), 'configuração do organizador gravada');
+select pg_temp.u(:'A', true);
 
 \echo '--- confirmação de gasto sem nota (só inserção)'
 select pg_temp.err(format($$insert into public.expense_confirmations (event_id, id, expense_id, family_id) values (%L, gen_random_uuid(), 'e1', 'f1')$$, :'ev'), 'payer_family_cannot_confirm', 'família de quem pagou não confirma');
@@ -89,10 +96,30 @@ select pg_temp.err($$delete from public.expense_confirmations$$, 'permission den
 select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e1","payer_person_id":"p2"}', 3) ->> 'status') = 'ok', 'troca de pagador');
 select pg_temp.ok(pg_temp.n('select * from public.expense_confirmations where voided_at is null') = 0, 'troca de pagador anula a confirmação');
 
-\echo '--- sobreposições'
-select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.6}') ->> 'status') = 'ok', 'peso salvo');
+\echo '--- sobreposições (pesos/preços: só organizador)'
+select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.6}') ->> 'status') = 'error', 'membro não grava peso');
+select pg_temp.u(:'O', false);
+select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.6}') ->> 'status') = 'ok', 'organizador grava peso');
+select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"price","key":"carne","value":69.9}') ->> 'status') = 'ok', 'organizador grava preço');
 select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.7}', 1) -> 'row' ->> 'value') = '0.7', 'peso atualizado com versão');
+select pg_temp.u(:'A', true);
+select pg_temp.ok(pg_temp.n('select * from public.event_overrides') = 2, 'membro lê pesos e preços');
+select pg_temp.ok((pg_temp.op(:'ev', 'event_overrides', '{"kind":"weight","key":"crianca","value":0.9}', 2) ->> 'status') = 'error', 'membro não altera peso existente');
+
+\echo '--- receitas e cardápio (membros aprovados editam, com versão)'
+select pg_temp.ok((pg_temp.op(:'ev', 'recipes', '{"id":"r1","title":"Bolo","yield":8,"text":"Bolo\nRende 8","parsed":{"ingredients":[{"name":"farinha","qty":500,"unit":"g"}],"steps":["assar"]}}') ->> 'status') = 'ok', 'membro cria receita');
+select pg_temp.ok((select created_by = auth.uid() from public.recipes where id = 'r1'), 'autor da receita pelo servidor');
+select pg_temp.ok((pg_temp.op(:'ev', 'recipes', '{"id":"r1","title":"Bolo de fubá"}', 1) -> 'row' ->> 'version') = '2', 'receita editada (v2)');
+select pg_temp.ok((pg_temp.op(:'ev', 'recipes', '{"id":"r1","title":"x"}', 1) ->> 'status') = 'conflict', 'receita com versão velha = conflict');
+select pg_temp.ok((pg_temp.op(:'ev', 'meal_plan', '{"day":"2026-10-10","meal":"almoco","mode":"casa","recipe_ids":["r1","churrasco"]}') ->> 'status') = 'ok', 'célula do cardápio criada');
+select pg_temp.ok((pg_temp.op(:'ev', 'meal_plan', '{"day":"2026-10-10","meal":"almoco","mode":"fora"}', 1) -> 'row' ->> 'mode') = 'fora', 'célula muda de modo (patch)');
+select pg_temp.ok((select recipe_ids = array['r1','churrasco'] from public.meal_plan), 'patch preserva as receitas da célula');
+select pg_temp.ok((pg_temp.op(:'ev', 'meal_plan', '{"day":"2026-10-10","meal":"ceia","mode":"casa"}') ->> 'status') = 'error', 'refeição fora da lista recusada');
+select pg_temp.ok((pg_temp.op(:'ev', 'meal_plan', '{"day":"2026-10-11","meal":"jantar","recipe_ids":["ok","bad id!"]}') ->> 'status') = 'error', 'id de receita inválido no cardápio recusado');
+select pg_temp.ok((pg_temp.op(:'ev', 'recipes', format('{"id":"big","title":"x","parsed":{"t":"%s"}}', repeat('x', 40000))::jsonb) ->> 'status') = 'error', 'receita acima de 32 KB recusada');
+select pg_temp.u(:'O', false);
 select pg_temp.err(format($$insert into public.event_overrides (event_id, kind, key, value) values (%L, 'diet', 'x', '1')$$, :'ev'), 'check', 'tipo de sobreposição fora da lista');
+select pg_temp.u(:'A', true);
 
 \echo '--- storage comprovantes'
 select pg_temp.ok((select not public and file_size_limit = 153600 from storage.buckets where id = 'comprovantes'), 'bucket privado com 150 KB');
@@ -102,6 +129,12 @@ select pg_temp.err($$insert into storage.objects (bucket_id, name) values ('comp
 select pg_temp.err(format($$insert into storage.objects (bucket_id, name) values ('comprovantes', %L)$$, :'ev' || '/e1.png'), 'row-level security', 'extensão diferente de .jpg recusada');
 delete from storage.objects where bucket_id = 'comprovantes';
 select pg_temp.ok(pg_temp.n($$select * from storage.objects$$) = 1, 'membro não apaga comprovante');
+update storage.objects set metadata = '{"x":1}' where bucket_id = 'comprovantes';
+select pg_temp.ok((select metadata is null from storage.objects), 'membro não substitui comprovante (update = 0 linhas)');
+select pg_temp.u(:'O', false);
+update storage.objects set metadata = '{"size":1000}' where bucket_id = 'comprovantes';
+select pg_temp.ok((select metadata ->> 'size' = '1000' from storage.objects), 'organizador substitui comprovante');
+select pg_temp.u(:'A', true);
 
 \echo '--- dieta (saúde)'
 select pg_temp.err(format($$insert into public.person_diet (event_id, person_id, veg, guardian_consent) values (%L, 'p1', true, false)$$, :'ev'), 'check', 'sem aceite do responsável não grava');
@@ -130,6 +163,21 @@ select pg_temp.ok(pg_temp.n('select * from public.expenses') = 0 and pg_temp.n('
 select pg_temp.ok((pg_temp.op(:'ev', 'expenses', '{"id":"e9","amount":1,"category":"food"}') ->> 'status') = 'error', 'revogado não grava');
 select pg_temp.ok((public.join_event('ABCD2345', 'Ana') ->> 'error') = 'revoked', 'revogado não volta com o código');
 select pg_temp.err(format($$update public.event_members set display_name = 'x' where event_id = %L$$, :'ev') || '; select 1/(select count(*) - count(*) from public.event_members where display_name = ''x'')', 'division', 'revogado não edita a própria linha');
+
+\echo '--- papéis (promover/rebaixar, último organizador)'
+select pg_temp.u(:'O', false);
+select pg_temp.err(format($$select public.set_member_role(%L, %L, 'member')$$, :'ev', :'O'), 'last_organizer', 'único organizador não se rebaixa');
+select pg_temp.err(format($$select public.set_member_role(%L, %L, 'organizer')$$, :'ev', :'A'), 'member_not_found', 'removido não vira organizador');
+select public.set_member_role(:'ev', :'B', 'organizer');
+select pg_temp.u(:'B', true);
+select pg_temp.ok((public.my_membership(:'ev') ->> 'role') = 'organizer', 'B promovido a organizador');
+select pg_temp.ok((public.update_event_settings(:'ev', '{"include_unconfirmed":false}', (select version from public.events)) ->> 'include_unconfirmed') = 'false', 'novo organizador muda configuração');
+select pg_temp.err(format($$select public.set_member_role(%L, %L, 'member')$$, :'ev', :'O'), 'cannot_demote_creator', 'quem criou não é rebaixado');
+select pg_temp.err(format($$select public.revoke_member(%L, %L)$$, :'ev', :'O'), 'cannot_revoke_creator', 'quem criou não é removido');
+select public.set_member_role(:'ev', :'B', 'member');
+select pg_temp.ok((public.my_membership(:'ev') ->> 'role') = 'member', 'organizador (não criador) se rebaixa havendo outro');
+select pg_temp.err(format($$select public.set_member_role(%L, %L, 'organizer')$$, :'ev', :'B'), 'organizer_only', 'membro não se promove');
+select pg_temp.u(:'O', false);
 
 \echo '--- girar código'
 select pg_temp.u(:'O', false);
@@ -172,6 +220,19 @@ set role anon;
 select pg_temp.err($$select * from public.expenses$$, 'permission denied', 'papel anon (sem login) não lê');
 select pg_temp.err($$select public.join_event('WXYZ6789', 'X')$$, 'permission denied', 'papel anon não chama RPC');
 reset role;
+
+\echo '--- expurgo automático: opt-in'
+set role authenticated;
+select pg_temp.u(:'O', false);
+select pg_temp.err($$select public.enable_health_purge()$$, 'permission denied', 'cliente não liga o expurgo agendado');
+reset role;
+select pg_temp.ok(public.health_purge_status() like 'desligado%', 'expurgo agendado começa desligado');
+select pg_temp.ok(public.enable_health_purge() like 'pg_cron não está ligado%', 'sem pg_cron: enable explica como ligar');
+
+\echo '--- delta: updated_at em tudo que sincroniza'
+select pg_temp.ok((select count(*) = 0 from unnest(array['events','families','people','expenses','settlement_marks','event_overrides','expense_confirmations','recipes','meal_plan']) t
+  where not exists (select 1 from information_schema.columns c where c.table_schema = 'public' and c.table_name = t and c.column_name = 'updated_at')), 'todas as tabelas sincronizadas têm updated_at');
+select pg_temp.ok((select bool_and(updated_at >= confirmed_at) from public.expense_confirmations), 'anulação de confirmação atualiza updated_at');
 
 \echo '--- expurgo automático (servidor)'
 update public.events set end_date = current_date - 40, start_date = current_date - 42, version = version + 1 where id = :'ev';
