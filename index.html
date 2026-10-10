@@ -257,16 +257,152 @@ footer{max-width:1120px;margin:32px auto 0;padding:0 16px;display:flex;flex-wrap
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .toast svg{width:16px;height:16px}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* ===== v3: tabs, planning, recipes, proof ===== */
+.toptotal{opacity:1;transform:none}
+body[data-view="inicio"] .top:not(.scrolled) .toptotal{opacity:0;transform:translateY(4px)}
+body{padding-bottom:calc(88px + var(--sab))}
+.view[hidden]{display:none!important}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:6px calc(8px + var(--sar)) calc(6px + var(--sab)) calc(8px + var(--sal));
+  background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-top:1px solid var(--border)}
+.tabbar button{min-height:52px;border:0;background:transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:var(--text-3);min-width:0}
+.tabbar button svg{width:22px;height:22px}
+.tabbar button[aria-selected="true"]{color:var(--accent);background:var(--accent-soft)}
+@media(min-width:920px){
+  .tabbar{position:sticky;top:calc(56px + var(--sat));bottom:auto;max-width:560px;margin:8px auto 0;border:1px solid var(--border);border-radius:16px;padding:6px}
+  .tabbar button{flex-direction:row;gap:8px;font-size:14px;min-height:44px}
+  body{padding-bottom:32px}
+}
+.subnav{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
+.subnav button{flex:1 1 auto;min-height:40px;border:0;border-radius:9px;background:transparent;font-weight:600;font-size:14px;color:var(--text-2);padding:0 12px}
+.subnav button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--border)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pills button{flex:1 1 auto;min-height:40px;padding:6px 12px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);font-size:14px;font-weight:550;color:var(--text-2);display:inline-flex;align-items:center;justify-content:center;gap:6px;text-align:center;line-height:1.2}
+.pills button:hover{color:var(--text)}
+.pills button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent)}
+.pills.sm button{min-height:36px;font-size:13px;flex:0 1 auto}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.badge{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:550;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);line-height:1.2}
+.badge svg{width:13px;height:13px}
+.badge.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.badge.ok{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.badge.acc{background:var(--accent-soft);color:var(--text);border-color:transparent}
+button.badge{cursor:pointer;min-height:32px}
+.thumb{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);padding:0;overflow:hidden;background:var(--surface-2);flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.chooser{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px;border-radius:var(--r);background:var(--surface-2);margin-top:4px}
+.chooser .t2{flex:1 1 100%}
+.inp.sm{height:40px;font-size:15px;padding:0 12px}
+select.inp.sm{padding-right:36px;background-position:right 12px center}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mini{font-size:12px;color:var(--text-3);font-weight:550;display:block;margin-bottom:4px}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.switchrow .switch{flex:none}
+.hint{font-size:13px;color:var(--text-3);margin:0}
+.callout{border-radius:var(--r);padding:12px;background:var(--warn-soft);color:var(--warn);font-size:14px;display:flex;gap:8px;align-items:flex-start}
+.callout b{font-weight:650}
+.preview{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin-top:8px}
+.quickrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.quickrow .mic{width:48px;height:48px}
+.mic.on{color:var(--neg);border-color:var(--neg)}
+/* matrix */
+.mxwrap{overflow-x:auto;margin:0 -4px;padding:4px}
+.mx{display:grid;gap:3px;align-items:center;min-width:max-content}
+.mx .ml{font-size:12px;color:var(--text-2);font-weight:550;padding-right:4px}
+.mx .dh{border:0;background:transparent;border-radius:8px;padding:4px 0;font-size:11px;line-height:1.2;color:var(--text-3);text-align:center;font-weight:600;min-height:36px}
+.mx .dh b{display:block;font-size:14px;color:var(--text)}
+.mx .dh.sel{background:var(--accent-soft)}
+.mx .dh.sel b{color:var(--text)}
+.mx .c{height:30px;border-radius:7px;border:1px solid var(--border-strong);background:transparent;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0;position:relative;color:var(--text-2)}
+.mx .c.casa{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mx .c.fora{background:color-mix(in srgb,var(--fam-2) 30%,var(--surface));border-color:var(--fam-2);color:var(--text)}
+.mx .c.livre{border-style:dashed;color:var(--text-3)}
+.mx .c.sel{outline:2px solid var(--text);outline-offset:1px}
+.mx .c i{position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 1.5px var(--surface)}
+.legend2{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text-2);margin-top:12px}
+.legend2 span{display:inline-flex;align-items:center;gap:6px}
+.legend2 i{width:14px;height:14px;border-radius:4px;border:1px solid var(--border-strong);display:inline-block}
+.legend2 i.casa{background:var(--accent);border-color:var(--accent)}.legend2 i.fora{background:color-mix(in srgb,var(--fam-2) 30%,var(--surface));border-color:var(--fam-2)}.legend2 i.livre{border-style:dashed}
+.meal{border-top:1px solid var(--border);padding:16px 0}
+.meal:first-child{border-top:0;padding-top:0}
+.meal .mh{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.meal .mh b{font-size:15px}
+.modebtn{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.modebtn i{width:10px;height:10px;border-radius:3px;border:1px solid var(--border-strong)}
+.modebtn.casa i{background:var(--accent);border-color:var(--accent)}.modebtn.fora i{background:color-mix(in srgb,var(--fam-2) 30%,var(--surface));border-color:var(--fam-2)}.modebtn.livre i{border-style:dashed}
+.rchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.rchip{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 4px 0 12px;border-radius:999px;background:var(--accent-soft);color:var(--text);font-size:14px;font-weight:550}
+.rchip button{width:28px;height:28px;border-radius:999px;border:0;background:transparent;color:var(--text-2);display:grid;place-items:center}
+.rchip button svg{width:14px;height:14px}
+.rchips select{width:auto;min-width:0;max-width:100%}
+.mmeta{display:grid;gap:4px;margin-top:12px;font-size:13px;color:var(--text-2)}
+.warnline{font-size:13px;color:var(--warn);display:flex;gap:6px;align-items:flex-start}
+.warnline svg{width:14px;height:14px;margin-top:2px;flex:none}
+/* recipes */
+.rec .t1{font-size:16px}
+.ingrow{display:grid;grid-template-columns:minmax(0,1fr) 96px 80px 40px;gap:8px;align-items:center;padding:8px;border-radius:10px;border:1px solid var(--border);margin-bottom:8px}
+@container (max-width: 460px){.ingrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px}.ingrow .nm{grid-column:1/-1}}
+.ingwrap{container-type:inline-size}
+.ingrow.erro{background:var(--warn-soft);border-color:transparent}
+.ingrow.medio{border-color:color-mix(in srgb,var(--warn) 50%,var(--border))}
+.ingrow .src{font-size:12px;color:var(--text-3);grid-column:1/-1;overflow-wrap:anywhere}
+.ingrow.erro .src{color:var(--warn)}
+.sect{font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);margin:16px 0 4px}
+.sect:first-child{margin-top:0}
+.shop .li{grid-template-columns:minmax(0,1fr) auto}
+.shop .done .t1{text-decoration:line-through;color:var(--text-3)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px}
+.kpi{border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.kpi span{display:block;font-size:12px;color:var(--text-3)}
+.kpi b{font-size:17px;font-weight:650}
+.est{font-size:12px;color:var(--warn);font-weight:550}
+.pricerow{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--border)}
+.memd{border-top:1px solid var(--border)}
+.memd summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:12px 0;min-height:48px}
+.memd summary::-webkit-details-marker{display:none}
+.memd .body{display:grid;gap:12px;padding:0 0 16px}
+.fcard .fhead2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+/* cook mode */
+dialog.cook{width:100%;max-width:760px;height:100%;max-height:100%;margin:0 auto;border:0;padding:0;background:var(--bg);color:var(--text)}
+dialog.cook::backdrop{background:rgba(0,0,0,.5)}
+@media(min-width:800px){dialog.cook{height:auto;max-height:92vh;margin:4vh auto;border-radius:20px;border:1px solid var(--border)}}
+.cookin{padding:calc(16px + var(--sat)) calc(20px + var(--sar)) calc(24px + var(--sab)) calc(20px + var(--sal));font-size:20px;line-height:1.45}
+.cookhd{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;margin-bottom:16px}
+.cookhd h2{margin:0;font-size:26px;letter-spacing:-.02em}
+.cookhd p{margin:4px 0 0;font-size:15px;color:var(--text-2)}
+.cookin h3{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin:24px 0 8px}
+.ck{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--border);cursor:pointer}
+.ck input{width:28px;height:28px;margin:2px 0 0;accent-color:var(--accent)}
+.ck.done span{text-decoration:line-through;color:var(--text-3)}
+.ck b{font-variant-numeric:tabular-nums}
+dialog.photo{border:0;padding:0;background:transparent;max-width:92vw}
+dialog.photo img{max-width:92vw;max-height:80vh;border-radius:12px;display:block}
+dialog.photo::backdrop{background:rgba(0,0,0,.75)}
+.inp[type=date]{min-width:0;padding:0 10px;font-size:15px;-webkit-appearance:none;appearance:none}
+@media(max-width:359px){.brand .bt{display:none}}
+.toptotal b{white-space:nowrap}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.toast{bottom:calc(92px + var(--sab))}@media(min-width:920px){.toast{bottom:calc(24px + var(--sab))}}
 </style>
 </head>
-<body>
+<body data-view="inicio">
 <header class="top" id="top"><div class="in">
   <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Racha da Viagem</span></div>
   <div class="toptotal" aria-hidden="true"><small>Total</small><b class="num" id="topTotal">R$ 0,00</b></div>
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
 
+<nav class="tabbar" id="tabbar" role="tablist" aria-label="Seções">
+  <button role="tab" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
+  <button role="tab" data-view="planejar" aria-selected="false"><span data-i="calendar"></span><span>Planejar</span></button>
+  <button role="tab" data-view="gastos" aria-selected="false"><span data-i="wallet"></span><span>Gastos</span></button>
+  <button role="tab" data-view="acertos" aria-selected="false"><span data-i="scale"></span><span>Acertos</span></button>
+</nav>
+
 <main class="wrap">
+<!-- ============ INÍCIO ============ -->
+<section class="view" id="v-inicio" role="tabpanel">
   <div class="grid">
     <div class="col">
       <section class="card summary" aria-labelledby="sumLbl">
@@ -275,10 +411,135 @@ footer{max-width:1120px;margin:32px auto 0;padding:0 16px;display:flex;flex-wrap
         <div class="stats">
           <div><b class="num" id="heroAvg">R$ 0,00</b><span>média por pessoa</span></div>
           <div><b class="num" id="heroCount">0</b><span>despesas</span></div>
-          <div><b class="num" id="heroPeople">0</b><span id="heroPeopleLbl">pessoas</span></div>
+          <div><b class="num" id="heroPeople">0</b><span>pessoas</span></div>
         </div>
       </section>
+      <div id="pendCard"></div>
+      <section class="card" aria-labelledby="qTitle" id="quickCard">
+        <div class="ch"><h2 id="qTitle">Lançamento rápido</h2><span class="meta">escreva como no WhatsApp</span></div>
+        <div class="quickrow">
+          <label class="sr" for="quick">Lançamento rápido</label>
+          <input class="inp" id="quick" placeholder="Ex.: 80 gasolina Botelho sem nota" autocomplete="off" enterkeyhint="done">
+          <button class="iconbtn mic" id="micBtn" type="button" aria-label="Ditar por voz" hidden><span data-i="mic"></span></button>
+        </div>
+        <div class="preview" id="qPreview" aria-live="polite"></div>
+        <div class="actwrap" style="margin-top:12px"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+          <button class="btn primary" id="qSave" disabled><span data-i="check"></span><span>Lançar</span></button>
+          <button class="btn secondary" id="qMore"><span data-i="edit"></span><span>Completar</span></button>
+        </div></div>
+      </section>
+    </div>
+    <div class="col">
+      <section class="card" aria-labelledby="nTitle">
+        <div class="ch"><h2 id="nTitle">Próximas refeições</h2><span class="meta" id="nMeta"></span></div>
+        <div id="nextMeals"></div>
+      </section>
+      <section class="card" aria-labelledby="chTitle">
+        <div class="ch"><h2 id="chTitle">Gastos por categoria</h2></div>
+        <div class="chart">
+          <div class="donutbox"><svg viewBox="0 0 36 36" id="donut" aria-hidden="true"></svg><div class="c"><small>Total</small><b class="num" id="donutTotal"></b></div></div>
+          <div class="list legend" id="legend"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
 
+<!-- ============ PLANEJAR ============ -->
+<section class="view" id="v-planejar" role="tabpanel" hidden>
+  <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
+    <button role="tab" data-sub="cardapio" aria-selected="true">Cardápio</button>
+    <button role="tab" data-sub="receitas" aria-selected="false">Receitas</button>
+    <button role="tab" data-sub="compras" aria-selected="false">Compras</button>
+    <button role="tab" data-sub="pessoas" aria-selected="false">Pessoas</button>
+  </div>
+  <div data-panel="cardapio">
+    <div class="grid">
+      <div class="col">
+        <section class="card" aria-labelledby="gTitle">
+          <div class="ch"><h2 id="gTitle">Cardápio da viagem</h2><span class="meta" id="gMeta"></span></div>
+          <div class="mxwrap"><div class="mx" id="matrix"></div></div>
+          <div class="legend2"><span><i class="casa"></i>Em casa (letra = família que cozinha)</span><span><i class="fora"></i>Fora</span><span><i class="livre"></i>Livre</span><span><i style="border:0;width:8px;height:8px;border-radius:50%;background:var(--warn)"></i>Restrição alimentar</span></div>
+        </section>
+        <section class="card" aria-labelledby="tTitle">
+          <div class="ch"><h2 id="tTitle">Viagem</h2><span class="meta" id="tMeta"></span></div>
+          <div class="row2">
+            <div class="field"><label for="tStart">Início</label><input class="inp" type="date" id="tStart"></div>
+            <div class="field"><label for="tEnd">Fim</label><input class="inp" type="date" id="tEnd"></div>
+          </div>
+          <div class="field" style="margin-top:16px"><span class="flabel">Refeições planejadas</span><div class="pills sm" id="mealToggles"></div></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card" aria-labelledby="dTitle" id="dayCard">
+          <div class="ch"><h2 id="dTitle">Dia</h2><span class="meta" id="dMeta"></span></div>
+          <div id="dayMeals"></div>
+          <button class="btn text" id="applyAll" style="margin-top:8px"><span data-i="copy"></span><span>Aplicar este dia a todos os dias</span></button>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div data-panel="receitas" hidden>
+    <div class="grid">
+      <div class="col">
+        <section class="card" aria-labelledby="rlTitle">
+          <div class="ch"><h2 id="rlTitle">Receitas</h2><span class="meta" id="rlMeta"></span></div>
+          <div class="list" id="recList"></div>
+          <button class="btn secondary block" id="newRec" style="margin-top:16px"><span data-i="plus"></span><span>Nova receita (colar texto)</span></button>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card" aria-labelledby="reTitle" id="recEditor">
+          <div class="ch"><h2 id="reTitle">Colar receita</h2><span class="meta" id="reMeta"></span></div>
+          <div class="field">
+            <label for="recPaste">Cole o texto como veio (WhatsApp, site…)</label>
+            <textarea class="inp" id="recPaste" style="min-height:140px;font:15px/1.5 var(--font);background:var(--surface)" placeholder="Bolo de cenoura&#10;Rende 8 porções&#10;Ingredientes:&#10;- 3 cenouras&#10;- 2 xícaras de açúcar&#10;Modo de preparo: …"></textarea>
+          </div>
+          <button class="btn secondary block" id="recParse" style="margin-top:12px"><span data-i="sparkle"></span><span>Interpretar receita</span></button>
+          <div id="recDraft"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div data-panel="compras" hidden>
+    <div class="grid">
+      <div class="col">
+        <section class="card shop" aria-labelledby="sTitle2">
+          <div class="ch"><h2 id="sTitle2">Lista de compras</h2><span class="meta" id="shopMeta"></span></div>
+          <div class="pills sm" id="shopRange" style="margin-bottom:16px"></div>
+          <div class="kpis" id="shopKpis"></div>
+          <div id="shopList"></div>
+          <div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+            <button class="btn secondary" id="shopCopy"><span data-i="copy"></span><span>Copiar lista</span></button>
+            <a class="btn secondary" id="shopWa" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a>
+          </div></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card" aria-labelledby="dishTitle"><div class="ch"><h2 id="dishTitle">Custo por prato</h2><span class="meta">estimado</span></div><div class="list" id="dishList"></div></section>
+        <section class="card" aria-labelledby="pfTitle"><div class="ch"><h2 id="pfTitle">Prévia por família</h2><span class="meta">por porções</span></div><div class="list" id="famPreview"></div></section>
+        <section class="card" aria-labelledby="pvTitle"><div class="ch"><h2 id="pvTitle">Planejado × real</h2></div><div id="planReal"></div></section>
+        <section class="card" aria-labelledby="eTitle2">
+          <div class="ch"><h2 id="eTitle2">Preços e quantidades</h2><span class="meta">edite à vontade</span></div>
+          <div id="estEditor"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div data-panel="pessoas" hidden>
+    <section class="card" aria-labelledby="wTitle" style="margin-bottom:16px">
+      <div class="ch"><h2 id="wTitle">Peso da porção</h2><span class="meta">adulto = 1</span></div>
+      <div class="row2" id="weights"></div>
+      <p class="hint" style="margin-top:12px">Usado no rateio “Por porções”, na escala das receitas e na lista de compras.</p>
+    </section>
+    <div class="fgrid" id="people"></div>
+  </div>
+</section>
+
+<!-- ============ GASTOS ============ -->
+<section class="view" id="v-gastos" role="tabpanel" hidden>
+  <div class="grid">
+    <div class="col">
       <section class="card" id="addCard" aria-labelledby="formTitle">
         <div class="ch"><h2 id="formTitle">Nova despesa</h2><span class="meta editbadge tag">Editando</span></div>
         <form class="stack" id="expForm" novalidate autocomplete="off">
@@ -286,10 +547,20 @@ footer{max-width:1120px;margin:32px auto 0;padding:0 16px;display:flex;flex-wrap
             <label for="amt">Valor</label>
             <div class="money lg"><span>R$</span><input class="inp" id="amt" inputmode="decimal" placeholder="0,00" aria-describedby="amtErr"></div>
             <div class="err" id="amtErr" role="alert"><span data-i="alert"></span><span>Informe um valor maior que zero.</span></div>
+            <label class="switch" style="height:32px"><input type="checkbox" role="switch" id="estChk">Valor estimado (troco pelo real quando a nota chegar)</label>
+          </div>
+          <div id="fuelBox" hidden>
+            <div class="row3">
+              <div class="field"><label for="fKm">km</label><input class="inp sm" id="fKm" inputmode="decimal" placeholder="320"></div>
+              <div class="field"><label for="fKml">km/L</label><input class="inp sm" id="fKml" inputmode="decimal" placeholder="11"></div>
+              <div class="field"><label for="fPrice">R$/L</label><input class="inp sm" id="fPrice" inputmode="decimal" placeholder="6,19"></div>
+            </div>
+            <p class="hint" id="fOut" style="margin-top:8px">Calculadora de combustível: km ÷ km/L × preço.</p>
           </div>
           <div class="field"><span class="flabel" id="catLbl">Categoria</span><div class="segwrap"><div class="seg" id="catSeg" role="group" aria-labelledby="catLbl"></div></div></div>
           <div class="field">
             <label for="payer">Quem pagou</label>
+            <input class="inp sm" id="payerSearch" placeholder="Buscar pessoa…" aria-label="Buscar quem pagou" autocomplete="off">
             <select class="inp" id="payer" aria-describedby="payerErr"></select>
             <div class="err" id="payerErr" role="alert"><span data-i="alert"></span><span>Adicione pelo menos uma pessoa nas famílias.</span></div>
           </div>
@@ -298,35 +569,57 @@ footer{max-width:1120px;margin:32px auto 0;padding:0 16px;display:flex;flex-wrap
             <input class="inp" id="desc" placeholder="Ex.: Mercado do sábado" maxlength="60">
             <div class="sugg" id="sugg" aria-label="Sugestões"></div>
           </div>
+          <div class="field"><span class="flabel" id="proofLbl">Comprovante</span><div class="pills" id="proofSeg" role="group" aria-labelledby="proofLbl"></div></div>
+          <div class="field" id="proofExtra">
+            <div class="row2" style="grid-template-columns:auto minmax(0,1fr);align-items:center">
+              <label class="btn secondary sm" for="photo" style="cursor:pointer"><span data-i="camera"></span><span>Foto</span></label>
+              <div id="photoPrev" class="hint">Opcional: foto do produto, placa ou papel.</div>
+            </div>
+            <input type="file" id="photo" accept="image/*" capture="environment" class="sr-only">
+            <input class="inp sm" id="note" placeholder="Observação (ex.: feira da praça, barraca do Zé)" maxlength="80">
+          </div>
+          <div class="field" id="itemsField">
+            <label for="items">Itens comprados <span class="sub">(opcional — abate da lista de compras)</span></label>
+            <input class="inp sm" id="items" placeholder="Ex.: picanha 2 kg, carvão, cerveja 2 fardos">
+          </div>
           <div class="formactions">
             <button class="btn primary block" type="submit" id="submitBtn"><span data-i="plus"></span><span>Adicionar despesa</span></button>
             <button class="btn secondary" type="button" id="cancelEdit">Cancelar</button>
           </div>
         </form>
       </section>
+    </div>
+    <div class="col">
+      <section class="card" aria-labelledby="eTitle">
+        <div class="ch"><h2 id="eTitle">Despesas</h2><span class="meta" id="expMeta"></span></div>
+        <div class="pills sm" id="expFilter" style="margin-bottom:12px"></div>
+        <div class="list" id="expList"></div>
+      </section>
+    </div>
+  </div>
+</section>
 
+<!-- ============ ACERTOS ============ -->
+<section class="view" id="v-acertos" role="tabpanel" hidden>
+  <div class="grid">
+    <div class="col">
+      <section class="card" aria-labelledby="mTitle">
+        <div class="ch"><h2 id="mTitle">Como dividir</h2></div>
+        <div class="pills" id="modeSeg" role="group" aria-labelledby="mTitle"></div>
+        <p class="hint" id="modeHint" style="margin-top:12px"></p>
+        <div class="list" id="modeDelta" style="margin-top:12px"></div>
+      </section>
       <section class="card" aria-labelledby="xfTitle">
         <div class="ch"><h2 id="xfTitle">Quem paga quem</h2><span class="meta" id="xferMeta"></span></div>
         <div class="list" id="xfers"></div>
       </section>
-
       <section class="card" aria-labelledby="balTitle">
         <div class="ch"><h2 id="balTitle">Saldo por família</h2><span class="meta">toque para ver pessoas</span></div>
         <div id="warnBox"></div>
         <div id="fams"></div>
-        <div class="legendnote"><span class="dot" style="margin:0"></span>bebe álcool · a parte de álcool é dividida só entre essas pessoas</div>
       </section>
     </div>
-
     <div class="col">
-      <section class="card" aria-labelledby="chTitle">
-        <div class="ch"><h2 id="chTitle">Gastos por categoria</h2></div>
-        <div class="chart">
-          <div class="donutbox"><svg viewBox="0 0 36 36" id="donut" aria-hidden="true"></svg><div class="c"><small>Total</small><b class="num" id="donutTotal"></b></div></div>
-          <div class="list legend" id="legend"></div>
-        </div>
-      </section>
-
       <section class="card" aria-labelledby="kTitle">
         <div class="ch"><h2 id="kTitle">Sobra da viagem</h2><span class="meta">caixinha</span></div>
         <div class="field">
@@ -335,45 +628,36 @@ footer{max-width:1120px;margin:32px auto 0;padding:0 16px;display:flex;flex-wrap
         </div>
         <div id="kBody"></div>
       </section>
-
-      <section class="card" aria-labelledby="sTitle">
-        <div class="ch"><h2 id="sTitle">Modo surpresa</h2><span class="meta">quem paga a próxima?</span></div>
+      <section class="card" aria-labelledby="suTitle">
+        <div class="ch"><h2 id="suTitle">Modo surpresa</h2><span class="meta">quem paga a próxima?</span></div>
         <div class="surprise">
           <div class="res" aria-live="polite"><div class="name" id="sName">—</div><div class="t2" id="sFam">Sorteio com mais chance para quem pagou menos que a própria parte.</div></div>
           <button class="btn secondary sm" id="spinBtn"><span data-i="shuffle"></span>Sortear</button>
         </div>
         <div class="odds" id="odds"></div>
       </section>
-
-      <section class="card" aria-labelledby="eTitle">
-        <div class="ch"><h2 id="eTitle">Despesas</h2><span class="meta" id="expMeta"></span></div>
-        <div class="list" id="expList"></div>
+      <section class="card" aria-labelledby="shTitle">
+        <div class="ch"><h2 id="shTitle">Resumo para compartilhar</h2><span class="meta">WhatsApp</span></div>
+        <label class="sr" for="shareText">Resumo</label>
+        <textarea class="inp" id="shareText" readonly></textarea>
+        <div class="actwrap"><div class="actions">
+          <button class="btn secondary" id="copyBtn"><span data-i="copy"></span><span>Copiar</span></button>
+          <button class="btn secondary" id="shareBtn"><span data-i="share"></span><span>Compartilhar</span></button>
+          <a class="btn secondary" id="waLink" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a>
+        </div></div>
       </section>
     </div>
-
-    <section class="card span2" aria-labelledby="fTitle">
-      <div class="ch"><h2 id="fTitle">Famílias e membros</h2><span class="meta tag">Dados de exemplo</span></div>
-      <div class="fgrid" id="famEdit"></div>
-    </section>
-
-    <section class="card span2" aria-labelledby="shTitle">
-      <div class="ch"><h2 id="shTitle">Resumo para compartilhar</h2><span class="meta">formatado para WhatsApp</span></div>
-      <label class="sr" for="shareText">Resumo</label>
-      <textarea class="inp" id="shareText" readonly></textarea>
-      <div class="actwrap"><div class="actions">
-        <button class="btn secondary" id="copyBtn"><span data-i="copy"></span><span>Copiar</span></button>
-        <button class="btn secondary" id="shareBtn"><span data-i="share"></span><span>Compartilhar</span></button>
-        <a class="btn secondary" id="waLink" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a>
-      </div></div>
-    </section>
   </div>
+</section>
 </main>
 <footer>
   <span>Protótipo local · dados salvos apenas neste navegador · sem servidor e sem dados bancários</span>
   <button class="btn text" id="resetBtn"><span data-i="reset"></span>Restaurar exemplo</button>
 </footer>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<dialog class="cook" id="cookDlg" aria-labelledby="cookTitle"><div class="cookin" id="cookBody"></div></dialog>
+<dialog class="photo" id="photoDlg"><form method="dialog"><button class="iconbtn" style="position:absolute;top:8px;right:8px" aria-label="Fechar"><span data-i="x"></span></button></form><img id="photoBig" alt="Foto do gasto"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 // ===== LOGIC-START (pure functions; tested in test.js) =====
 const CATEGORIES = {
@@ -400,30 +684,30 @@ function computeSplit(state) {
   const drinkerIds = people.filter(p => p.drinks).map(p => p.id);
   const catTotals = Object.fromEntries(Object.keys(CATEGORIES).map(k => [k, 0]));
   const warnings = [];
+  const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state) : null;
+  const wCache = {};
   let total = 0;
-  for (const e of state.expenses) {
+  for (const e of countedExpenses(state)) {
     const amt = Number(e.amount) || 0;
     total += amt;
     catTotals[e.category] = (catTotals[e.category] || 0) + amt;
     if (byId[e.payerId]) byId[e.payerId].paid += amt;
-    let group = CATEGORIES[e.category] && CATEGORIES[e.category].scope === 'drinkers' ? drinkerIds : ids;
-    if (group.length === 0 && CATEGORIES[e.category].scope === 'drinkers') {
-      if (!warnings.includes('noDrinkers')) warnings.push('noDrinkers');
-      group = ids; // fallback so the math still balances
-    }
-    if (group.length === 0) continue;
-    const share = amt / group.length;
-    group.forEach(id => { byId[id].owed += share; });
+    if (!ids.length) continue;
+    const sw = wCache[e.category] = wCache[e.category] || splitWeights(state, e.category, people, P);
+    if (sw.warn && !warnings.includes(sw.warn)) warnings.push(sw.warn);
+    const tw = Object.values(sw.w).reduce((a, b) => a + b, 0); if (!tw) continue;
+    for (const id in sw.w) byId[id].owed += amt * sw.w[id] / tw;
   }
   if (ids.length === 0) warnings.push('noPeople');
   if (state.expenses.some(e => !byId[e.payerId])) warnings.push('orphanPayer');
+  const excluded = state.expenses.length - countedExpenses(state).length;
   const persons = ids.map(id => { const p = byId[id]; p.net = p.paid - p.owed; return p; });
   const families = state.families.map(f => {
     const ps = persons.filter(p => p.familyId === f.id);
     const paid = ps.reduce((s, p) => s + p.paid, 0), owed = ps.reduce((s, p) => s + p.owed, 0);
     return { id: f.id, name: f.name, count: ps.length, drinkers: ps.filter(p => p.drinks).length, paid, owed, net: paid - owed };
   });
-  return { persons, families, catTotals, total, avg: ids.length ? total / ids.length : 0, drinkers: drinkerIds.length, warnings };
+  return { persons, families, catTotals, total, avg: ids.length ? total / ids.length : 0, drinkers: drinkerIds.length, warnings, excluded };
 }
 
 // Greedy: repeatedly match the largest debtor with the largest creditor. Yields <= n-1 transfers.
@@ -467,6 +751,497 @@ function weightedPick(weights, rnd = Math.random) {
   return weights[weights.length - 1];
 }
 
+
+// ---- Proof levels ("gastos sem nota")
+const PROOF = {
+  nf:   { label: 'Nota fiscal', short: 'Nota' },
+  comp: { label: 'Comprovante', short: 'Comprovante' },  // Pix / cartão
+  none: { label: 'Sem nota',    short: 'Sem nota' },
+};
+const proofOf = e => (e && PROOF[e.proof]) ? e.proof : 'nf';
+const needsConfirm = e => proofOf(e) === 'none' && !e.confirmedBy;
+// Pending items: sem-nota awaiting a peer confirmation, and estimated values.
+function pendingInfo(state) {
+  const unconfirmed = state.expenses.filter(needsConfirm);
+  const estimated = state.expenses.filter(e => e.estimated);
+  const sum = a => a.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const byProof = {};
+  for (const k of Object.keys(PROOF)) { const l = state.expenses.filter(e => proofOf(e) === k); byProof[k] = { count: l.length, total: sum(l) }; }
+  return { unconfirmed, unconfirmedTotal: sum(unconfirmed), estimated, estimatedTotal: sum(estimated), byProof,
+    include: state.includeUnconfirmed !== false };
+}
+// Expenses that enter the split (the group may exclude unconfirmed sem-nota items).
+const countedExpenses = state => state.includeUnconfirmed === false ? state.expenses.filter(e => !needsConfirm(e)) : state.expenses;
+
+// ---- "Lançamento rápido": one line of text -> expense
+const normTxt = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const CAT_WORDS = {
+  alcohol: ['cerveja', 'cervejas', 'breja', 'brejas', 'chopp', 'chope', 'vinho', 'vinhos', 'cachaca', 'caipirinha', 'caipirinhas', 'caipi', 'drink', 'drinks', 'whisky', 'uisque', 'vodka', 'gin', 'skol', 'heineken', 'brahma', 'espumante', 'destilado', 'alcool', 'bebida alcoolica', 'cervejaria'],
+  gas: ['gasolina', 'combustivel', 'etanol', 'diesel', 'posto', 'abastecimento', 'abasteci', 'abastecer', 'pedagio', 'pedagios', 'estacionamento', 'gnv', 'calibragem'],
+  groceries: ['mercado', 'supermercado', 'feira', 'gelo', 'carvao', 'hortifruti', 'acougue', 'sacolao', 'atacadao', 'mercearia', 'agua', 'frutas', 'verduras', 'compras'],
+  food: ['churrasco', 'almoco', 'jantar', 'restaurante', 'lanche', 'lanches', 'pizza', 'sorvete', 'cafe', 'padaria', 'pao', 'paes', 'ambulante', 'gorjeta', 'acai', 'pastel', 'espetinho', 'quiosque', 'comida', 'marmita', 'hamburguer', 'petisco', 'milho', 'tapioca', 'coco', 'picole', 'refri', 'refrigerante'],
+};
+const PROOF_WORDS = { none: ['sem nota', 'sem cupom', 'sem recibo', 'sem comprovante', 'dinheiro', 'especie'], comp: ['pix', 'cartao', 'debito', 'credito', 'comprovante', 'transferencia', 'maquininha'], nf: ['nota fiscal', 'nota', 'nf', 'cupom', 'cupom fiscal', 'recibo'] };
+const EST_WORDS = ['aprox', 'aproximadamente', 'cerca de', 'estimado', 'estimativa', 'mais ou menos', 'uns', 'umas', 'por volta de'];
+const STOP = new Set(['pago', 'paga', 'pagou', 'paguei', 'pagamos', 'por', 'pela', 'pelo', 'foi', 'de', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas', 'em', 'com', 'reais', 'real', 'r', 'rs', 'o', 'a', 'os', 'as', 'e', 'pra', 'para', 'familia', 'fam', 'quem']);
+function lev(a, b) {
+  const m = a.length, n = b.length; if (Math.abs(m - n) > 1) return 9; // Damerau (OSA) distance
+  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]); for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) { d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1); }
+  return d[m][n];
+}
+const nameMatch = (tok, name) => { if (!tok || !name || tok.length < 2) return false; if (tok === name) return true;
+  if (tok.length >= 3 && name.length >= 3 && (name.startsWith(tok) || tok.startsWith(name))) return true; return tok.length >= 4 && name.length >= 4 && lev(tok, name) <= 1; };
+const hasPhrase = (txt, ph) => new RegExp('(^|[^a-z0-9])' + ph.replace(/ /g, '\\s+') + '($|[^a-z0-9])').test(txt);
+
+function parseQuick(text, families) {
+  const raw = String(text || '').trim(), n = normTxt(raw);
+  const out = { amount: null, category: null, payerId: null, payerVia: null, proof: null, estimated: false, description: '' };
+  if (!raw) return out;
+  // amount: prefer a number next to R$/reais, else the largest number
+  const re = /(~\s*)?(r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)(\s*(?:reais|real|conto|contos)\b)?/gi;
+  let best = null, m; const nums = [];
+  while ((m = re.exec(raw))) {
+    const s = m[3], v = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(s) ? parseFloat(s.replace(/\./g, '').replace(',', '.')) : parseFloat(s.replace(',', '.'));
+    const c = { v, idx: m.index, len: m[0].length, money: !!(m[2] || m[4]), tilde: !!m[1] }; nums.push(c);
+    if (!best || (c.money && !best.money) || (c.money === best.money && v > best.v)) best = c;
+  }
+  if (best && best.v > 0) { out.amount = Math.round(best.v * 100) / 100; if (best.tilde) out.estimated = true; }
+  if (EST_WORDS.some(w => hasPhrase(n, w))) out.estimated = true;
+  // proof
+  for (const k of ['none', 'comp', 'nf']) if (PROOF_WORDS[k].some(w => hasPhrase(n, w))) { out.proof = k; break; }
+  // category: earliest keyword; "alcool" next to fuel words means fuel
+  let catPos = Infinity;
+  for (const [cat, words] of Object.entries(CAT_WORDS)) for (const w of words) {
+    const r = new RegExp('(^|[^a-z0-9])' + w.replace(/ /g, '\\s+') + '($|[^a-z0-9])'), mm = r.exec(n);
+    if (mm && mm.index < catPos) { catPos = mm.index; out.category = cat; }
+  }
+  if (out.category === 'alcohol' && hasPhrase(n, 'alcool') && CAT_WORDS.gas.some(w => hasPhrase(n, w)) && !CAT_WORDS.alcohol.filter(w => w !== 'alcool').some(w => hasPhrase(n, w))) out.category = 'gas';
+  // payer: member names first, then family names
+  const words = raw.split(/\s+/), toks = words.map(w => normTxt(w).replace(/[^a-z0-9]/g, ''));
+  const catSet = new Set(Object.values(CAT_WORDS).flat()), proofSet = new Set(Object.values(PROOF_WORDS).flat());
+  const cand = toks.map((t, i) => ({ t, i })).filter(x => x.t.length >= 2 && !STOP.has(x.t) && !catSet.has(x.t) && !proofSet.has(x.t) && !/^\d/.test(x.t));
+  const fams = families || [], used = new Set();
+  let famHit = null;
+  for (const c of cand) { const f = fams.find(f => nameMatch(c.t, normTxt(String(f.name).replace(/^fam[ií]lia\s+/i, '')).replace(/[^a-z0-9]/g, ''))); if (f) { famHit = f; used.add(c.i); break; } }
+  let mem = null;
+  for (const c of cand) { if (used.has(c.i)) continue;
+    const hits = []; fams.forEach(f => f.members.forEach(mb => { if (nameMatch(c.t, normTxt(mb.name).replace(/[^a-z0-9]/g, ''))) hits.push({ f, mb }); }));
+    if (hits.length) { const h = (famHit && hits.find(x => x.f.id === famHit.id)) || hits[0]; mem = h; used.add(c.i); break; } }
+  if (mem) { out.payerId = mem.mb.id; out.payerVia = 'person'; }
+  else if (famHit && famHit.members.length) { out.payerId = famHit.members[0].id; out.payerVia = 'family'; }
+  // description: what is left
+  const amountSpan = best ? [best.idx, best.idx + best.len] : null; let pos = 0;
+  const keep = words.filter((w, i) => { const start = raw.indexOf(w, pos); pos = start + w.length;
+    if (amountSpan && start >= amountSpan[0] && start < amountSpan[1]) return false;
+    const t = toks[i]; if (used.has(i) || STOP.has(t) || !t || t === 'r$') return false;
+    if (proofSet.has(t) || ['sem', 'fiscal'].includes(t)) return false;
+    if (EST_WORDS.includes(t) || t === 'cerca') return false; return true; });
+  const d = keep.join(' ').replace(/^[~\-–,.:;\s]+|[\-–,.:;\s]+$/g, '');
+  out.description = d ? d[0].toUpperCase() + d.slice(1) : '';
+  return out;
+}
+
+// Fuel estimate: km / (km per liter) * price per liter
+const fuelCost = (km, kmPerL, pricePerL) => (km > 0 && kmPerL > 0 && pricePerL > 0) ? Math.round(km / kmPerL * pricePerL * 100) / 100 : 0;
+
+// ===================== Planejamento: dias, refeições, porções =====================
+const MEALS = { cafe: 'Café', almoco: 'Almoço', lanche: 'Lanche', jantar: 'Jantar' };
+const MEAL_ORDER = ['cafe', 'almoco', 'lanche', 'jantar'];
+const MEMBER_TYPES = { adulto: { label: 'Adulto', w: 1 }, adolescente: { label: 'Adolescente', w: 1.2 }, crianca: { label: 'Criança', w: 0.5 }, bebe: { label: 'Bebê', w: 0 } };
+const MODES = { casa: 'Em casa', fora: 'Fora', livre: 'Livre' };
+const DEFAULT_MENU = { cafe: 'cafe', almoco: 'arroz_feijao', lanche: 'lanches', jantar: 'massa' };
+function tripDays(trip) {
+  if (!trip || !trip.start || !trip.end) return [];
+  const out = []; let t = Date.parse(trip.start + 'T12:00:00Z'); const e = Date.parse(trip.end + 'T12:00:00Z');
+  while (t <= e && out.length < 60) { out.push(new Date(t).toISOString().slice(0, 10)); t += 864e5; }
+  return out;
+}
+const activeMeals = trip => MEAL_ORDER.filter(m => trip && trip.meals && trip.meals[m]);
+const typeOf = m => (m && MEMBER_TYPES[m.type]) ? m.type : 'adulto';
+const weightOf = (state, m) => { const t = typeOf(m), w = state.weights && state.weights[t]; return typeof w === 'number' && w >= 0 ? w : MEMBER_TYPES[t].w; };
+const cellOf = (state, day, meal) => (state.plan && state.plan[day] && state.plan[day][meal]) || { mode: 'casa', menu: DEFAULT_MENU[meal] };
+// Presence window: member override, else family override, else whole trip. Positions are day*4 + meal index.
+function presenceRange(state, m, f, days) {
+  const pos = (d, meal, dflt) => { const i = days.indexOf(d); return i < 0 ? dflt : i * 4 + MEAL_ORDER.indexOf(meal || (dflt === 0 ? 'cafe' : 'jantar')); };
+  const a = m.arrive || f.arrive, am = m.arrive ? m.arriveMeal : f.arriveMeal, d = m.depart || f.depart, dm = m.depart ? m.departMeal : f.departMeal;
+  return [a ? pos(a, am || 'cafe', 0) : 0, d ? pos(d, dm || 'jantar', Infinity) : Infinity];
+}
+// Counts per person: weighted portions (casa / fora), days present, drinker-days; portions per meal cell.
+function portions(state) {
+  const days = tripDays(state.trip), meals = activeMeals(state.trip);
+  const per = {}, cell = {}; let casaTotal = 0, foraTotal = 0;
+  for (const f of state.families) for (const m of f.members) {
+    const w = weightOf(state, m), [a, b] = presenceRange(state, m, f, days), p = per[m.id] = { casa: 0, fora: 0, days: 0, drinkerDays: 0, w };
+    days.forEach((day, i) => {
+      let here = false;
+      for (const meal of meals) {
+        const k = i * 4 + MEAL_ORDER.indexOf(meal); if (k < a || k > b) continue;
+        here = true; const c = cellOf(state, day, meal), key = day + '|' + meal;
+        cell[key] = cell[key] || { portions: 0, people: 0 };
+        if (c.mode === 'livre') continue;
+        cell[key].people++;
+        cell[key].portions += w; // casa: drives recipes/shopping; fora: restaurant estimate
+        if (c.mode === 'casa') { p.casa += w; casaTotal += w; } else { p.fora += w; foraTotal += w; }
+      }
+      if (here) { p.days++; if (m.drinks) p.drinkerDays++; }
+    });
+  }
+  return { days, meals, per, cell, casaTotal, foraTotal };
+}
+const SPLIT_MODES = { porcoes: 'Por porções (justo)', pessoa: 'Por pessoa', igual: 'Tudo igual' };
+// Weight map (personId -> weight) that divides an expense of `category` under the chosen split mode.
+function splitWeights(state, category, people, P) {
+  const mode = state.splitMode || 'pessoa', all = Object.fromEntries(people.map(p => [p.id, 1]));
+  if (mode === 'igual') return { w: all };
+  const drinkers = people.filter(p => p.drinks);
+  if (CATEGORIES[category] && CATEGORIES[category].scope === 'drinkers') {
+    if (!drinkers.length) return { w: all, warn: 'noDrinkers' };
+    if (mode === 'porcoes' && P) { const w = Object.fromEntries(drinkers.map(p => [p.id, P.per[p.id] ? P.per[p.id].drinkerDays : 0])); if (Object.values(w).some(x => x > 0)) return { w }; }
+    return { w: Object.fromEntries(drinkers.map(p => [p.id, 1])) };
+  }
+  if (mode === 'porcoes' && P && (category === 'food' || category === 'groceries')) {
+    const w = Object.fromEntries(people.map(p => [p.id, P.per[p.id] ? P.per[p.id].casa + P.per[p.id].fora : 0]));
+    if (Object.values(w).some(x => x > 0)) return { w };
+  }
+  return { w: all };
+}
+
+// ---- Lista de compras (estimativas editáveis)
+const SECTIONS = ['Açougue', 'Mercearia', 'Hortifruti', 'Padaria', 'Bebidas'];
+const ITEMS = { // unit: g | ml | un ; pack = tamanho da embalagem na mesma unidade ; price = preço estimado da embalagem (R$)
+  carne:     { name: 'Carne bovina (churrasco)', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 59.9 },
+  linguica:  { name: 'Linguiça', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 27.9 },
+  frango:    { name: 'Frango', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 19.9 },
+  peixe:     { name: 'Peixe (filé)', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 49.9 },
+  feijoada:  { name: 'Carnes p/ feijoada', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 39.9 },
+  carvao:    { name: 'Carvão', section: 'Mercearia', unit: 'g', pack: 5000, packLabel: 'saco 5 kg', price: 29.9 },
+  arroz:     { name: 'Arroz', section: 'Mercearia', unit: 'g', pack: 5000, packLabel: 'pacote 5 kg', price: 27.9 },
+  feijao:    { name: 'Feijão', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 8.9 },
+  macarrao:  { name: 'Macarrão', section: 'Mercearia', unit: 'g', pack: 500, packLabel: '500 g', price: 5.9 },
+  molho:     { name: 'Molho de tomate', section: 'Mercearia', unit: 'g', pack: 340, packLabel: '340 g', price: 4.5 },
+  queijo:    { name: 'Queijo ralado', section: 'Mercearia', unit: 'g', pack: 100, packLabel: '100 g', price: 8.9 },
+  cafe:      { name: 'Café em pó', section: 'Mercearia', unit: 'g', pack: 500, packLabel: '500 g', price: 21.9 },
+  leite:     { name: 'Leite', section: 'Mercearia', unit: 'ml', pack: 1000, packLabel: '1 L', price: 5.49 },
+  manteiga:  { name: 'Manteiga', section: 'Mercearia', unit: 'g', pack: 200, packLabel: '200 g', price: 11.9 },
+  frutas:    { name: 'Frutas', section: 'Hortifruti', unit: 'g', pack: 1000, packLabel: '1 kg', price: 8.9 },
+  salada:    { name: 'Salada / legumes', section: 'Hortifruti', unit: 'g', pack: 1000, packLabel: '1 kg', price: 9.9 },
+  couve:     { name: 'Couve', section: 'Hortifruti', unit: 'g', pack: 200, packLabel: 'maço', price: 3.9 },
+  pao:       { name: 'Pão francês', section: 'Padaria', unit: 'un', pack: 10, packLabel: '10 un', price: 8.5 },
+  pao_alho:  { name: 'Pão de alho', section: 'Padaria', unit: 'un', pack: 6, packLabel: 'pacote 6 un', price: 17.9 },
+  frios:     { name: 'Frios (queijo/presunto)', section: 'Padaria', unit: 'g', pack: 200, packLabel: '200 g', price: 11.9 },
+  agua:      { name: 'Água mineral', section: 'Bebidas', unit: 'ml', pack: 5000, packLabel: 'galão 5 L', price: 8.9 },
+  gelo:      { name: 'Gelo', section: 'Bebidas', unit: 'g', pack: 5000, packLabel: 'saco 5 kg', price: 14.9 },
+  cerveja:   { name: 'Cerveja', section: 'Bebidas', unit: 'ml', pack: 4200, packLabel: 'fardo 12 × 350 ml', price: 39.9, alcohol: true },
+};
+const TEMPLATES = { // quantidade por porção (adulto = 1 porção)
+  cafe:         { label: 'Café da manhã completo', items: { pao: 2, cafe: 10, leite: 200, frutas: 150, frios: 50, manteiga: 10 } },
+  churrasco:    { label: 'Churrasco', items: { carne: 400, linguica: 100, pao_alho: 1, carvao: 500, salada: 80 } },
+  massa:        { label: 'Massa', items: { macarrao: 100, molho: 120, queijo: 15, salada: 80 } },
+  peixe:        { label: 'Peixe', items: { peixe: 250, arroz: 80, salada: 80 } },
+  prato_unico:  { label: 'Feijoada / prato único', items: { feijoada: 200, feijao: 80, arroz: 80, couve: 50 } },
+  arroz_feijao: { label: 'Arroz, feijão e frango', items: { arroz: 80, feijao: 60, frango: 200, salada: 80 } },
+  lanches:      { label: 'Lanches', items: { pao: 2, frios: 60, frutas: 100 } },
+};
+const STAPLES = { agua: { per: 'pessoa/dia', qty: 2000 }, gelo: { per: 'pessoa/dia', qty: 300 }, cerveja: { per: 'bebedor/dia', qty: 1500 } };
+const RESTAURANT_DEFAULT = 55; // R$ por porção em refeição fora (estimado)
+const itemDef = (state, k) => ({ ...ITEMS[k], price: (state.prices && typeof state.prices[k] === 'number') ? state.prices[k] : ITEMS[k].price });
+const tplQty = (state, t, k) => { const o = state.planQty && state.planQty[t] && state.planQty[t][k]; return typeof o === 'number' ? o : TEMPLATES[t].items[k]; };
+const stapleQty = (state, k) => { const o = state.planQty && state.planQty._staples && state.planQty._staples[k]; return typeof o === 'number' ? o : STAPLES[k].qty; };
+const restaurantPrice = state => (state.prices && typeof state.prices.restaurante === 'number') ? state.prices.restaurante : RESTAURANT_DEFAULT;
+
+// Items already bought, from the optional "itens" line of food/groceries/alcohol expenses (e.g. "carne 3 kg, carvão 5 kg, pão de alho").
+const ITEM_SYNONYMS = { carne: ['carne', 'picanha', 'alcatra', 'fraldinha', 'maminha', 'contrafile', 'costela'], linguica: ['linguica'], frango: ['frango', 'coxa', 'sobrecoxa', 'peito'], peixe: ['peixe', 'tilapia', 'salmao', 'pescada'],
+  feijoada: ['feijoada', 'paio', 'bacon', 'costelinha'], carvao: ['carvao'], arroz: ['arroz'], feijao: ['feijao'], macarrao: ['macarrao', 'massa', 'espaguete', 'penne'], molho: ['molho'], queijo: ['queijo ralado', 'parmesao'],
+  cafe: ['cafe'], leite: ['leite'], manteiga: ['manteiga'], frutas: ['fruta', 'frutas', 'banana', 'maca', 'mamao', 'melancia', 'abacaxi'], salada: ['salada', 'alface', 'tomate', 'legume', 'legumes', 'cebola'], couve: ['couve'],
+  pao: ['pao frances', 'pao', 'paes'], pao_alho: ['pao de alho'], frios: ['frios', 'presunto', 'mussarela', 'queijo prato'], agua: ['agua'], gelo: ['gelo'], cerveja: ['cerveja', 'latinha', 'breja'] };
+function parseBought(state) {
+  const got = {};
+  for (const e of state.expenses) {
+    if (!e.items) continue;
+    for (const line of String(e.items).split(/[;\n]+|,(?!\d)/)) {
+      const n = normTxt(line).trim(); if (!n) continue;
+      let key = null, best = 0;
+      for (const [k, syns] of Object.entries(ITEM_SYNONYMS)) for (const s of syns) if (hasPhrase(n, s) && s.length > best) { best = s.length; key = k; }
+      if (!key) continue;
+      const it = ITEMS[key], m = n.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|l|litros?|ml|un|unidades?|pct|pacotes?|fardos?|sacos?|cx|caixas?|latas?|maco|macos)?\b/);
+      const g = got[key] = got[key] || { qty: 0, covered: false };
+      if (!m) { g.covered = true; continue; }
+      const v = parseFloat(m[1].replace(',', '.')), u = m[2] || '';
+      let q = null;
+      if (u === 'kg') q = it.unit === 'g' ? v * 1000 : null; else if (u === 'g') q = it.unit === 'g' ? v : null;
+      else if (/^(l|litros?)$/.test(u)) q = it.unit === 'ml' ? v * 1000 : null; else if (u === 'ml') q = it.unit === 'ml' ? v : null;
+      else if (/^lata/.test(u) && key === 'cerveja') q = v * 350;
+      else if (/^un/.test(u) && it.unit === 'un') q = v;
+      else q = v * it.pack; // packs (pacote, fardo, saco, maço or no unit)
+      if (q == null) g.covered = true; else g.qty += q;
+    }
+  }
+  return got;
+}
+function shoppingList(state, opts) {
+  const P = portions(state), need = {}, defs = {}, gosto = {}, dishes = [], add = (k, q) => { need[k] = (need[k] || 0) + q; };
+  const only = opts && opts.days ? new Set(opts.days) : null;
+  for (const day of P.days) for (const meal of P.meals) {
+    if (only && !only.has(day)) continue;
+    const c = cellOf(state, day, meal), cp = P.cell[day + '|' + meal];
+    if (c.mode !== 'casa' || !cp || !cp.portions) continue;
+    for (const id of cellRecipes(c)) {
+      const r = getRecipe(state, id); if (!r) continue;
+      const f = cp.portions / (r.yield || 1); let cost = 0;
+      for (const ing of r.ingredients || []) {
+        const k = ingKey(ing); if (!ITEMS[k]) defs[k] = defs[k] || customDef(state, k, ing);
+        if (ing.qty == null) { gosto[k] = true; continue; }
+        add(k, ing.qty * f); const it = ITEMS[k] ? itemDef(state, k) : defs[k]; cost += ing.qty * f * it.price / it.pack;
+      }
+      dishes.push({ day, meal, recipe: r.id, title: r.title, portions: cp.portions, cost });
+    }
+  }
+  let personDays = 0, drinkerDays = 0;
+  const dayFrac = only ? Math.min(1, only.size / Math.max(1, P.days.length)) : 1;
+  for (const f of state.families) for (const m of f.members) { const p = P.per[m.id]; if (!p) continue; if (typeOf(m) !== 'bebe') personDays += p.days * dayFrac; drinkerDays += p.drinkerDays * dayFrac; }
+  if (personDays) { add('agua', personDays * stapleQty(state, 'agua')); add('gelo', personDays * stapleQty(state, 'gelo')); }
+  if (drinkerDays) add('cerveja', drinkerDays * stapleQty(state, 'cerveja'));
+  const bought = parseBought(state), rows = [];
+  for (const k of [...Object.keys(ITEMS), ...Object.keys(defs)]) {
+    if (!need[k] && !gosto[k]) continue;
+    if (!need[k]) need[k] = 0;
+    const it = ITEMS[k] ? itemDef(state, k) : defs[k], b = bought[k] || { qty: 0, covered: false };
+    const g = !!gosto[k] && need[k] === 0;
+    const packs = g ? 1 : Math.ceil(need[k] / it.pack - 1e-9), toBuy = b.covered ? 0 : (g ? (b.qty ? 0 : it.pack) : Math.max(0, need[k] - b.qty)), packsLeft = g ? (toBuy ? 1 : 0) : Math.ceil(toBuy / it.pack - 1e-9);
+    rows.push({ key: k, name: it.name, section: it.section, unit: it.unit, need: need[k], packs, packLabel: it.packLabel, price: it.price, cost: packs * it.price,
+      bought: b.qty, covered: b.covered, toBuy, packsLeft, costLeft: packsLeft * it.price, alcohol: !!it.alcohol, aGosto: g, custom: !!it.custom });
+  }
+  const sum = (a, f) => a.reduce((s, r) => s + f(r), 0);
+  const groceryTotal = sum(rows, r => r.cost), alcoholTotal = sum(rows.filter(r => r.alcohol), r => r.cost), foodTotal = groceryTotal - alcoholTotal;
+  const foraTotal = P.foraTotal * dayFrac * restaurantPrice(state);
+  // per-family preview: food by casa portions, fora by fora portions, water/ice by person-days, beer by drinker-days
+  const famP = state.families.map(f => { const ps = f.members.map(m => P.per[m.id]).filter(Boolean);
+    return { id: f.id, name: f.name, casa: sum(ps, p => p.casa), fora: sum(ps, p => p.fora), days: sum(f.members.filter(m => typeOf(m) !== 'bebe'), m => P.per[m.id] ? P.per[m.id].days : 0), dd: sum(ps, p => p.drinkerDays) }; });
+  const stapleCost = sum(rows.filter(r => r.key === 'agua' || r.key === 'gelo'), r => r.cost), mealCost = foodTotal - stapleCost;
+  const perFamily = famP.map(f => ({ ...f, cost: (P.casaTotal ? mealCost * f.casa / P.casaTotal : 0) + (personDays ? stapleCost * f.days / personDays : 0)
+    + (drinkerDays ? alcoholTotal * f.dd / drinkerDays : 0) + (P.foraTotal ? foraTotal * f.fora / P.foraTotal : 0) }));
+  return { dishes, P, rows, groceryTotal, alcoholTotal, foodTotal, foraTotal, leftTotal: sum(rows, r => r.costLeft),
+    costPerPortion: P.casaTotal ? mealCost / P.casaTotal : 0, personDays, drinkerDays, perFamily, total: groceryTotal + foraTotal };
+}
+const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
+  : (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L` : `${Math.round(q)} ml`);
+function shoppingText(state, S) {
+  const L = ['*Lista de compras — Racha da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
+  for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
+    L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
+  L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
+  return L.join('\n');
+}
+
+// ===================== Receitas: parser pt-BR, escala, dieta, escala da cozinha =====================
+Object.assign(ITEMS, {
+  carne_moida:  { name: 'Carne moída', section: 'Açougue', unit: 'g', pack: 500, packLabel: '500 g', price: 22.9 },
+  carne_seca:   { name: 'Carne seca', section: 'Açougue', unit: 'g', pack: 500, packLabel: '500 g', price: 34.9 },
+  bacon:        { name: 'Bacon', section: 'Açougue', unit: 'g', pack: 250, packLabel: '250 g', price: 12.9 },
+  cebola:       { name: 'Cebola', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 0.9 },
+  alho:         { name: 'Alho', section: 'Hortifruti', unit: 'un', pack: 10, packLabel: 'cabeça (~10 dentes)', price: 2.5 },
+  tomate:       { name: 'Tomate', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 1.1 },
+  cheiro_verde: { name: 'Cheiro-verde', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'maço', price: 3.5 },
+  limao:        { name: 'Limão', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 0.6 },
+  oleo:         { name: 'Óleo', section: 'Mercearia', unit: 'ml', pack: 900, packLabel: '900 ml', price: 8.9 },
+  azeite:       { name: 'Azeite', section: 'Mercearia', unit: 'ml', pack: 500, packLabel: '500 ml', price: 34.9 },
+  sal:          { name: 'Sal', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 3.9 },
+  sal_grosso:   { name: 'Sal grosso', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 4.9 },
+  acucar:       { name: 'Açúcar', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 4.9 },
+  farinha:      { name: 'Farinha de trigo', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 5.9 },
+  farofa:       { name: 'Farofa pronta', section: 'Mercearia', unit: 'g', pack: 500, packLabel: '500 g', price: 7.9 },
+  ovos:         { name: 'Ovos', section: 'Mercearia', unit: 'un', pack: 12, packLabel: 'dúzia', price: 11.9 },
+  creme_leite:  { name: 'Creme de leite', section: 'Mercearia', unit: 'g', pack: 200, packLabel: 'caixinha 200 g', price: 3.9 },
+  requeijao:    { name: 'Requeijão', section: 'Mercearia', unit: 'g', pack: 200, packLabel: 'pote 200 g', price: 8.9 },
+  suco:         { name: 'Suco', section: 'Bebidas', unit: 'ml', pack: 1000, packLabel: '1 L', price: 7.9 },
+});
+Object.assign(ITEM_SYNONYMS, {
+  carne_moida: ['carne moida', 'patinho moido', 'acem moido'], carne_seca: ['carne seca', 'charque', 'jerked beef'], bacon: ['bacon'],
+  cebola: ['cebola', 'cebolas'], alho: ['alho', 'dentes de alho', 'dente de alho'], tomate: ['tomate', 'tomates'], cheiro_verde: ['cheiro verde', 'cheiro-verde', 'salsinha', 'cebolinha', 'salsa'],
+  limao: ['limao', 'limoes'], oleo: ['oleo'], azeite: ['azeite'], sal: ['sal'], sal_grosso: ['sal grosso'], acucar: ['acucar'], farinha: ['farinha de trigo', 'farinha'],
+  farofa: ['farofa'], ovos: ['ovo', 'ovos'], creme_leite: ['creme de leite'], requeijao: ['requeijao'], suco: ['suco'],
+  molho: ['molho de tomate', 'extrato de tomate', 'polpa de tomate', 'molho'], macarrao: ['macarrao', 'espaguete', 'penne', 'parafuso', 'talharim'],
+  leite: ['leite'], queijo: ['queijo ralado', 'parmesao'], frios: ['frios', 'presunto', 'mussarela', 'muçarela', 'queijo prato', 'queijo minas', 'queijo'],
+});
+ITEM_SYNONYMS.salada = ['salada', 'alface', 'legume', 'legumes', 'pepino', 'cenoura'];
+const DENSITY = { arroz: 0.77, acucar: 0.8, farinha: 0.53, feijao: 0.8, sal: 1.2, sal_grosso: 1.1, queijo: 0.4, manteiga: 0.95, farofa: 0.45, cafe: 0.4, macarrao: 0.45, carne_moida: 0.9 };
+const LIQUIDS = new Set(['leite', 'oleo', 'azeite', 'agua', 'suco', 'cerveja']);
+const LIQUID_WORDS = ['agua', 'caldo', 'vinho', 'vinagre', 'shoyu', 'molho ingles', 'leite de coco', 'suco'];
+const CAN = { molho: 340, creme_leite: 200, milho: 170, ervilha: 170, atum: 170, leite_condensado: 395 };
+const PACK = { macarrao: 500, farofa: 500, frios: 200, bacon: 250, creme_leite: 200 };
+const UNIT_WEIGHT = { batata: 150, cenoura: 120, pimentao: 150, linguica: 100, salada: 150, frutas: 150 };
+const VOL_ML = { xicara: 240, csopa: 15, ccha: 5, ccafe: 2.5, copo: 200 };
+const UNIT_RE = [
+  ['quilos?|kgs?|kilos?', 'kg'], ['gramas?|grs?|g', 'g'], ['mililitros?|ml', 'ml'], ['litros?|l', 'l'],
+  ['colher(?:es)?\\s*(?:\\(\\s*(?:de\\s*)?sopa\\s*\\)|de\\s*sopa|sopa)|c\\.?\\s*sopa|csp|cs', 'csopa'],
+  ['colher(?:es)?\\s*(?:\\(\\s*(?:de\\s*)?cha\\s*\\)|de\\s*cha|cha)|c\\.?\\s*cha|cch|cc', 'ccha'],
+  ['colher(?:es)?\\s*(?:\\(\\s*(?:de\\s*)?cafe\\s*\\)|de\\s*cafe)', 'ccafe'],
+  ['xicaras?(?:\\s*\\(\\s*(?:de\\s*)?(?:cha|cafe)\\s*\\))?|xic\\.?', 'xicara'], ['colher(?:es)?', 'csopa'],
+  ['copos?(?:\\s*\\(\\s*americano\\s*\\))?(?:\\s*americano)?', 'copo'], ['latas?', 'lata'], ['pacotes?|pcts?\\.?|sacos?|saquinhos?', 'pacote'], ['caixas?|caixinhas?|cx', 'caixa'],
+  ['dentes?', 'dente'], ['unidades?|und|un\\.?', 'un'], ['macos?|molhos? de', 'maco'], ['pitadas?', 'pitada'], ['fatias?', 'fatia'], ['duzias?', 'duzia'],
+  ['saches?|envelopes?', 'sache'], ['cubos?|tabletes?', 'cubo'], ['garrafas?', 'garrafa'], ['potes?', 'pote'], ['ramos?', 'ramo'], ['folhas?', 'folha'], ['punhados?', 'punhado'], ['pedacos?', 'pedaco'], ['bandejas?', 'bandeja'],
+];
+const UNIT_LABEL = { kg: 'kg', g: 'g', ml: 'ml', l: 'L', xicara: 'xícara', csopa: 'colher (sopa)', ccha: 'colher (chá)', ccafe: 'colher (café)', copo: 'copo', lata: 'lata', pacote: 'pacote', caixa: 'caixa',
+  dente: 'dente', un: 'un', maco: 'maço', pitada: 'pitada', fatia: 'fatia', duzia: 'dúzia', sache: 'sachê', cubo: 'cubo', garrafa: 'garrafa', pote: 'pote', ramo: 'ramo', folha: 'folha', punhado: 'punhado', pedaco: 'pedaço', bandeja: 'bandeja' };
+const FRAC = { '½': .5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': .25, '¾': .75, '⅛': .125 };
+const WORDNUM = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, doze: 12, meia: .5, meio: .5 };
+function numAt(s) { // s is normalized text; returns {v, len} for a number at the start
+  let m;
+  if ((m = /^(\d+)\s*(?:e\s+)?(\d+)\s*\/\s*(\d+)/.exec(s)) && +m[3]) return { v: +m[1] + m[2] / m[3], len: m[0].length };
+  if ((m = /^(\d+)\s*(?:e\s*)?([½⅓⅔¼¾⅛])/.exec(s))) return { v: +m[1] + FRAC[m[2]], len: m[0].length };
+  if ((m = /^(\d+)\s*\/\s*(\d+)/.exec(s)) && +m[2]) return { v: m[1] / m[2], len: m[0].length };
+  if ((m = /^([½⅓⅔¼¾⅛])/.exec(s))) return { v: FRAC[m[1]], len: m[0].length };
+  if ((m = /^(\d+(?:[.,]\d+)?)/.exec(s))) return { v: parseFloat(m[1].replace(',', '.')), len: m[0].length };
+  if ((m = /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|doze|meia|meio)\b(?:\s+e\s+meia?o?\b)?/.exec(s))) return { v: WORDNUM[m[1]] + (/e\s+mei/.test(m[0]) ? .5 : 0), len: m[0].length };
+  return null;
+}
+function findItem(nameNorm) {
+  let key = null, best = 0;
+  for (const [k, syns] of Object.entries(ITEM_SYNONYMS)) for (const s of syns) { const sn = normTxt(s); if (sn.length > best && hasPhrase(nameNorm, sn)) { best = sn.length; key = k; } }
+  return key;
+}
+const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+function parseIngredient(raw) {
+  const line = String(raw).normalize('NFC').replace(/^\s*(?:[-•*·–—>]+|\[\s*\]|☐)\s*/, '').trim();
+  const n = normTxt(line), out = { raw: String(raw).trim(), qty: null, unit: 'un', name: '', itemKey: null, status: 'ok', aGosto: false, src: '' };
+  if (!line) return null;
+  const gosto = /\b(a gosto|q\.?\s?b\.?|quanto baste|opcional)\b/.exec(n);
+  let i = 0, num = numAt(n);
+  if (num) {
+    let v = num.v; i = num.len;
+    const rg = /^\s*(?:a|-|–|ou)\s*/.exec(n.slice(i));
+    if (rg) { const n2 = numAt(n.slice(i + rg[0].length)); if (n2) { v = (v + n2.v) / 2; i += rg[0].length + n2.len; out.range = true; } }
+    out.srcQty = v;
+    let unit = null;
+    const rest = n.slice(i);
+    for (const [re, u] of UNIT_RE) { const mm = new RegExp('^\\s*(?:' + re + ')(?![a-z])\\.?').exec(rest); if (mm) { unit = u; i += mm[0].length; break; } }
+    const de = /^\s*(?:\(\s*(?:de\s*)?(?:cha|sopa)\s*\))?\s*(?:de|do|da|dos|das)\s+/.exec(n.slice(i)); if (de) i += de[0].length;
+    out.srcUnit = unit || 'un';
+    out.name = line.slice(i).replace(/\s+/g, ' ').trim();
+    const nn = normTxt(out.name).replace(/\b(a gosto|q\.?\s?b\.?|quanto baste|opcional)\b/g, '').trim();
+    out.name = out.name.replace(/\s*\b(a gosto|q\.?\s?b\.?|quanto baste)\b\s*/gi, ' ').replace(/[,;.]+$/, '').trim();
+    const key = findItem(nn); out.itemKey = key;
+    const liquid = (key && LIQUIDS.has(key)) || LIQUID_WORDS.some(w => hasPhrase(nn, w));
+    const u = out.srcUnit;
+    if (u === 'kg') { out.qty = v * 1000; out.unit = 'g'; }
+    else if (u === 'g') { out.qty = v; out.unit = 'g'; }
+    else if (u === 'l') { out.qty = v * 1000; out.unit = 'ml'; }
+    else if (u === 'ml') { out.qty = v; out.unit = 'ml'; }
+    else if (VOL_ML[u]) { const ml = v * VOL_ML[u]; if (liquid) { out.qty = ml; out.unit = 'ml'; } else { const d = key && DENSITY[key]; out.qty = ml * (d || 0.6); out.unit = 'g'; if (!d) out.status = 'medio'; } }
+    else if (u === 'pitada') { out.qty = v * 0.5; out.unit = 'g'; }
+    else if (u === 'lata') { out.qty = v * (CAN[key] || 350); out.unit = 'g'; if (!CAN[key]) out.status = 'medio'; }
+    else if (u === 'pacote') { const it = key && ITEMS[key]; out.qty = v * (PACK[key] || (it ? it.pack : 500)); out.unit = it ? it.unit : 'g'; if (!PACK[key] && !it) out.status = 'medio'; }
+    else if (u === 'caixa') { out.qty = v * (CAN[key] || 200); out.unit = 'g'; if (!CAN[key]) out.status = 'medio'; }
+    else if (u === 'duzia') { out.qty = v * 12; out.unit = 'un'; }
+    else { out.qty = v; out.unit = 'un'; }
+    // align with catalog unit when possible
+    if (key && ITEMS[key].unit !== out.unit) {
+      const it = ITEMS[key];
+      if (it.unit === 'g' && out.unit === 'un' && UNIT_WEIGHT[key]) { out.qty *= UNIT_WEIGHT[key]; out.unit = 'g'; }
+      else if (it.unit === 'un' && out.unit === 'g' && key === 'alho') { out.qty = Math.max(1, out.qty / 5); out.unit = 'un'; }
+      else if (it.unit === 'ml' && out.unit === 'g') out.unit = 'ml';
+      else if (it.unit === 'g' && out.unit === 'ml') out.unit = 'g';
+      else { out.itemKey = null; out.status = 'medio'; }
+    }
+    if (!out.name) out.status = 'erro';
+  } else if (gosto) {
+    out.aGosto = true; out.qty = null;
+    out.name = line.replace(/\s*\b(a gosto|q\.?\s?b\.?|quanto baste|opcional)\b\.?\s*/gi, ' ').replace(/[,;.]+$/, '').trim();
+    out.itemKey = findItem(normTxt(out.name));
+    if (out.itemKey) out.unit = ITEMS[out.itemKey].unit;
+  } else { out.name = line; out.status = 'erro'; out.itemKey = findItem(n); }
+  if (gosto && num) out.aGosto = false;
+  return out;
+}
+const isHeader = (n, words) => new RegExp('^(?:[*_#\\s]*)(' + words + ')\\b[^a-z]*$').test(n) || new RegExp('^(?:[*_#\\s]*)(' + words + ')\\s*:').test(n);
+function parseRecipe(text) {
+  const lines = String(text || '').normalize('NFC').split(/\r?\n/);
+  const r = { title: '', yield: 4, yieldFound: false, ingredients: [], steps: [] };
+  const all = normTxt(lines.join(' \n '));
+  const ym = /(?:rende|rendimento|serve|servem|para|da para)\s*:?\s*(?:ate\s*)?(?:aproximadamente\s*|cerca de\s*)?(\d+)(?:\s*(?:a|-|–|ou)\s*(\d+))?\s*(?:porcoes|porcao|pessoas|pratos|unidades|fatias|pedacos)?/.exec(all)
+    || /(\d+)(?:\s*(?:a|-|–)\s*(\d+))?\s*(?:porcoes|porcao|pessoas)\b/.exec(all);
+  if (ym) { r.yield = ym[2] ? Math.round((+ym[1] + +ym[2]) / 2) : +ym[1]; r.yieldFound = true; }
+  let mode = 'auto';
+  for (const rawLine of lines) {
+    const line = rawLine.trim(); if (!line) continue;
+    const n = normTxt(line);
+    if (isHeader(n, 'ingredientes?|voce vai precisar|lista de ingredientes')) { mode = 'ing'; continue; }
+    if (isHeader(n, 'modo de preparo|modo de fazer|preparo|instrucoes|como fazer|passo a passo|montagem')) { mode = 'steps'; continue; }
+    const yieldLine = /^(?:[*_\s]*)(rende|rendimento|serve|servem|tempo de preparo|tempo|porcoes|dificuldade)\b/.test(n);
+    if (!r.title && mode === 'auto' && !yieldLine && !numAt(n.replace(/^[-•*·\s]+/, ''))) { r.title = line.replace(/^[*_#\s]+|[*_#\s:]+$/g, '').replace(/\s*\(.*?(rende|serve).*?\)\s*/i, ''); continue; }
+    if (yieldLine) continue;
+    if (mode === 'ing') { if (/:\s*$/.test(line) && !numAt(n)) continue; const ing = parseIngredient(line); if (ing) r.ingredients.push(ing); continue; }
+    if (mode === 'steps') { r.steps.push(line.replace(/^\s*(?:\d+\s*[.)-]|[-•*·]|passo\s*\d+\s*[:.-]?)\s*/i, '')); continue; }
+    const stripped = n.replace(/^[-•*·\s]+/, '');
+    if (numAt(stripped) || /\b(a gosto|q\.?\s?b\.?)\b/.test(n) || /^[-•*·]/.test(line)) { const ing = parseIngredient(line); if (ing && ing.status !== 'erro') { r.ingredients.push(ing); continue; } }
+    r.steps.push(line.replace(/^\s*(?:\d+\s*[.)-])\s*/, ''));
+  }
+  if (!r.title) r.title = 'Receita sem título';
+  return r;
+}
+// Unified recipe access: user recipes (state.recipes) or built-in per-portion templates.
+function getRecipe(state, id) {
+  const r = (state.recipes || []).find(x => x.id === id); if (r) return r;
+  const t = TEMPLATES[id]; if (!t) return null;
+  return { id, title: t.label, yield: 1, builtin: true, ingredients: Object.entries(t.items).map(([k, q]) => ({ qty: tplQty(state, id, k), unit: ITEMS[k].unit, name: ITEMS[k].name, itemKey: k, status: 'ok' })), steps: [] };
+}
+const cellRecipes = c => (c && c.mode === 'casa') ? (Array.isArray(c.recipes) ? c.recipes : (c.menu ? [c.menu] : [])) : [];
+const customKey = ing => 'x:' + normTxt(ing.name).replace(/[^a-z0-9 ]/g, '').trim().replace(/\s+/g, '_') + '|' + ing.unit;
+const SECTION_WORDS = { 'Açougue': ['carne', 'frango', 'peixe', 'porco', 'costela', 'file', 'linguica', 'camarao', 'lombo', 'pernil', 'bife'], 'Hortifruti': ['batata', 'cenoura', 'pimentao', 'abobrinha', 'brocolis', 'fruta', 'banana', 'maca', 'manjericao', 'coentro', 'alface', 'repolho', 'milho verde', 'abacate', 'laranja'],
+  'Padaria': ['pao', 'bolo', 'torrada'], 'Bebidas': ['refrigerante', 'refri', 'agua tonica', 'vinho', 'espumante'] };
+const SECTION_PRICE = { 'Açougue': 45, 'Hortifruti': 9, 'Mercearia': 12, 'Padaria': 12, 'Bebidas': 10 }; // R$ por kg / L / un estimado
+function customDef(state, key, ing) {
+  const nn = normTxt(ing.name), section = Object.keys(SECTION_WORDS).find(s => SECTION_WORDS[s].some(w => hasPhrase(nn, w))) || 'Mercearia';
+  const unit = ing.unit, pack = unit === 'un' ? 1 : 1000, base = SECTION_PRICE[section] * (unit === 'un' ? 0.25 : 1);
+  return { name: cap(ing.name), section, unit, pack, packLabel: unit === 'un' ? 'un' : unit === 'g' ? '1 kg' : '1 L', price: (state.prices && typeof state.prices[key] === 'number') ? state.prices[key] : Math.round(base * 100) / 100, custom: true };
+}
+const ingKey = ing => ing.itemKey && ITEMS[ing.itemKey] && ITEMS[ing.itemKey].unit === ing.unit ? ing.itemKey : customKey(ing);
+// Cost of one portion of a recipe (unrounded unit prices).
+function recipeCost(state, r) {
+  let total = 0;
+  for (const ing of r.ingredients || []) { if (ing.qty == null) continue; const k = ingKey(ing), it = ITEMS[k] ? itemDef(state, k) : customDef(state, k, ing); total += ing.qty * it.price / it.pack; }
+  return { total, perPortion: r.yield ? total / r.yield : 0 };
+}
+// Diet: tags derived from ingredients, checked against member notes.
+const DIET = { veg: { label: 'vegetariano', words: ['carne', 'frango', 'peixe', 'linguica', 'bacon', 'feijoada', 'costela', 'presunto', 'camarao', 'atum', 'charque', 'calabresa', 'porco', 'picanha', 'file'] },
+  lactose: { label: 'sem lactose', words: ['leite', 'queijo', 'manteiga', 'creme de leite', 'requeijao', 'iogurte', 'mussarela', 'parmesao', 'nata'] },
+  gluten: { label: 'sem glúten', words: ['farinha de trigo', 'trigo', 'macarrao', 'espaguete', 'pao', 'massa', 'biscoito', 'cerveja', 'penne', 'farinha de rosca'] } };
+const ingText = (state, ing) => normTxt(ing.name + ' ' + (ing.itemKey && ITEMS[ing.itemKey] ? ITEMS[ing.itemKey].name : ''));
+function dietConflicts(state, recipe, member) {
+  const d = member.diet || {}, out = [];
+  if (!recipe) return out;
+  for (const k of Object.keys(DIET)) if (d[k]) { const hit = (recipe.ingredients || []).find(ing => DIET[k].words.some(w => hasPhrase(ingText(state, ing), w))); if (hit) out.push(`${DIET[k].label}: ${hit.name}`); }
+  if (d.alergia) for (const w of normTxt(d.alergia).split(/[,;/]+|\s+e\s+/).map(x => x.trim()).filter(x => x.length >= 3)) {
+    const hit = (recipe.ingredients || []).find(ing => hasPhrase(ingText(state, ing), w) || ingText(state, ing).includes(w)); if (hit) out.push(`alergia (${w}): ${hit.name}`); }
+  return out;
+}
+function mealConflicts(state, day, meal) {
+  const days = tripDays(state.trip), i = days.indexOf(day), k = i * 4 + MEAL_ORDER.indexOf(meal), out = [];
+  const c = cellOf(state, day, meal); if (c.mode !== 'casa') return out;
+  for (const f of state.families) for (const m of f.members) {
+    const [a, b] = presenceRange(state, m, f, days); if (k < a || k > b) continue;
+    for (const id of cellRecipes(c)) { const r = getRecipe(state, id); for (const x of dietConflicts(state, r, m)) out.push({ member: m.name, recipe: r.title, issue: x }); }
+  }
+  return out;
+}
+// Escala da cozinha: each "em casa" meal gets a cooking and a cleaning family, balanced by each family's share of portions.
+function kitchenRota(state) {
+  const P = portions(state), fams = state.families.map(f => ({ id: f.id, share: f.members.reduce((s, m) => s + (P.per[m.id] ? P.per[m.id].casa : 0), 0), cook: 0, clean: 0 }));
+  const tot = fams.reduce((s, f) => s + f.share, 0) || 1, rota = {};
+  P.days.forEach((day, i) => P.meals.forEach(meal => {
+    const c = cellOf(state, day, meal), cp = P.cell[day + '|' + meal]; if (c.mode !== 'casa' || !cp || !cp.portions) return;
+    const k = i * 4 + MEAL_ORDER.indexOf(meal);
+    const here = fams.filter(f => { const fam = state.families.find(x => x.id === f.id); return fam.members.some(m => { const [a, b] = presenceRange(state, m, fam, P.days); return k >= a && k <= b && weightOf(state, m) > 0; }); });
+    if (!here.length) return;
+    const rel = (f, k) => f[k] / (f.share / tot || 1e-9); // load relative to the family's share of portions
+    const cook = here.slice().sort((x, y) => rel(x, 'cook') - rel(y, 'cook') || rel(x, 'clean') - rel(y, 'clean'))[0]; cook.cook += cp.portions;
+    const rest = here.filter(f => f !== cook), clean = rest.length ? rest.sort((x, y) => rel(x, 'clean') - rel(y, 'clean'))[0] : cook; clean.clean += cp.portions;
+    rota[day + '|' + meal] = { cook: cook.id, clean: clean.id };
+  }));
+  return { rota, load: fams };
+}
+
 const brl = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function summaryText(state, split, xfers, k) {
@@ -474,10 +1249,20 @@ function summaryText(state, split, xfers, k) {
   L.push('*Racha da Viagem — resumo*');
   L.push(`Total: *${brl(split.total)}*`);
   L.push(`${split.persons.length} pessoas · média ${brl(split.avg)} por pessoa`);
+  if (state.splitMode && SPLIT_MODES[state.splitMode]) L.push(`Divisão: ${SPLIT_MODES[state.splitMode]}`);
   L.push('');
   L.push('*Por categoria*');
   for (const [k2, c] of Object.entries(CATEGORIES)) if (split.catTotals[k2] > 0)
     L.push(`- ${c.label}: ${brl(split.catTotals[k2])} (${Math.round(split.catTotals[k2] / split.total * 100)}%)`);
+  L.push('');
+  const pi = pendingInfo(state);
+  L.push('*Por comprovante*');
+  for (const [k3, p3] of Object.entries(PROOF)) if (pi.byProof[k3].count) L.push(`- ${p3.label}: ${pi.byProof[k3].count} · ${brl(pi.byProof[k3].total)}`);
+  if (pi.unconfirmed.length) {
+    L.push(`⚠ ${pi.unconfirmed.length} sem nota aguardando confirmação (${brl(pi.unconfirmedTotal)}) — ${pi.include ? 'incluídos' : 'fora'} do acerto:`);
+    for (const e of pi.unconfirmed) L.push(`  • ${e.description || CATEGORIES[e.category].label}: ${brl(e.amount)}`);
+  }
+  if (pi.estimated.length) { L.push(`~ ${pi.estimated.length} valor(es) estimado(s), a confirmar:`); for (const e of pi.estimated) L.push(`  • ${e.description || CATEGORIES[e.category].label}: ~${brl(e.amount)}`); }
   L.push('');
   L.push('*Saldo por família*');
   for (const f of split.families) {
@@ -496,69 +1281,174 @@ function summaryText(state, split, xfers, k) {
 }
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = { CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl };
+  module.exports = { parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
 }
 </script>
-
 <script>
-(function () {
+(() => {
   if (typeof document === 'undefined') return;
-  const BASE_KEY = 'racha-viagem-v1', THEME_KEY = BASE_KEY + '-theme';
-  let KEY = BASE_KEY;
+  const KEY = 'racha-viagem-v3', THEME_KEY = 'racha-viagem-v1-theme', UI_KEY = 'racha-viagem-v3-ui';
   const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
   const uid = () => Math.random().toString(36).slice(2, 9);
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  // Single-style stroke icon set (24px grid, 1.75 stroke)
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const P = {
-    plus: 'M12 5v14M5 12h14', arrow: 'M5 12h14M13 6l6 6-6 6', x: 'M18 6 6 18M6 6l12 12', chev: 'm9 6 6 6-6 6',
+    plus: 'M12 5v14M5 12h14', arrow: 'M5 12h14M13 6l6 6-6 6', x: 'M18 6 6 18M6 6l12 12', chev: 'm9 6 6 6-6 6', left: 'm15 6-6 6 6 6',
     trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3',
     copy: 'M10 9h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
-    share: 'M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 7l-4-4-4 4M12 3v13',
-    chat: 'M7.9 20A9 9 0 1 0 4 16.1L2.5 21.5z',
+    share: 'M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 7l-4-4-4 4M12 3v13', chat: 'M7.9 20A9 9 0 1 0 4 16.1L2.5 21.5z',
     sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
-    moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
-    shuffle: 'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
+    moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', shuffle: 'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
     alert: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
     check: 'M20 6 9 17l-5-5', reset: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5', receipt: 'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6',
     food: 'M4 3v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V3M7 3v18M20 15V3a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2zm0 0v6',
     cart: 'M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h8.1a2 2 0 0 0 2-1.5L21 7H6M9 20.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM18 20.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z',
     fuel: 'M3 21h11M4 10h9M13 21V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16M13 13h2a2 2 0 0 1 2 2v2a1.5 1.5 0 0 0 3 0V9l-3-3',
     wine: 'M8 21h8M12 15v6M7 3h10l-.5 6a4.5 4.5 0 0 1-9 0z',
+    home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z', calendar: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
+    wallet: 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM3 7l2-3h11l2 3M16 13.5h.01',
+    scale: 'M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z',
+    mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+    camera: 'M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
+    chef: 'M6 14v6h12v-6M6 14a4 4 0 0 1-.5-7.9A5 5 0 0 1 12 3a5 5 0 0 1 6.5 3.1A4 4 0 0 1 18 14zM9 17h6',
+    edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', sparkle: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6',
+    users: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
+    clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2', book: 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z',
+    image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01',
   };
   const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]}"/></svg>`;
   const hydrate = root => root.querySelectorAll('[data-i]').forEach(el => { el.outerHTML = icon(el.dataset.i); });
 
+  // ---------- seed (exemplo) ----------
+  const SEED_RECIPES = {
+    r_churrasco: `Churrasco completo
+Rende 10 porções
+
+Ingredientes
+- 3 kg de picanha ou alcatra
+- 1 kg de linguiça toscana
+- 2 pacotes de pão de alho
+- 1 saco de carvão
+- 300 g de sal grosso
+- 2 pacotes de farofa pronta
+- 6 tomates
+- 2 cebolas
+- 1 maço de cheiro-verde
+- Limão a gosto
+
+Modo de preparo
+1. Acenda o carvão uns 40 minutos antes.
+2. Tempere a carne só com sal grosso, na hora de ir para a grelha.
+3. Faça o vinagrete: tomate, cebola e cheiro-verde picados, com limão e um fio de óleo.
+4. Asse a linguiça primeiro, depois a carne, e sirva com farofa e pão de alho.`,
+    r_carreteiro: `Arroz carreteiro
+Serve 6 pessoas
+
+Ingredientes:
+- 500 g de carne seca dessalgada
+- 2 xícaras (chá) de arroz
+- 1 cebola picada
+- 3 dentes de alho
+- 2 tomates
+- 3 colheres (sopa) de óleo
+- 1 litro de água fervente
+- Cheiro-verde a gosto
+
+Modo de preparo:
+1. Desfie a carne seca já dessalgada.
+2. Refogue o alho e a cebola no óleo, junte a carne e doure.
+3. Acrescente o arroz e o tomate, refogue rapidamente.
+4. Cubra com a água fervente e cozinhe em fogo baixo até secar.
+5. Finalize com cheiro-verde.`,
+    r_bolonhesa: `Macarrão à bolonhesa
+Rende 8 porções
+
+Ingredientes
+- 1 kg de macarrão espaguete
+- 800 g de carne moída
+- 2 latas de molho de tomate
+- 1 cebola grande picada
+- 4 dentes de alho
+- 2 colheres de sopa de azeite
+- 100 g de queijo ralado
+- Sal a gosto
+
+Modo de preparo
+1. Cozinhe o macarrão em bastante água com sal.
+2. Doure a carne moída no azeite com alho e cebola.
+3. Junte o molho de tomate e deixe apurar 15 minutos.
+4. Misture ao macarrão e sirva com queijo ralado.`,
+    r_cafe: `Café da manhã completo
+Serve 10 pessoas
+
+- 20 pães franceses
+- 500 g de frios (queijo e presunto)
+- 2 litros de leite
+- 100 g de café em pó
+- 1,5 kg de frutas da estação
+- 100 g de manteiga
+- 1 dúzia de ovos
+
+Passe o café, aqueça o leite e faça ovos mexidos na hora.
+Corte as frutas e monte a mesa com pães e frios.`,
+  };
+  const recipeFromText = (id, text) => ({ id, ...parseRecipe(text), text });
   function example() {
-    const F = (name, members) => ({ id: uid(), name, members: members.map(([n, d]) => ({ id: uid(), name: n, drinks: d })) });
+    const F = (name, members, extra) => ({ id: uid(), name, ...extra, members: members.map(([n, d, type, diet]) => ({ id: uid(), name: n, drinks: d, type: type || 'adulto', ...(diet ? { diet } : {}) })) });
     const fams = [
-      F('Família Bonifácio', [['Carlos', true], ['Ana', true], ['Pedro', false], ['Lia', false]]),
+      F('Família Bonifácio', [['Carlos', true], ['Ana', true], ['Pedro', false, 'adolescente'], ['Lia', false, 'crianca']]),
       F('Família Botelho', [['Marcos', true], ['Júlia', false], ['Rafa', true]]),
-      F('Família Vasconcelos', [['Beto', true], ['Clara', true], ['Davi', false], ['Nina', false]]),
-      F('Família Sena', [['Tiago', true], ['Bia', false], ['Leo', false]]),
+      F('Família Vasconcelos', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'amendoim' }], ['Nina', false, 'bebe']]),
+      F('Família Sena', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'camarão' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
     ];
     const p = (fi, mi) => fams[fi].members[mi].id;
-    const E = (amount, category, description, payerId) => ({ id: uid(), amount, category, description, payerId, ts: Date.now() });
+    let t = Date.now();
+    const E = (amount, category, description, payerId, extra) => ({ id: uid(), amount, category, description, payerId, proof: 'nf', ts: t--, ...extra });
+    const recipes = Object.entries(SEED_RECIPES).map(([id, txt]) => recipeFromText(id, txt));
+    const days = tripDays({ start: '2026-12-26', end: '2027-01-03' });
+    const C = r => ({ mode: 'casa', recipes: r ? [r] : [] }), O = { mode: 'fora' }, L = { mode: 'livre' }, cf = C('r_cafe');
+    const rows = [[L, O, C('r_bolonhesa')], [cf, C('r_carreteiro'), O], [cf, C('r_churrasco'), L], [cf, O, C('r_carreteiro')], [cf, C('r_bolonhesa'), O],
+      [cf, L, C('r_churrasco')], [L, C('r_churrasco'), C('r_bolonhesa')], [cf, C('r_carreteiro'), O], [cf, O, L]];
+    const plan = {}; days.forEach((d, i) => { plan[d] = { cafe: rows[i][0], almoco: rows[i][1], jantar: rows[i][2] }; });
     return {
-      families: fams, kittyPerFamily: 900,
+      families: fams, kittyPerFamily: 1200, splitMode: 'porcoes', includeUnconfirmed: true, settled: {},
+      trip: { start: '2026-12-26', end: '2027-01-03', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
+      weights: {}, prices: {}, planQty: {}, plan, recipes,
       expenses: [
-        E(180, 'alcohol', 'Caipirinhas na praia', p(0, 1)),
-        E(390, 'gas', 'Gasolina volta', p(2, 1)),
+        E(64, 'food', 'Milho e água de coco', p(1, 2), { proof: 'none', note: 'Ambulante da praia' }),
+        E(120, 'groceries', 'Feira: frutas e verduras', p(3, 1), { proof: 'none', note: 'Feira da praça', items: 'frutas 4 kg, tomate, cebola' }),
+        E(38, 'gas', 'Pedágio', p(1, 0), { proof: 'none', confirmedBy: fams[3].id }),
+        E(390, 'gas', 'Gasolina da volta', p(2, 1), { estimated: true }),
+        E(180, 'alcohol', 'Caipirinhas na praia', p(0, 1), { proof: 'comp' }),
         E(610, 'food', 'Almoço no restaurante', p(1, 1)),
-        E(360, 'alcohol', 'Cerveja e vinho', p(3, 0)),
-        E(540, 'food', 'Churrasco de sábado', p(2, 0)),
-        E(420, 'gas', 'Gasolina ida', p(1, 0)),
-        E(680, 'groceries', 'Mercado da chegada', p(0, 0)),
+        E(360, 'alcohol', 'Cerveja e vinho', p(3, 0), { items: 'cerveja 3 fardos' }),
+        E(540, 'food', 'Restaurante na estrada', p(2, 0), { proof: 'comp' }),
+        E(420, 'gas', 'Gasolina ida', p(1, 0), { proof: 'comp' }),
+        E(680, 'groceries', 'Mercado da chegada', p(0, 0), { items: 'picanha 2 kg, linguiça 1 kg, carvão, arroz 5 kg, macarrão 4 pacotes, café 2 pacotes, leite 6 l, cerveja 2 fardos' }),
       ],
     };
+  }
+  function normalize(s) {
+    s.settled = s.settled || {}; s.expenses = s.expenses || []; s.recipes = s.recipes || []; s.plan = s.plan || {};
+    s.weights = s.weights || {}; s.prices = s.prices || {}; s.planQty = s.planQty || {};
+    s.trip = s.trip || { start: '', end: '', meals: { cafe: true, almoco: true, lanche: false, jantar: true } };
+    s.splitMode = s.splitMode || 'porcoes'; if (s.includeUnconfirmed === undefined) s.includeUnconfirmed = true;
+    return s;
   }
   let state;
   try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
   if (!state || !Array.isArray(state.families)) state = example();
-  if (!state.settled) state.settled = {};
-  const cache = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
-  // Every local mutation calls save(): persist locally, then notify the sync layer (if any).
-  const save = () => { cache(); if (window.App && App.onLocalChange) App.onLocalChange(); };
+  normalize(state);
+  let ui = { view: 'inicio', sub: 'cardapio', day: null, shopRange: 'all', expFilter: 'all' };
+  try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY)) || {}); } catch (e) {}
+  const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} };
+  let storageWarned = false;
+  const save = () => {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return; }
+    const used = JSON.stringify(state).length;
+    if (used > 3.5e6 && !storageWarned) { storageWarned = true; toast('Armazenamento quase cheio (fotos)', 'alert'); }
+  };
 
   // theme
   const sysDark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
@@ -566,144 +1456,181 @@ if (typeof module !== 'undefined' && typeof window === 'undefined') {
   const applyTheme = () => { document.documentElement.dataset.theme = theme; $('#themeBtn').innerHTML = icon(theme === 'dark' ? 'sun' : 'moon'); };
   applyTheme();
   $('#themeBtn').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem(THEME_KEY, theme); applyTheme(); };
-
-  // sticky bar: border + compact total appear once the summary scrolls away
   const onScroll = () => $('#top').classList.toggle('scrolled', window.scrollY > 120);
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
+  // helpers
   const famIdx = id => state.families.findIndex(f => f.id === id);
+  const famById = id => state.families.find(f => f.id === id);
   const famColor = id => FAMILY_COLORS[famIdx(id) % FAMILY_COLORS.length] || '#888';
-  const shortFam = name => name.replace(/^Fam[ií]lia\s+/i, '').trim() || name;
+  const shortFam = name => String(name).replace(/^Fam[ií]lia\s+/i, '').trim() || name;
   const famInitial = name => (shortFam(name)[0] || '?').toUpperCase();
   const famAv = f => `<span class="av" style="--c:${famColor(f.id)}" aria-hidden="true">${esc(famInitial(f.name))}</span>`;
-  const toast = (msg, ic = 'check') => { const t = $('#toast'); t.innerHTML = icon(ic) + esc(msg); t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800); };
+  const toast = (msg, ic = 'check') => { const t = $('#toast'); t.innerHTML = icon(ic) + esc(msg); t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2000); };
   const parseMoney = s => { s = String(s).trim().replace(/[^\d,.-]/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return parseFloat(s); };
   const fmtInput = n => n ? n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
-
-  const anim = new Map();
+  const fmtN = (n, d = 1) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: d });
   const brlWrap = n => brl(n).replace(/\u00a0/g, ' ');
+  const WD = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const dObj = d => new Date(d + 'T12:00:00');
+  const dLabel = d => { const x = dObj(d); return `${WD[x.getDay()]} ${String(x.getDate()).padStart(2, '0')}/${String(x.getMonth() + 1).padStart(2, '0')}`; };
+  const todayISO = () => { const x = new Date(); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+  const personInfo = id => { for (const f of state.families) { const m = f.members.find(m => m.id === id); if (m) return { m, f }; } return null; };
+  const anim = new Map();
   function animateTo(el, value) {
-    const from = anim.has(el) ? anim.get(el) : value;
-    anim.set(el, value);
+    const from = anim.has(el) ? anim.get(el) : value; anim.set(el, value);
     if (Math.abs(from - value) < 0.005) { el.textContent = brlWrap(value); return; }
     const t0 = performance.now(), dur = 450;
     const step = t => { if (anim.get(el) !== value) return; const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = brlWrap(from + (value - from) * e); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
-
-  // ---- form
-  let selCat = 'food', editingId = null;
-  function renderSeg() {
-    $('#catSeg').innerHTML = Object.entries(CATEGORIES).map(([k, c]) =>
-      `<button type="button" data-cat="${k}" aria-pressed="${k === selCat}">${icon(c.icon)}<span>${esc(c.label)}</span></button>`).join('');
-  }
-  $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); };
-  const SUGG = [['Mercado', 'groceries'], ['Gasolina', 'gas'], ['Pedágio', 'gas'], ['Churrasco', 'food'], ['Restaurante', 'food'], ['Padaria', 'food'], ['Gelo', 'groceries'], ['Cerveja', 'alcohol'], ['Vinho', 'alcohol']];
-  $('#sugg').innerHTML = SUGG.map(([l], i) => `<button type="button" data-s="${i}">${l}</button>`).join('');
-  $('#sugg').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; const [d, c] = SUGG[b.dataset.s]; selCat = c; renderSeg(); $('#desc').value = d; if (!$('#amt').value) $('#amt').focus(); };
-
-  function renderPayers() {
-    const sel = $('#payer'), cur = sel.value;
-    sel.innerHTML = state.families.filter(f => f.members.length).map(f => `<optgroup label="${esc(f.name)}">${f.members.map(m => `<option value="${m.id}">${esc(m.name || 'Sem nome')} · ${esc(shortFam(f.name))}</option>`).join('')}</optgroup>`).join('');
-    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
-  }
-  const setErr = (inp, err, on) => { inp.setAttribute('aria-invalid', on ? 'true' : 'false'); err.classList.toggle('on', on); };
-  $('#amt').addEventListener('input', () => setErr($('#amt'), $('#amtErr'), false));
-  $('#amt').addEventListener('blur', () => { const v = parseMoney($('#amt').value); if (v > 0) $('#amt').value = fmtInput(round2(v)); });
-
-  $('#expForm').onsubmit = e => {
-    e.preventDefault();
-    const amount = round2(parseMoney($('#amt').value));
-    const okAmt = amount > 0 && amount < 1e7, okPayer = !!$('#payer').value;
-    setErr($('#amt'), $('#amtErr'), !okAmt); setErr($('#payer'), $('#payerErr'), !okPayer);
-    if (!okAmt) { $('#amt').focus(); return; }
-    if (!okPayer) return;
-    const data = { amount, category: selCat, description: $('#desc').value.trim(), payerId: $('#payer').value };
-    const ed = editingId && state.expenses.find(x => x.id === editingId);
-    if (ed) Object.assign(ed, data); else state.expenses.unshift({ id: uid(), ...data, ts: Date.now() });
-    stopEdit(); save(); render();
-    toast(ed ? 'Despesa atualizada' : 'Despesa adicionada');
+  const niceNum = v => { // 2.5 -> "2 ½"
+    if (v >= 10) return fmtN(Math.round(v), 0);
+    const q = Math.round(v * 4) / 4, w = Math.floor(q), f = q - w, fr = { .25: '¼', .5: '½', .75: '¾' }[f] || '';
+    if (!q) return fmtN(v, 2);
+    return (w ? w + (fr ? ' ' : '') : '') + fr;
   };
-  function stopEdit() {
-    editingId = null; $('#amt').value = ''; $('#desc').value = '';
-    $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
-    $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>';
-    setErr($('#amt'), $('#amtErr'), false);
-    document.querySelectorAll('.exp.sel').forEach(x => x.classList.remove('sel'));
-  }
-  function startEdit(id) {
-    const e = state.expenses.find(x => x.id === id); if (!e) return;
-    editingId = id; selCat = e.category; renderSeg();
-    $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId;
-    $('#addCard').classList.add('editing'); $('#formTitle').textContent = 'Editar despesa';
-    $('#submitBtn').innerHTML = icon('check') + '<span>Salvar alterações</span>';
-    document.querySelectorAll('.exp').forEach(x => x.classList.toggle('sel', x.dataset.id === id));
-    $('#addCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  $('#cancelEdit').onclick = stopEdit;
-
-  const personInfo = id => { for (const f of state.families) { const m = f.members.find(m => m.id === id); if (m) return { m, f }; } return null; };
-  function balCell(net, big) {
-    const z = Math.abs(net) < 0.005, cls = z ? 'zero' : net > 0 ? 'pos' : 'neg';
-    const v = z ? brl(0) : (net > 0 ? '+' : '−') + brl(Math.abs(net));
-    return `<div class="bal ${cls}"><span class="v">${v}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`;
+  // Amount label for a scaled ingredient: keeps the recipe's own unit when friendly (xícara, lata…), plus base qty.
+  function ingAmount(ing, factor) {
+    if (ing.qty == null) return 'a gosto';
+    const base = fmtQty(ing.qty * factor, ing.unit);
+    const su = ing.srcUnit, sq = ing.srcQty;
+    if (su && sq && !['g', 'kg', 'ml', 'l', 'un'].includes(su)) { const v = sq * factor; return `${niceNum(v)} ${UNIT_LABEL[su] || su}${v > 1.25 && !/\)$/.test(UNIT_LABEL[su] || '') ? 's' : ''} <span class="t2">(≈ ${base})</span>`; }
+    if (ing.unit === 'un') { const v = ing.qty * factor; return `${niceNum(v)} un`; }
+    return base;
   }
 
-  // ---- renders
-  function renderSummary(split) {
-    animateTo($('#heroTotal'), split.total); animateTo($('#topTotal'), split.total); animateTo($('#heroAvg'), split.avg);
-    $('#heroCount').textContent = state.expenses.length;
-    $('#heroPeople').textContent = split.persons.length;
-    $('#heroPeopleLbl').textContent = 'pessoas';
+  // ---------- navigation ----------
+  function setView(v, opts = {}) {
+    ui.view = v; saveUi(); document.body.dataset.view = v;
+    $$('#tabbar [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+    $$('.view').forEach(s => { s.hidden = s.id !== 'v-' + v; });
+    if (!opts.keepScroll) window.scrollTo({ top: 0 });
+    onScroll();
   }
-  const isSettled = t => { const s = (state.settled || {})[t.from + '_' + t.to]; return !!s && Math.abs(s.amount - t.amount) < 0.01; };
-  $('#xfers').addEventListener('click', e => {
-    const b = e.target.closest('[data-settle]'); if (!b) return;
-    state.settled = state.settled || {};
-    const k = b.dataset.settle, amt = +b.dataset.amt, cur = state.settled[k];
-    if (cur && Math.abs(cur.amount - amt) < 0.01) delete state.settled[k];
-    else state.settled[k] = { amount: amt, at: Date.now() };
-    save(); render(); toast(state.settled[k] ? 'Transferência marcada como paga' : 'Marcação removida');
-  });
-  function renderXfers(xfers) {
-    $('#xferMeta').textContent = xfers.length ? `${xfers.length} ${xfers.length > 1 ? 'transferências' : 'transferência'}` : '';
-    if (!xfers.length) {
-      $('#xfers').innerHTML = state.expenses.length
-        ? `<div class="empty ok"><span class="ic">${icon('check')}</span><b>Tudo acertado</b><p>Os saldos das famílias estão zerados.</p></div>`
-        : `<div class="empty"><span class="ic">${icon('arrow')}</span><b>Nada para acertar ainda</b><p>Adicione despesas para ver quem paga quem.</p></div>`;
-      return;
+  function setSub(s) {
+    ui.sub = s; saveUi();
+    $$('#subnav [data-sub]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.sub === s)));
+    $$('#v-planejar [data-panel]').forEach(p => { p.hidden = p.dataset.panel !== s; });
+  }
+  $('#tabbar').onclick = e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); };
+  $('#subnav').onclick = e => { const b = e.target.closest('[data-sub]'); if (b) setSub(b.dataset.sub); };
+
+  // ---------- shared computed context (one per render) ----------
+  let C = null;
+  function compute() {
+    const split = computeSplit(state), xfers = settle(split.families), P2 = portions(state), rota = kitchenRota(state).rota;
+    return { split, xfers, P: P2, rota, pend: pendingInfo(state), days: P2.days, meals: P2.meals };
+  }
+  const presentAt = (day, meal) => {
+    const days = C.days, k = days.indexOf(day) * 4 + MEAL_ORDER.indexOf(meal), out = [];
+    for (const f of state.families) for (const m of f.members) { const [a, b] = presenceRange(state, m, f, days); if (k >= a && k <= b) out.push({ m, f }); }
+    return out;
+  };
+
+  // ---------- INÍCIO ----------
+  function renderSummary() {
+    const s = C.split;
+    animateTo($('#heroTotal'), s.total); animateTo($('#topTotal'), s.total); animateTo($('#heroAvg'), s.avg);
+    $('#heroCount').textContent = state.expenses.length; $('#heroPeople').textContent = s.persons.length;
+  }
+  function renderPending() {
+    const p = C.pend, el = $('#pendCard');
+    if (!p.unconfirmed.length && !p.estimated.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<section class="card" aria-labelledby="pTitle"><div class="ch"><h2 id="pTitle">Pendente</h2><span class="meta">${p.unconfirmed.length + p.estimated.length} itens</span></div>
+      <div class="callout">${icon('alert')}<div>
+        ${p.unconfirmed.length ? `<div><b>${p.unconfirmed.length} sem nota</b> aguardando confirmação · <span class="num">${brl(p.unconfirmedTotal)}</span></div>` : ''}
+        ${p.estimated.length ? `<div><b>${p.estimated.length} ${p.estimated.length > 1 ? 'valores estimados' : 'valor estimado'}</b> · <span class="num">~${brl(p.estimatedTotal)}</span> (${p.estimated.map(e => esc(e.description || 'sem descrição')).join(', ')})</div>` : ''}
+      </div></div>
+      ${p.unconfirmed.length ? `<div class="switchrow" style="margin-top:12px"><span class="t2" style="color:var(--text-2)">Incluir não confirmados no acerto</span><label class="switch"><input type="checkbox" role="switch" id="inclChk" ${p.include ? 'checked' : ''} aria-label="Incluir não confirmados no acerto"></label></div>` : ''}
+      <button class="btn text" data-go-pend style="margin-top:4px">${icon('arrow')}<span>Ver e confirmar</span></button></section>`;
+  }
+  $('#pendCard').addEventListener('change', e => { if (e.target.id === 'inclChk') { state.includeUnconfirmed = e.target.checked; save(); render(); toast(e.target.checked ? 'Não confirmados entram no acerto' : 'Não confirmados ficaram fora do acerto'); } });
+  $('#pendCard').addEventListener('click', e => { if (e.target.closest('[data-go-pend]')) { ui.expFilter = 'pend'; setView('gastos'); render(); } });
+
+  // quick entry
+  let qParsed = null;
+  function renderQuick() {
+    const txt = $('#quick').value, el = $('#qPreview');
+    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago por Sena”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; return; }
+    const q = qParsed = parseQuick(txt, state.families), pi = q.payerId && personInfo(q.payerId), cat = CATEGORIES[q.category || 'food'];
+    const b = (ok, html) => `<span class="badge ${ok ? 'acc' : 'warn'}">${html}</span>`;
+    el.innerHTML = [
+      b(!!q.amount, q.amount ? `<b class="num">${q.estimated ? '~' : ''}${brl(q.amount)}</b>` : 'valor?'),
+      b(true, `${icon(cat.icon)}${esc(cat.label)}${q.category ? '' : ' (padrão)'}`),
+      b(!!pi, pi ? `${esc(pi.m.name)} · ${esc(shortFam(pi.f.name))}${q.payerVia === 'family' ? ' (família)' : ''}` : 'quem pagou?'),
+      q.proof ? b(true, esc(PROOF[q.proof].label)) : '',
+      q.estimated ? b(true, 'Estimado') : '',
+      q.description ? b(true, `“${esc(q.description)}”`) : '',
+    ].join('');
+    $('#qSave').disabled = !(q.amount && q.payerId);
+  }
+  $('#quick').addEventListener('input', renderQuick);
+  $('#quick').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('#qSave').disabled) { e.preventDefault(); $('#qSave').click(); } });
+  $('#qSave').onclick = () => {
+    const q = qParsed; if (!q || !q.amount || !q.payerId) return;
+    const cat = q.category || 'food';
+    state.expenses.unshift({ id: uid(), amount: q.amount, category: cat, description: q.description || CATEGORIES[cat].label, payerId: q.payerId, proof: q.proof || 'nf', estimated: q.estimated, ts: Date.now() });
+    $('#quick').value = ''; renderQuick(); save(); render(); toast(`Lançado: ${brl(q.amount)}`);
+  };
+  $('#qMore').onclick = () => {
+    const q = $('#quick').value.trim() ? parseQuick($('#quick').value, state.families) : null;
+    setView('gastos'); stopEdit();
+    if (q) { if (q.amount) $('#amt').value = fmtInput(q.amount); if (q.category) selCat = q.category; if (q.payerId) $('#payer').value = q.payerId; $('#desc').value = q.description || ''; selProof = q.proof || 'nf'; $('#estChk').checked = !!q.estimated; renderSeg(); renderProof(); }
+    $('#quick').value = ''; renderQuick(); $('#amt').focus();
+  };
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    const mic = $('#micBtn'); mic.hidden = false; let rec = null;
+    mic.onclick = () => {
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = 'pt-BR'; rec.interimResults = true; rec.maxAlternatives = 1;
+      mic.classList.add('on'); mic.setAttribute('aria-label', 'Parar ditado');
+      rec.onresult = ev => { $('#quick').value = [...ev.results].map(r => r[0].transcript).join(' '); renderQuick(); };
+      rec.onend = rec.onerror = () => { rec = null; mic.classList.remove('on'); mic.setAttribute('aria-label', 'Ditar por voz'); };
+      rec.start();
+    };
+  }
+
+  // next meals
+  function upcomingSlots(n) {
+    const days = C.days, meals = C.meals; if (!days.length) return [];
+    const t = todayISO(), h = new Date().getHours(), out = [];
+    const start = t < days[0] || t > days[days.length - 1] ? 0 : days.indexOf(t);
+    const curMeal = t === days[start] && t >= days[0] && t <= days[days.length - 1] ? (h < 10 ? 0 : h < 15 ? 1 : h < 18 ? 2 : 3) : 0;
+    for (let i = start; i < days.length && out.length < n; i++) for (const m of meals) {
+      if (i === start && MEAL_ORDER.indexOf(m) < curMeal) continue;
+      const c = cellOf(state, days[i], m); if (c.mode === 'livre') continue;
+      out.push({ day: days[i], meal: m, c }); if (out.length >= n) break;
     }
-    const F = id => state.families.find(f => f.id === id);
-    $('#xfers').innerHTML = xfers.map(t => `<div class="li xf ${isSettled(t) ? 'done' : ''}">
-      <span class="avs">${famAv(F(t.from))}${famAv(F(t.to))}</span>
-      <div style="min-width:0"><div class="route"><span>${esc(shortFam(t.fromName))}</span>${icon('arrow')}<span>${esc(shortFam(t.toName))}</span></div></div>
-      <div class="amt num">${brl(t.amount)}</div>
-      <button class="chk" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${isSettled(t)}" aria-label="${isSettled(t) ? 'Desmarcar pagamento' : 'Marcar como pago'}" title="${isSettled(t) ? 'Pago' : 'Marcar como pago'}">${icon('check')}</button></div>`).join('')
-      + `<div class="sub" style="margin-top:16px">Menor número possível de transferências entre as famílias.</div>`;
+    return out;
   }
-  const openFams = new Set();
-  function renderBalances(split) {
-    const w = [];
-    if (split.warnings.includes('noDrinkers')) w.push('Há despesas de álcool, mas ninguém está marcado como "bebe". Até alguém ser marcado, elas são divididas entre todos.');
-    if (split.warnings.includes('orphanPayer')) w.push('Uma despesa tem um pagador que não existe mais.');
-    $('#warnBox').innerHTML = w.map(x => `<div class="alert" role="status">${icon('alert')}<span>${esc(x)}</span></div>`).join('');
-    if (!split.persons.length) { $('#fams').innerHTML = `<div class="empty"><span class="ic">${icon('plus')}</span><b>Nenhuma pessoa</b><p>Adicione membros às famílias abaixo.</p></div>`; return; }
-    $('#fams').innerHTML = split.families.map(f => {
-      const ps = split.persons.filter(p => p.familyId === f.id);
-      return `<details class="fam" data-id="${f.id}" ${openFams.has(f.id) ? 'open' : ''}>
-        <summary>${famAv(f)}<div style="min-width:0"><div class="t1">${esc(f.name)}</div><div class="t2 w num">Pagou ${brl(f.paid)} · parte ${brl(f.owed)}</div></div>${balCell(f.net)}<svg class="i chev" viewBox="0 0 24 24"><path d="${P.chev}"/></svg></summary>
-        <div class="people">${ps.length ? ps.map(p => `<div class="li"><div style="min-width:0"><div class="t1">${esc(p.name || 'Sem nome')}${p.drinks ? '<span class="dot" title="bebe álcool"></span>' : ''}</div><div class="t2 w num">Pagou ${brl(p.paid)} · parte ${brl(p.owed)}</div></div>${balCell(p.net)}</div>`).join('') : '<div class="t2" style="padding:8px 0">Sem membros</div>'}</div>
-      </details>`;
+  function mealSummary(day, meal, c) {
+    const cp = C.P.cell[day + '|' + meal] || { portions: 0, people: 0 }, r = C.rota[day + '|' + meal];
+    const recs = cellRecipes(c).map(id => getRecipe(state, id)).filter(Boolean), warns = mealConflicts(state, day, meal);
+    return { cp, r, recs, warns };
+  }
+  function renderNext() {
+    const slots = upcomingSlots(3), el = $('#nextMeals');
+    $('#nMeta').textContent = C.days.length ? `${C.days.length} dias` : '';
+    if (!slots.length) { el.innerHTML = `<div class="empty"><span class="ic">${icon('calendar')}</span><b>Sem refeições planejadas</b><p>Monte o cardápio em Planejar.</p></div>`; return; }
+    el.innerHTML = slots.map(({ day, meal, c }) => {
+      const { cp, r, recs, warns } = mealSummary(day, meal, c);
+      const title = c.mode === 'fora' ? 'Refeição fora' : recs.length ? recs.map(x => esc(x.title)).join(' + ') : 'Em casa · sem receita';
+      return `<div class="li" style="grid-template-columns:minmax(0,1fr) auto">
+        <div style="min-width:0"><div class="t2">${dLabel(day)} · ${MEALS[meal]}</div><div class="t1">${title}</div>
+          <div class="t2">${cp.people} pessoas · ${fmtN(cp.portions)} porções${r ? ` · cozinha ${esc(shortFam(famById(r.cook).name))} · limpa ${esc(shortFam(famById(r.clean).name))}` : ''}</div>
+          ${warns.length ? `<div class="warnline">${icon('alert')}<span>${warns.length} ${warns.length > 1 ? 'alertas' : 'alerta'} de dieta: ${esc(warns.slice(0, 2).map(w => w.member + ' — ' + w.issue).join('; '))}${warns.length > 2 ? '…' : ''}</span></div>` : ''}</div>
+        ${recs.length ? `<button class="btn secondary sm" data-cook="${day}|${meal}">${icon('chef')}<span>Cozinha</span></button>` : ''}</div>`;
     }).join('');
-    $('#fams').querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => d.open ? openFams.add(d.dataset.id) : openFams.delete(d.dataset.id)));
   }
-  function renderChart(split) {
-    const R = 15.9155; let off = 0, segs = '';
+  $('#nextMeals').addEventListener('click', e => { const b = e.target.closest('[data-cook]'); if (b) { const [d, m] = b.dataset.cook.split('|'); openCook({ day: d, meal: m }); } });
+
+  function renderChart() {
+    const split = C.split, R = 15.9155; let off = 0, segs = '';
     for (const [k, c] of Object.entries(CATEGORIES)) {
-      const pct = split.total ? split.catTotals[k] / split.total * 100 : 0;
-      const gap = pct > 0 && pct < 100 ? 0.8 : 0, len = Math.max(0, pct - gap);
-      segs += `<circle class="seg" cx="18" cy="18" r="${R}" style="stroke:${c.color}" stroke-dasharray="${len} ${100 - len}" stroke-dashoffset="${-off}"/>`;
-      off += pct;
+      const pct = split.total ? split.catTotals[k] / split.total * 100 : 0, gap = pct > 0 && pct < 100 ? 0.8 : 0, len = Math.max(0, pct - gap);
+      segs += `<circle class="seg" cx="18" cy="18" r="${R}" style="stroke:${c.color}" stroke-dasharray="${len} ${100 - len}" stroke-dashoffset="${-off}"/>`; off += pct;
     }
     $('#donut').innerHTML = `<circle cx="18" cy="18" r="${R}" stroke="var(--surface-2)"/>` + segs;
     $('#donutTotal').textContent = brl(split.total).replace(/,00$/, '');
@@ -712,162 +1639,563 @@ if (typeof module !== 'undefined' && typeof window === 'undefined') {
       return `<div class="li"><span class="sw" style="--c:${c.color}"></span><span class="t1" style="font-size:14px">${esc(c.label)}${c.scope === 'drinkers' ? ' <span class="sub">só quem bebe</span>' : ''}</span><span class="amt num" style="font-size:14px">${brl(v)}</span><span class="pct">${split.total ? pct.toFixed(0) + '%' : '—'}</span></div>`;
     }).join('');
   }
-  function renderKitty(split) {
-    const k = kitty(state, split), kin = $('#kitty');
+
+  // ---------- PLANEJAR: cardápio ----------
+  const setCell = (day, meal, c) => { state.plan[day] = state.plan[day] || {}; state.plan[day][meal] = c; };
+  const curCell = (day, meal) => { const c = cellOf(state, day, meal); return { mode: c.mode, recipes: cellRecipes({ ...c, mode: 'casa' }).slice() }; };
+  function renderMatrix() {
+    const days = C.days, meals = C.meals, el = $('#matrix');
+    if (!days.includes(ui.day)) ui.day = days.includes(todayISO()) ? todayISO() : days[0] || null;
+    $('#gMeta').textContent = days.length ? `${dLabel(days[0])} – ${dLabel(days[days.length - 1])}` : '';
+    if (!days.length || !meals.length) { el.style.gridTemplateColumns = '1fr'; el.innerHTML = `<div class="empty"><span class="ic">${icon('calendar')}</span><b>Defina as datas e refeições</b><p>No cartão “Viagem”.</p></div>`; return; }
+    el.style.gridTemplateColumns = `44px repeat(${days.length}, minmax(26px, 1fr))`;
+    let h = '<div></div>' + days.map(d => { const x = dObj(d); return `<button class="dh ${d === ui.day ? 'sel' : ''}" data-day="${d}" aria-label="${dLabel(d)}" aria-pressed="${d === ui.day}">${WD[x.getDay()].slice(0, 3)}<b class="num">${x.getDate()}</b></button>`; }).join('');
+    for (const m of meals) {
+      h += `<div class="ml">${MEALS[m]}</div>`;
+      for (const d of days) {
+        const c = cellOf(state, d, m), r = C.rota[d + '|' + m], warn = c.mode === 'casa' && mealConflicts(state, d, m).length;
+        const txt = c.mode === 'casa' ? (r ? famInitial(famById(r.cook).name) : '') : c.mode === 'livre' ? '–' : '';
+        const recs = cellRecipes(c).map(id => (getRecipe(state, id) || {}).title).filter(Boolean).join(', ');
+        h += `<button class="c ${c.mode} ${d === ui.day ? 'sel' : ''}" data-day="${d}" data-meal="${m}" aria-label="${dLabel(d)}, ${MEALS[m]}: ${MODES[c.mode]}${recs ? ' — ' + esc(recs) : ''}${r ? ', cozinha ' + esc(shortFam(famById(r.cook).name)) : ''}" title="${MODES[c.mode]}${recs ? ': ' + esc(recs) : ''}">${txt}${warn ? '<i></i>' : ''}</button>`;
+      }
+    }
+    el.innerHTML = h;
+  }
+  $('#matrix').addEventListener('click', e => {
+    const b = e.target.closest('[data-day]'); if (!b) return;
+    ui.day = b.dataset.day; saveUi(); renderMatrix(); renderDay();
+    if (b.dataset.meal && innerWidth < 920) $('#dayCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  function renderDay() {
+    const d = ui.day, el = $('#dayMeals');
+    if (!d) { $('#dTitle').textContent = 'Dia'; $('#dMeta').textContent = ''; el.innerHTML = ''; return; }
+    $('#dTitle').textContent = dLabel(d) + (d === todayISO() ? ' · hoje' : '');
+    const pres = new Set(); C.meals.forEach(m => presentAt(d, m).forEach(x => pres.add(x.m.id)));
+    $('#dMeta').textContent = `${pres.size} pessoas no dia`;
+    el.innerHTML = C.meals.map(m => {
+      const c = cellOf(state, d, m), { cp, r, recs, warns } = mealSummary(d, m, c), here = presentAt(d, m).length;
+      let body = '';
+      if (c.mode === 'casa') {
+        const avail = state.recipes.filter(x => !cellRecipes(c).includes(x.id));
+        const cost = recs.reduce((s, x) => s + recipeCost(state, x).perPortion * cp.portions, 0);
+        body = `<div class="rchips">${recs.map(x => `<span class="rchip">${esc(x.title)}<button data-rmrec="${x.id}" aria-label="Remover ${esc(x.title)}">${icon('x')}</button></span>`).join('')}
+          ${avail.length ? `<select class="inp sm" data-addrec aria-label="Adicionar receita ao ${MEALS[m]}"><option value="">+ Receita</option>${avail.map(x => `<option value="${x.id}">${esc(x.title)}</option>`).join('')}</select>` : ''}</div>
+          <div class="mmeta"><span>${cp.people} pessoas · <b class="num">${fmtN(cp.portions)}</b> porções${cost ? ` · ~${brl(cost)} (${brl(cp.portions ? cost / cp.portions : 0)}/porção)` : ''}</span>
+          ${r ? `<span>${icon('chef').replace('class="i"', 'class="i" style="width:14px;height:14px;vertical-align:-2px"')} Cozinha <b>${esc(shortFam(famById(r.cook).name))}</b> · limpa <b>${esc(shortFam(famById(r.clean).name))}</b></span>` : ''}</div>
+          ${warns.map(w => `<div class="warnline">${icon('alert')}<span>${esc(w.member)} (${esc(w.issue)}) — ${esc(w.recipe)}</span></div>`).join('')}
+          ${recs.length ? `<button class="btn text sm" data-cookm style="margin-top:8px;padding:0 8px">${icon('chef')}<span>Modo cozinha</span></button>` : ''}`;
+      } else if (c.mode === 'fora') body = `<div class="mmeta"><span>${cp.people} pessoas · ${fmtN(cp.portions)} porções · restaurante ~${brl(cp.portions * restaurantPrice(state))}</span></div>`;
+      else body = `<div class="mmeta"><span>${here} presentes · cada família por conta própria (fora do rateio de comida)</span></div>`;
+      return `<div class="meal" data-meal="${m}"><div class="mh"><b>${MEALS[m]}</b><button class="modebtn ${c.mode}" data-cycle aria-label="${MEALS[m]}: ${MODES[c.mode]}. Toque para trocar"><i></i>${MODES[c.mode]}</button></div>${body}</div>`;
+    }).join('');
+  }
+  const CYCLE = { casa: 'fora', fora: 'livre', livre: 'casa' };
+  $('#dayMeals').addEventListener('click', e => {
+    const row = e.target.closest('[data-meal]'); if (!row) return; const m = row.dataset.meal, d = ui.day, c = curCell(d, m);
+    if (e.target.closest('[data-cycle]')) { c.mode = CYCLE[c.mode]; setCell(d, m, c); save(); render(); return; }
+    const rm = e.target.closest('[data-rmrec]'); if (rm) { c.recipes = c.recipes.filter(x => x !== rm.dataset.rmrec); setCell(d, m, c); save(); render(); return; }
+    if (e.target.closest('[data-cookm]')) openCook({ day: d, meal: m });
+  });
+  $('#dayMeals').addEventListener('change', e => {
+    if (!e.target.matches('[data-addrec]') || !e.target.value) return;
+    const m = e.target.closest('[data-meal]').dataset.meal, c = curCell(ui.day, m); c.recipes.push(e.target.value); setCell(ui.day, m, c); save(); render();
+  });
+  $('#applyAll').onclick = () => {
+    if (!ui.day || !confirm(`Copiar o cardápio de ${dLabel(ui.day)} para todos os dias?`)) return;
+    const src = {}; C.meals.forEach(m => { src[m] = curCell(ui.day, m); });
+    C.days.forEach(d => C.meals.forEach(m => setCell(d, m, JSON.parse(JSON.stringify(src[m])))));
+    save(); render(); toast('Cardápio aplicado a todos os dias');
+  };
+  function renderTrip() {
+    if (document.activeElement !== $('#tStart')) $('#tStart').value = state.trip.start || '';
+    if (document.activeElement !== $('#tEnd')) $('#tEnd').value = state.trip.end || '';
+    $('#tMeta').textContent = C.days.length ? `${C.days.length} dias` : '';
+    $('#mealToggles').innerHTML = MEAL_ORDER.map(m => `<button type="button" data-mt="${m}" aria-pressed="${!!state.trip.meals[m]}">${MEALS[m]}</button>`).join('');
+  }
+  const onDate = () => {
+    const s = $('#tStart').value, e = $('#tEnd').value; if (!s || !e) return;
+    if (e < s) { toast('O fim precisa ser depois do início', 'alert'); return; }
+    if (tripDays({ start: s, end: e }).length >= 60) { toast('Máximo de 60 dias', 'alert'); return; }
+    state.trip.start = s; state.trip.end = e; save(); render();
+  };
+  $('#tStart').addEventListener('change', onDate); $('#tEnd').addEventListener('change', onDate);
+  $('#mealToggles').onclick = e => { const b = e.target.closest('[data-mt]'); if (!b) return; state.trip.meals[b.dataset.mt] = !state.trip.meals[b.dataset.mt]; save(); render(); };
+
+  // ---------- PLANEJAR: receitas ----------
+  const recipeTags = r => Object.entries(DIET).filter(([k, d]) => (r.ingredients || []).some(ing => d.words.some(w => hasPhrase(ingText(state, ing), w)))).map(([k]) => ({ veg: 'carne/peixe', lactose: 'lactose', gluten: 'glúten' })[k]);
+  const recipeUses = id => { let n = 0; for (const d of C.days) for (const m of C.meals) if (cellRecipes(cellOf(state, d, m)).includes(id)) n++; return n; };
+  function renderRecipes() {
+    $('#rlMeta').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'receita' : 'receitas'}`;
+    if (!state.recipes.length) { $('#recList').innerHTML = `<div class="empty"><span class="ic">${icon('book')}</span><b>Nenhuma receita</b><p>Cole uma receita do WhatsApp ou de um site.</p></div>`; return; }
+    $('#recList').innerHTML = state.recipes.map(r => {
+      const c = recipeCost(state, r), uses = recipeUses(r.id), rev = (r.ingredients || []).filter(i => i.status === 'erro').length;
+      return `<div class="li rec" style="grid-template-columns:auto minmax(0,1fr) auto" data-rid="${r.id}">
+        <span class="av" style="--c:var(--accent)">${icon('book')}</span>
+        <div style="min-width:0"><div class="t1">${esc(r.title)}</div>
+          <div class="t2 num">Rende ${r.yield} · ${(r.ingredients || []).length} ingredientes · ~${brl(c.perPortion)}/porção · ${uses ? `${uses} ${uses > 1 ? 'refeições' : 'refeição'}` : 'fora do cardápio'}</div>
+          <div class="badges">${recipeTags(r).map(t => `<span class="badge">contém ${t}</span>`).join('')}${rev ? `<span class="badge warn">${rev} para revisar</span>` : ''}</div></div>
+        <div style="display:flex;gap:4px"><button class="del" data-editrec aria-label="Editar ${esc(r.title)}">${icon('edit')}</button><button class="del" data-cookrec aria-label="Modo cozinha: ${esc(r.title)}">${icon('chef')}</button></div></div>`;
+    }).join('');
+  }
+  let draft = null;
+  $('#recList').addEventListener('click', e => {
+    const row = e.target.closest('[data-rid]'); if (!row) return; const r = state.recipes.find(x => x.id === row.dataset.rid);
+    if (e.target.closest('[data-cookrec]')) { openCook({ recipeId: r.id }); return; }
+    draft = JSON.parse(JSON.stringify({ ...r, stepsText: (r.steps || []).join('\n'), yieldFound: true })); $('#recPaste').value = r.text || '';
+    renderDraft(); if (innerWidth < 920) $('#recEditor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('#newRec').onclick = () => { draft = null; $('#recPaste').value = ''; renderDraft(); $('#recEditor').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#recPaste').focus({ preventScroll: true }); };
+  $('#recParse').onclick = () => {
+    const txt = $('#recPaste').value; if (!txt.trim()) { toast('Cole o texto da receita primeiro', 'alert'); return; }
+    const r = parseRecipe(txt); draft = { id: draft && draft.id, ...r, text: txt, stepsText: r.steps.join('\n') }; renderDraft();
+    const bad = r.ingredients.filter(i => i.status === 'erro').length;
+    toast(`${r.ingredients.length} ingredientes${bad ? ` · ${bad} para revisar` : ''}`, bad ? 'alert' : 'check');
+  };
+  function ingSrc(i) {
+    if (i.status === 'erro') return `“${esc(i.raw || i.name)}” — não entendi a quantidade; preencha ou deixe vazio para “a gosto”`;
+    const it = i.itemKey && ITEMS[i.itemKey];
+    const what = it ? `${esc(it.name)} · ${esc(it.section)}` : 'item novo · preço estimado';
+    return `${i.raw ? `“${esc(i.raw)}” → ` : ''}${i.qty == null ? 'a gosto' : fmtQty(i.qty, i.unit)} · ${what}${i.status === 'medio' ? ' · medida aproximada' : ''}`;
+  }
+  function renderDraft() {
+    $('#reTitle').textContent = draft && draft.id && state.recipes.some(r => r.id === draft.id) ? 'Editar receita' : 'Colar receita';
+    const el = $('#recDraft');
+    if (!draft) { el.innerHTML = ''; $('#reMeta').textContent = ''; return; }
+    const bad = draft.ingredients.filter(i => i.status === 'erro').length;
+    $('#reMeta').textContent = `${draft.ingredients.length} ingredientes${bad ? ` · ${bad} para revisar` : ''}`;
+    el.innerHTML = `<div class="ingwrap" style="margin-top:24px;display:grid;gap:16px">
+      <div class="row2" style="grid-template-columns:minmax(0,1fr) 96px">
+        <div class="field"><label for="dTitleIn">Título</label><input class="inp sm" id="dTitleIn" value="${esc(draft.title)}"></div>
+        <div class="field"><label for="dYield">Rende</label><input class="inp sm num" id="dYield" type="number" min="1" max="200" value="${draft.yield}"></div>
+      </div>
+      ${draft.yieldFound ? '' : `<div class="callout">${icon('alert')}<span>Rendimento não encontrado no texto — usei 4 porções. Ajuste se precisar.</span></div>`}
+      <div><span class="flabel">Ingredientes <span class="sub">(base: g, ml ou unidade)</span></span>
+      <div id="ingRows" style="margin-top:8px">${draft.ingredients.map((i, n) => `<div class="ingrow ${i.status}" data-n="${n}">
+        <input class="inp sm nm" data-f="name" value="${esc(i.name)}" aria-label="Ingrediente" placeholder="Ingrediente">
+        <input class="inp sm num" data-f="qty" inputmode="decimal" value="${i.qty == null ? '' : fmtN(i.qty, 1)}" placeholder="a gosto" aria-label="Quantidade">
+        <select class="inp sm" data-f="unit" aria-label="Unidade">${['g', 'ml', 'un'].map(u => `<option ${u === i.unit ? 'selected' : ''}>${u}</option>`).join('')}</select>
+        <button class="del" data-rmi aria-label="Remover ingrediente">${icon('x')}</button>
+        <div class="src">${ingSrc(i)}</div></div>`).join('')}</div>
+      <button class="btn text sm" id="addIng">${icon('plus')}<span>Ingrediente</span></button></div>
+      <div class="field"><label for="dSteps">Modo de preparo <span class="sub">(um passo por linha)</span></label><textarea class="inp" id="dSteps" style="min-height:120px;font:15px/1.5 var(--font);background:var(--surface)">${esc(draft.stepsText || '')}</textarea></div>
+      <div class="actwrap" style="margin-top:0"><div class="actions" style="grid-template-columns:minmax(0,1fr) auto auto">
+        <button class="btn primary" id="saveRec">${icon('check')}<span>Salvar receita</span></button>
+        <button class="btn secondary" id="cancelRec">Cancelar</button>
+        ${draft.id && state.recipes.some(r => r.id === draft.id) ? `<button class="btn secondary" id="delRec" aria-label="Excluir receita">${icon('trash')}</button>` : ''}
+      </div></div></div>`;
+  }
+  $('#recDraft').addEventListener('input', e => {
+    if (!draft) return;
+    if (e.target.id === 'dTitleIn') draft.title = e.target.value;
+    if (e.target.id === 'dSteps') draft.stepsText = e.target.value;
+    if (e.target.id === 'dYield') draft.yield = Math.max(1, parseInt(e.target.value) || 1);
+  });
+  $('#recDraft').addEventListener('change', e => {
+    const row = e.target.closest('[data-n]'); if (!row || !draft) return;
+    const i = draft.ingredients[+row.dataset.n], f = e.target.dataset.f;
+    if (f === 'name') { i.name = e.target.value.trim(); i.itemKey = findItem(normTxt(i.name)); }
+    if (f === 'qty') { const v = parseMoney(e.target.value); i.qty = v > 0 ? v : null; i.aGosto = !(v > 0); i.srcUnit = null; i.srcQty = null; }
+    if (f === 'unit') { i.unit = e.target.value; i.srcUnit = null; i.srcQty = null; }
+    if (i.itemKey && ITEMS[i.itemKey] && ITEMS[i.itemKey].unit !== i.unit && f !== 'unit' && f !== 'qty') i.unit = ITEMS[i.itemKey].unit;
+    i.status = i.name ? 'ok' : 'erro'; i.raw = '';
+    renderDraft();
+  });
+  $('#recDraft').addEventListener('click', e => {
+    if (!draft) return;
+    const rmi = e.target.closest('[data-rmi]'); if (rmi) { draft.ingredients.splice(+rmi.closest('[data-n]').dataset.n, 1); renderDraft(); return; }
+    if (e.target.closest('#addIng')) { draft.ingredients.push({ raw: '', qty: null, unit: 'g', name: '', itemKey: null, status: 'erro' }); renderDraft(); const ns = $$('#ingRows .nm'); ns[ns.length - 1].focus(); return; }
+    if (e.target.closest('#cancelRec')) { draft = null; renderDraft(); return; }
+    if (e.target.closest('#delRec')) {
+      const uses = recipeUses(draft.id); if (!confirm(`Excluir “${draft.title}”?${uses ? ` Ela sai de ${uses} refeições do cardápio.` : ''}`)) return;
+      state.recipes = state.recipes.filter(r => r.id !== draft.id);
+      for (const d in state.plan) for (const m in state.plan[d]) { const c = state.plan[d][m]; if (Array.isArray(c.recipes)) c.recipes = c.recipes.filter(x => x !== draft.id); }
+      draft = null; save(); renderDraft(); render(); toast('Receita excluída'); return;
+    }
+    if (e.target.closest('#saveRec')) {
+      const ings = draft.ingredients.filter(i => i.name);
+      if (!draft.title.trim() || !ings.length) { toast('Informe título e pelo menos um ingrediente', 'alert'); return; }
+      const r = { id: draft.id || 'r_' + uid(), title: draft.title.trim(), yield: draft.yield || 4, ingredients: ings, steps: String(draft.stepsText || '').split('\n').map(s => s.trim()).filter(Boolean), text: draft.text || $('#recPaste').value };
+      const ix = state.recipes.findIndex(x => x.id === r.id); if (ix >= 0) state.recipes[ix] = r; else state.recipes.push(r);
+      draft = null; $('#recPaste').value = ''; save(); renderDraft(); render(); toast(ix >= 0 ? 'Receita atualizada' : 'Receita salva — adicione ao cardápio');
+    }
+  });
+
+  // ---------- PLANEJAR: compras ----------
+  function nextDays() {
+    const days = C.days, t = todayISO(); if (!days.length) return [];
+    const i = days.includes(t) ? days.indexOf(t) : 0; return days.slice(i, i + 2);
+  }
+  function renderShop() {
+    const nd = nextDays(), rng = ui.shopRange === 'next' && nd.length ? 'next' : 'all';
+    $('#shopRange').innerHTML = `<button data-rng="all" aria-pressed="${rng === 'all'}">Viagem toda</button><button data-rng="next" aria-pressed="${rng === 'next'}">${icon('clock')}<span>${nd.includes(todayISO()) ? 'O que comprar hoje' : 'Primeiros 2 dias'}${nd.length ? ` (${nd.map(d => dLabel(d).slice(4)).join(' e ')})` : ''}</span></button>`;
+    const S = shoppingList(state, rng === 'next' ? { days: nd } : undefined), Sall = rng === 'next' ? shoppingList(state) : S;
+    C.shop = S; C.shopAll = Sall;
+    $('#shopMeta').textContent = `${S.rows.filter(r => r.toBuy > 0).length} itens`;
+    $('#shopKpis').innerHTML = `<div class="kpi"><span>Mercado (estimado)</span><b class="num">${brl(S.groceryTotal)}</b></div><div class="kpi"><span>Falta comprar</span><b class="num">${brl(S.leftTotal)}</b></div>
+      <div class="kpi"><span>Custo por porção</span><b class="num">${brl(S.costPerPortion)}</b></div><div class="kpi"><span>Refeições fora</span><b class="num">${brl(S.foraTotal)}</b></div>`;
+    let h = '';
+    for (const sec of SECTIONS) {
+      const rs = S.rows.filter(r => r.section === sec); if (!rs.length) continue;
+      h += `<div class="sect">${sec}</div><div class="list">` + rs.map(r => {
+        const done = r.toBuy <= 0;
+        const need = r.aGosto ? 'a gosto' : `precisa ${fmtQty(r.need, r.unit)} → ${r.packs} × ${esc(r.packLabel)}`;
+        const got = r.covered ? ' · já comprado' : r.bought > 0 ? ` · comprado ${fmtQty(r.bought, r.unit)}${done ? '' : `, falta ${fmtQty(r.toBuy, r.unit)}`}` : '';
+        return `<div class="li ${done ? 'done' : ''}"><div style="min-width:0"><div class="t1">${esc(r.name)}${r.custom ? ' <span class="badge" style="min-height:20px">novo</span>' : ''}</div><div class="t2 num">${need}${got}</div></div>
+          <div class="amt num" style="font-size:14px">${done ? '<span class="t2">comprado</span>' : brl(r.costLeft)}</div></div>`;
+      }).join('') + '</div>';
+    }
+    $('#shopList').innerHTML = h || `<div class="empty"><span class="ic">${icon('cart')}</span><b>Nada para comprar</b><p>Coloque receitas nas refeições “em casa”.</p></div>`;
+    const txt = shoppingText(state, S); C.shopText = txt; $('#shopWa').href = 'https://wa.me/?text=' + encodeURIComponent(txt);
+    // dishes
+    const by = {}; for (const d of S.dishes) { const x = by[d.recipe] = by[d.recipe] || { title: d.title, n: 0, portions: 0, cost: 0 }; x.n++; x.portions += d.portions; x.cost += d.cost; }
+    const ds = Object.values(by).sort((a, b) => b.cost - a.cost);
+    $('#dishList').innerHTML = ds.length ? ds.map(x => `<div class="li" style="grid-template-columns:minmax(0,1fr) auto"><div style="min-width:0"><div class="t1">${esc(x.title)}</div><div class="t2 num">${x.n}× · ${fmtN(x.portions)} porções · ${brl(x.portions ? x.cost / x.portions : 0)}/porção</div></div><div class="amt num">${brl(x.cost)}</div></div>`).join('')
+      : '<p class="hint">Sem pratos no período.</p>';
+    $('#famPreview').innerHTML = S.perFamily.map(f => `<div class="li" style="grid-template-columns:auto minmax(0,1fr) auto">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(shortFam(f.name))}</div><div class="t2 num">${fmtN(f.casa)} porções em casa · ${fmtN(f.fora)} fora</div></div><div class="amt num">${brl(f.cost)}</div></div>`).join('')
+      + `<p class="hint" style="margin-top:12px">Comida pelas porções, água/gelo por pessoa-dia, cerveja por bebedor-dia.</p>`;
+    // plan vs real (whole trip)
+    const cat = C.split.catTotals, realFood = (cat.food || 0) + (cat.groceries || 0), planFood = Sall.foodTotal + Sall.foraTotal, realAlc = cat.alcohol || 0, planAlc = Sall.alcoholTotal;
+    const bar = (label, real, plan) => { const pct = plan ? real / plan : 0, over = pct > 1; return `<div style="margin-bottom:16px"><div class="meterrow"><span>${label}</span><span class="num"><b>${brl(real)}</b> de ${brl(plan)}</span></div>
+      <div class="meter ${over ? 'over' : ''}" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct * 100)}" style="margin:8px 0 4px"><div style="width:${Math.min(100, pct * 100)}%"></div></div>
+      <div class="t2">${over ? `Passou ${brl(real - plan)} do planejado` : `Restam ${brl(plan - real)} (${Math.round(pct * 100)}% usado)`}</div></div>`; };
+    $('#planReal').innerHTML = bar('Comida e mercado', realFood, planFood) + bar('Bebidas alcoólicas', realAlc, planAlc)
+      + `<p class="hint">Itens anotados em “Itens comprados” nos gastos são abatidos da lista.</p>`;
+    // estimates editor
+    if (!$('#estEditor').contains(document.activeElement)) {
+      const rows = Sall.rows.filter(r => !r.aGosto || true);
+      $('#estEditor').innerHTML = `<div class="row2" style="margin-bottom:12px">
+        <div class="field"><label class="mini" for="eRest">Restaurante (R$/porção)</label><input class="inp sm num" id="eRest" data-est="restaurante" inputmode="decimal" value="${fmtInput(restaurantPrice(state))}"></div>
+        <div class="field"><label class="mini" for="eAgua">Água (ml/pessoa/dia)</label><input class="inp sm num" id="eAgua" data-staple="agua" inputmode="numeric" value="${stapleQty(state, 'agua')}"></div>
+        <div class="field"><label class="mini" for="eGelo">Gelo (g/pessoa/dia)</label><input class="inp sm num" id="eGelo" data-staple="gelo" inputmode="numeric" value="${stapleQty(state, 'gelo')}"></div>
+        <div class="field"><label class="mini" for="eCerv">Cerveja (ml/bebedor/dia)</label><input class="inp sm num" id="eCerv" data-staple="cerveja" inputmode="numeric" value="${stapleQty(state, 'cerveja')}"></div></div>
+        <details><summary class="btn text sm" style="list-style:none">${icon('edit')}<span>Preços por embalagem (${rows.length})</span></summary>
+        ${rows.map(r => `<div class="pricerow"><label class="t2" for="pr_${esc(r.key)}" style="color:var(--text-2)">${esc(r.name)} <span class="sub">· ${esc(r.packLabel)}</span></label><div class="money"><span style="left:12px">R$</span><input class="inp sm num" style="padding-left:40px" id="pr_${esc(r.key)}" data-price="${esc(r.key)}" inputmode="decimal" value="${fmtInput(r.price)}"></div></div>`).join('')}</details>`;
+    }
+  }
+  $('#shopRange').onclick = e => { const b = e.target.closest('[data-rng]'); if (!b) return; ui.shopRange = b.dataset.rng; saveUi(); renderShop(); };
+  $('#shopCopy').onclick = async () => { try { await navigator.clipboard.writeText(C.shopText); } catch (e) {} toast('Lista copiada'); };
+  $('#estEditor').addEventListener('change', e => {
+    const t = e.target, v = parseMoney(t.value); if (!(v >= 0)) return;
+    if (t.dataset.est === 'restaurante') state.prices.restaurante = round2(v);
+    if (t.dataset.price) state.prices[t.dataset.price] = round2(v);
+    if (t.dataset.staple) { state.planQty._staples = state.planQty._staples || {}; state.planQty._staples[t.dataset.staple] = Math.round(v); }
+    save(); t.blur(); render();
+  });
+
+  // ---------- PLANEJAR: pessoas ----------
+  const openMem = new Set();
+  const dietLabel = d => [d && d.veg && 'vegetariano', d && d.lactose && 'sem lactose', d && d.gluten && 'sem glúten', d && d.alergia && 'alergia: ' + d.alergia].filter(Boolean);
+  const daySel = (attr, val, empty) => `<select class="inp sm" ${attr}><option value="">${empty}</option>${C.days.map(d => `<option value="${d}" ${d === val ? 'selected' : ''}>${dLabel(d)}</option>`).join('')}</select>`;
+  const mealSel = (attr, val, def) => `<select class="inp sm" ${attr}>${MEAL_ORDER.map(m => `<option value="${m}" ${m === (val || def) ? 'selected' : ''}>${MEALS[m]}</option>`).join('')}</select>`;
+  function renderPeople() {
+    $('#weights').innerHTML = Object.entries(MEMBER_TYPES).map(([k, t]) => `<div class="field"><label class="mini" for="w_${k}">${t.label}</label><input class="inp sm num" id="w_${k}" data-w="${k}" inputmode="decimal" value="${fmtN(weightOf(state, { type: k }), 2)}"></div>`).join('');
+    $('#people').innerHTML = state.families.map(f => `<section class="card fcard" data-fid="${f.id}">
+      <div class="fhead">${famAv(f)}<input class="ghost" data-fname value="${esc(f.name)}" aria-label="Nome da família"></div>
+      <div class="row2" style="margin:8px 0 4px">
+        <div class="field"><span class="mini">Chega</span>${daySel('data-fa aria-label="Dia de chegada da família"', f.arrive, 'Início')}${f.arrive ? mealSel('data-fam aria-label="Refeição de chegada"', f.arriveMeal, 'cafe') : ''}</div>
+        <div class="field"><span class="mini">Sai</span>${daySel('data-fd aria-label="Dia de saída da família"', f.depart, 'Fim')}${f.depart ? mealSel('data-fdm aria-label="Última refeição"', f.departMeal, 'jantar') : ''}</div>
+      </div>
+      ${f.members.map(m => { const d = m.diet || {}, P2 = C.P.per[m.id] || { days: 0, casa: 0 };
+        const meta = [MEMBER_TYPES[typeOf(m)].label, m.drinks ? 'bebe' : '', ...dietLabel(d), m.arrive ? 'chega ' + dLabel(m.arrive) : '', m.depart ? 'sai ' + dLabel(m.depart) : ''].filter(Boolean).join(' · ');
+        return `<details class="memd" data-mid="${m.id}" ${openMem.has(m.id) ? 'open' : ''}><summary><div style="min-width:0"><div class="t1">${esc(m.name || 'Sem nome')}</div><div class="t2">${esc(meta)} · ${P2.days} dias · ${fmtN(P2.casa)} porções</div></div>${icon('chev')}</summary>
+        <div class="body">
+          <div class="row2"><div class="field"><label class="mini">Nome</label><input class="inp sm" data-mname value="${esc(m.name)}"></div>
+          <div class="field"><label class="mini">Tipo</label><select class="inp sm" data-mtype>${Object.entries(MEMBER_TYPES).map(([k, t]) => `<option value="${k}" ${k === typeOf(m) ? 'selected' : ''}>${t.label} (${fmtN(weightOf(state, { type: k }), 2)})</option>`).join('')}</select></div></div>
+          <div class="switchrow"><span class="t2" style="color:var(--text-2)">Bebe álcool</span><label class="switch"><input type="checkbox" role="switch" data-drinks ${m.drinks ? 'checked' : ''} aria-label="${esc(m.name)} bebe álcool"></label></div>
+          <div class="field"><span class="mini">Dieta</span><div class="pills sm">${[['veg', 'Vegetariano'], ['lactose', 'Sem lactose'], ['gluten', 'Sem glúten']].map(([k, l]) => `<button type="button" data-diet="${k}" aria-pressed="${!!d[k]}">${l}</button>`).join('')}</div>
+            <input class="inp sm" data-alergia value="${esc(d.alergia || '')}" placeholder="Alergias (ex.: camarão, amendoim)" aria-label="Alergias"></div>
+          <div class="row2"><div class="field"><span class="mini">Chega (se diferente)</span>${daySel('data-ma aria-label="Chegada própria"', m.arrive, 'Igual à família')}${m.arrive ? mealSel('data-mam aria-label="Refeição de chegada"', m.arriveMeal, 'cafe') : ''}</div>
+          <div class="field"><span class="mini">Sai (se diferente)</span>${daySel('data-md aria-label="Saída própria"', m.depart, 'Igual à família')}${m.depart ? mealSel('data-mdm aria-label="Última refeição"', m.departMeal, 'jantar') : ''}</div></div>
+          <button class="btn text sm" data-rm style="justify-self:start">${icon('trash')}<span>Remover ${esc(m.name)}</span></button>
+        </div></details>`; }).join('')}
+      <button class="btn text addmem" data-add>${icon('plus')}<span>Adicionar membro</span></button></section>`).join('');
+  }
+  const peopleEl = $('#people');
+  const ctx = e => { const fEl = e.target.closest('[data-fid]'); if (!fEl) return {}; const f = famById(fEl.dataset.fid), mEl = e.target.closest('[data-mid]'); return { f, m: mEl && f.members.find(x => x.id === mEl.dataset.mid) }; };
+  peopleEl.addEventListener('toggle', e => { const d = e.target; if (d.matches && d.matches('details.memd')) { if (d.open) openMem.add(d.dataset.mid); else openMem.delete(d.dataset.mid); } }, true);
+  peopleEl.addEventListener('input', e => {
+    const { f, m } = ctx(e); if (!f) return;
+    if (e.target.matches('[data-fname]')) { f.name = e.target.value; e.target.previousElementSibling.textContent = famInitial(f.name); }
+    else if (e.target.matches('[data-mname]')) m.name = e.target.value;
+    else if (e.target.matches('[data-alergia]')) { m.diet = m.diet || {}; m.diet.alergia = e.target.value.trim(); }
+    else return;
+    save(); render({ skipPeople: true });
+  });
+  peopleEl.addEventListener('change', e => {
+    const { f, m } = ctx(e); if (!f) return; const t = e.target, v = t.value;
+    if (t.matches('[data-mtype]')) m.type = v;
+    else if (t.matches('[data-drinks]')) m.drinks = t.checked;
+    else if (t.matches('[data-fa]')) { f.arrive = v || undefined; f.arriveMeal = v ? (f.arriveMeal || 'cafe') : undefined; }
+    else if (t.matches('[data-fam]')) f.arriveMeal = v;
+    else if (t.matches('[data-fd]')) { f.depart = v || undefined; f.departMeal = v ? (f.departMeal || 'jantar') : undefined; }
+    else if (t.matches('[data-fdm]')) f.departMeal = v;
+    else if (t.matches('[data-ma]')) { m.arrive = v || undefined; m.arriveMeal = v ? (m.arriveMeal || 'cafe') : undefined; }
+    else if (t.matches('[data-mam]')) m.arriveMeal = v;
+    else if (t.matches('[data-md]')) { m.depart = v || undefined; m.departMeal = v ? (m.departMeal || 'jantar') : undefined; }
+    else if (t.matches('[data-mdm]')) m.departMeal = v;
+    else if (t.matches('[data-fname]') && !v.trim()) { f.name = 'Família ' + (famIdx(f.id) + 1); }
+    else if (t.matches('[data-mname],[data-alergia]')) { render(); return; }
+    else return;
+    save(); render();
+  });
+  peopleEl.addEventListener('click', e => {
+    const { f, m } = ctx(e); if (!f) return;
+    const dt = e.target.closest('[data-diet]');
+    if (dt) { m.diet = m.diet || {}; m.diet[dt.dataset.diet] = !m.diet[dt.dataset.diet]; save(); render(); return; }
+    if (e.target.closest('[data-add]')) { const nm = { id: uid(), name: 'Membro ' + (f.members.length + 1), drinks: false, type: 'adulto' }; f.members.push(nm); openMem.add(nm.id); save(); render(); peopleEl.querySelector(`[data-mid="${nm.id}"] [data-mname]`).select(); return; }
+    if (e.target.closest('[data-rm]')) {
+      const n = state.expenses.filter(x => x.payerId === m.id).length;
+      if (!confirm(n ? `${m.name} pagou ${n} despesa(s). Remover a pessoa e essas despesas?` : `Remover ${m.name}?`)) return;
+      state.expenses = state.expenses.filter(x => x.payerId !== m.id); f.members = f.members.filter(x => x.id !== m.id);
+      save(); render(); toast('Membro removido');
+    }
+  });
+  $('#weights').addEventListener('change', e => { const k = e.target.dataset.w; if (!k) return; const v = parseMoney(e.target.value); if (v >= 0 && v <= 5) { state.weights[k] = v; save(); render(); } else toast('Peso entre 0 e 5', 'alert'); });
+
+  // ---------- GASTOS ----------
+  let selCat = 'food', selProof = 'nf', editingId = null, pendingPhoto = null;
+  function renderSeg() {
+    $('#catSeg').innerHTML = Object.entries(CATEGORIES).map(([k, c]) => `<button type="button" data-cat="${k}" aria-pressed="${k === selCat}">${icon(c.icon)}<span>${esc(c.label)}</span></button>`).join('');
+    $('#fuelBox').hidden = selCat !== 'gas'; $('#itemsField').hidden = selCat === 'gas';
+  }
+  function renderProof() {
+    $('#proofSeg').innerHTML = Object.entries(PROOF).map(([k, p]) => `<button type="button" data-proof="${k}" aria-pressed="${k === selProof}">${esc(p.label)}</button>`).join('');
+    $('#proofExtra').hidden = selProof === 'nf';
+    $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span><button type="button" class="btn text sm" id="rmPhoto">Remover foto</button></span>`
+      : (selProof === 'none' ? 'Sem nota: uma foto e uma observação ajudam na confirmação.' : 'Opcional: foto do comprovante.');
+  }
+  $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); };
+  $('#proofSeg').onclick = e => { const b = e.target.closest('[data-proof]'); if (!b) return; selProof = b.dataset.proof; renderProof(); };
+  $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { pendingPhoto = null; renderProof(); } });
+  $('#photo').addEventListener('change', async e => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+      const max = 480, k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      let q = 0.7, url = cv.toDataURL('image/jpeg', q); while (url.length > 60000 && q > 0.3) { q -= 0.1; url = cv.toDataURL('image/jpeg', q); }
+      pendingPhoto = url; renderProof();
+    } catch (err) { toast('Não consegui ler a foto', 'alert'); }
+    e.target.value = '';
+  });
+  const fuelCalc = () => { const v = fuelCost(parseMoney($('#fKm').value), parseMoney($('#fKml').value), parseMoney($('#fPrice').value));
+    $('#fOut').innerHTML = v ? `Estimativa: <b class="num">${brl(v)}</b> <button type="button" class="btn text sm" id="useFuel">Usar valor</button>` : 'Calculadora de combustível: km ÷ km/L × preço.'; C.fuel = v; };
+  ['#fKm', '#fKml', '#fPrice'].forEach(s => $(s).addEventListener('input', fuelCalc));
+  $('#fOut').addEventListener('click', e => { if (e.target.closest('#useFuel') && C.fuel) { $('#amt').value = fmtInput(C.fuel); $('#estChk').checked = true; if (!$('#desc').value) $('#desc').value = `Combustível ~${$('#fKm').value} km`; toast('Valor estimado preenchido'); } });
+  const SUGG = [['Mercado', 'groceries'], ['Gasolina', 'gas'], ['Pedágio', 'gas'], ['Feira', 'groceries'], ['Restaurante', 'food'], ['Padaria', 'food'], ['Gorjeta', 'food'], ['Gelo', 'groceries'], ['Cerveja', 'alcohol']];
+  $('#sugg').innerHTML = SUGG.map(([l], i) => `<button type="button" data-s="${i}">${l}</button>`).join('');
+  $('#sugg').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; const [d, c] = SUGG[b.dataset.s]; selCat = c; renderSeg(); $('#desc').value = d; if (/Feira|Gorjeta|Pedágio/.test(d)) { selProof = 'none'; renderProof(); } if (!$('#amt').value) $('#amt').focus(); };
+  function renderPayers() {
+    const sel = $('#payer'), cur = sel.value, q = normTxt($('#payerSearch').value.trim());
+    const ok = (m, f) => !q || normTxt(m.name).includes(q) || normTxt(f.name).includes(q);
+    sel.innerHTML = state.families.filter(f => f.members.some(m => ok(m, f))).map(f => `<optgroup label="${esc(f.name)}">${f.members.filter(m => ok(m, f)).map(m => `<option value="${m.id}">${esc(m.name || 'Sem nome')} · ${esc(shortFam(f.name))}</option>`).join('')}</optgroup>`).join('');
+    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+  $('#payerSearch').addEventListener('input', renderPayers);
+  const setErr = (inp, err, on) => { inp.setAttribute('aria-invalid', on ? 'true' : 'false'); err.classList.toggle('on', on); };
+  $('#amt').addEventListener('input', () => setErr($('#amt'), $('#amtErr'), false));
+  $('#amt').addEventListener('blur', () => { const v = parseMoney($('#amt').value); if (v > 0) $('#amt').value = fmtInput(round2(v)); });
+  $('#expForm').onsubmit = e => {
+    e.preventDefault();
+    const amount = round2(parseMoney($('#amt').value)), okAmt = amount > 0 && amount < 1e7, okPayer = !!$('#payer').value;
+    setErr($('#amt'), $('#amtErr'), !okAmt); setErr($('#payer'), $('#payerErr'), !okPayer);
+    if (!okAmt) { $('#amt').focus(); return; } if (!okPayer) return;
+    const data = { amount, category: selCat, description: $('#desc').value.trim(), payerId: $('#payer').value, proof: selProof, estimated: $('#estChk').checked,
+      note: selProof === 'nf' ? '' : $('#note').value.trim(), photo: selProof === 'nf' ? null : pendingPhoto, items: selCat === 'gas' ? '' : $('#items').value.trim() };
+    const ed = editingId && state.expenses.find(x => x.id === editingId);
+    if (ed) { if (ed.proof === 'none' && (data.proof !== 'none' || ed.payerId !== data.payerId)) delete ed.confirmedBy; if (ed.estimated && !data.estimated) toast('Valor real registrado'); Object.assign(ed, data); }
+    else state.expenses.unshift({ id: uid(), ...data, ts: Date.now() });
+    stopEdit(); save(); render(); toast(ed ? 'Despesa atualizada' : 'Despesa adicionada');
+  };
+  function stopEdit() {
+    editingId = null; pendingPhoto = null; selProof = 'nf';
+    ['#amt', '#desc', '#note', '#items', '#payerSearch', '#fKm', '#fKml', '#fPrice'].forEach(s => { $(s).value = ''; }); $('#estChk').checked = false;
+    $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
+    $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false);
+    $$('.exp.sel').forEach(x => x.classList.remove('sel')); renderProof(); renderPayers(); fuelCalc();
+  }
+  function startEdit(id) {
+    const e = state.expenses.find(x => x.id === id); if (!e) return;
+    editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; renderSeg(); renderProof();
+    $('#payerSearch').value = ''; renderPayers();
+    $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId; $('#estChk').checked = !!e.estimated;
+    $('#note').value = e.note || ''; $('#items').value = e.items || '';
+    $('#addCard').classList.add('editing'); $('#formTitle').textContent = 'Editar despesa';
+    $('#submitBtn').innerHTML = icon('check') + '<span>Salvar alterações</span>';
+    $$('.exp').forEach(x => x.classList.toggle('sel', x.dataset.id === id));
+    $('#addCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('#cancelEdit').onclick = stopEdit;
+  let confirming = null;
+  function renderExpenses() {
+    const p = C.pend, n = state.expenses.length;
+    $('#expFilter').innerHTML = [['all', `Todas (${n})`], ['pend', `Pendentes (${p.unconfirmed.length + p.estimated.length})`], ['none', `Sem nota (${p.byProof.none.count})`]]
+      .map(([k, l]) => `<button data-ef="${k}" aria-pressed="${ui.expFilter === k}">${l}</button>`).join('');
+    $('#expMeta').textContent = brl(C.split.total);
+    const list = state.expenses.filter(e => ui.expFilter === 'pend' ? (needsConfirm(e) || e.estimated) : ui.expFilter === 'none' ? proofOf(e) === 'none' : true);
+    if (!list.length) { $('#expList').innerHTML = `<div class="empty"><span class="ic">${icon('receipt')}</span><b>${n ? 'Nada neste filtro' : 'Nenhuma despesa'}</b><p>${n ? 'Tudo em dia por aqui.' : 'Use o formulário ou o lançamento rápido.'}</p></div>`; return; }
+    $('#expList').innerHTML = list.map(e => {
+      const c = CATEGORIES[e.category] || CATEGORIES.food, pi = personInfo(e.payerId), pr = proofOf(e), cf = e.confirmedBy && famById(e.confirmedBy);
+      const others = state.families.filter(f => !pi || f.id !== pi.f.id);
+      return `<div class="li exp ${e.id === editingId ? 'sel' : ''}" data-id="${e.id}" tabindex="0" role="button" aria-label="Editar ${esc(e.description || c.label)}">
+        <span class="av" style="--c:${c.color}">${icon(c.icon)}</span>
+        <div style="min-width:0"><div class="t1">${esc(e.description || c.label)}</div><div class="t2">${pi ? esc(pi.m.name || 'Sem nome') + ' · ' + esc(shortFam(pi.f.name)) : 'Pagador removido'} · ${esc(c.label)}</div>
+          ${e.note ? `<div class="t2">“${esc(e.note)}”</div>` : ''}
+          <div class="badges"><span class="badge">${esc(PROOF[pr].label)}</span>
+            ${e.estimated ? '<span class="badge warn">Estimado</span>' : ''}
+            ${needsConfirm(e) ? `<span class="badge warn">Aguardando confirmação</span><button class="badge acc" data-confirm>${icon('check')}Confirmar</button>` : ''}
+            ${pr === 'none' && cf ? `<span class="badge ok">${icon('check')}Confirmado por ${esc(shortFam(cf.name))}</span>` : ''}
+            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : ''}</div>
+          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('')}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
+        <div class="amt num">${e.estimated ? '~' : ''}${brl(e.amount)}</div>
+        <button class="del" data-del="${e.id}" aria-label="Excluir despesa">${icon('trash')}</button></div>`;
+    }).join('');
+  }
+  $('#expFilter').onclick = e => { const b = e.target.closest('[data-ef]'); if (!b) return; ui.expFilter = b.dataset.ef; saveUi(); renderExpenses(); };
+  const expList = $('#expList');
+  expList.onclick = e => {
+    const row = e.target.closest('.exp'); if (!row) return; const id = row.dataset.id, ex = state.expenses.find(x => x.id === id);
+    if (e.target.closest('[data-confirm]')) { confirming = id; renderExpenses(); return; }
+    if (e.target.closest('[data-cfx]')) { confirming = null; renderExpenses(); return; }
+    const cf = e.target.closest('[data-cf]'); if (cf) { ex.confirmedBy = cf.dataset.cf; ex.confirmedAt = Date.now(); confirming = null; save(); render(); toast(`Confirmado por ${shortFam(famById(cf.dataset.cf).name)}`); return; }
+    if (e.target.closest('[data-photo]')) { $('#photoBig').src = ex.photo; $('#photoDlg').showModal(); return; }
+    if (e.target.closest('.chooser')) return;
+    const b = e.target.closest('[data-del]');
+    if (!b) { startEdit(id); return; }
+    row.classList.add('out'); if (id === editingId) stopEdit();
+    setTimeout(() => { state.expenses = state.expenses.filter(x => x.id !== id); save(); render(); toast('Despesa excluída'); }, 180);
+  };
+  expList.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('exp')) { e.preventDefault(); startEdit(e.target.dataset.id); } };
+
+  // ---------- ACERTOS ----------
+  const MODE_HINT = { porcoes: 'Comida e mercado pelas porções que cada pessoa comeu (dias presentes × peso: criança 0,5, bebê 0). Álcool por dias de quem bebe. Combustível por pessoa.',
+    pessoa: 'Comida, mercado e combustível igual por pessoa; álcool só entre quem bebe.', igual: 'Tudo dividido igualmente por pessoa, inclusive álcool.' };
+  function balCell(net) { const z = Math.abs(net) < 0.005, cls = z ? 'zero' : net > 0 ? 'pos' : 'neg';
+    return `<div class="bal ${cls}"><span class="v num">${z ? brl(0) : (net > 0 ? '+' : '−') + brl(Math.abs(net))}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`; }
+  function renderMode() {
+    $('#modeSeg').innerHTML = Object.entries(SPLIT_MODES).map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${state.splitMode === k}">${esc(l)}</button>`).join('');
+    $('#modeHint').textContent = MODE_HINT[state.splitMode];
+    if (state.splitMode === 'igual') { $('#modeDelta').innerHTML = ''; return; }
+    const eq = computeSplit({ ...state, splitMode: 'igual' });
+    $('#modeDelta').innerHTML = `<div class="sect">Parte de cada família vs. “tudo igual”</div>` + C.split.families.map(f => {
+      const d = f.owed - eq.families.find(x => x.id === f.id).owed, z = Math.abs(d) < 0.005;
+      return `<div class="li" style="grid-template-columns:auto minmax(0,1fr) auto">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(shortFam(f.name))}</div><div class="t2 num">parte ${brl(f.owed)}</div></div>
+        <div class="bal ${z ? 'zero' : d < 0 ? 'pos' : 'neg'}"><span class="v num">${z ? '=' : (d > 0 ? '+' : '−') + brl(Math.abs(d))}</span><span class="k">${z ? 'igual' : d < 0 ? 'economiza' : 'paga a mais'}</span></div></div>`;
+    }).join('');
+  }
+  $('#modeSeg').onclick = e => { const b = e.target.closest('[data-mode]'); if (!b) return; state.splitMode = b.dataset.mode; save(); render(); toast(SPLIT_MODES[state.splitMode]); };
+  const isSettled = t => { const s = (state.settled || {})[t.from + '_' + t.to]; return !!s && Math.abs(s.amount - t.amount) < 0.01; };
+  function renderXfers() {
+    const xfers = C.xfers;
+    $('#xferMeta').textContent = xfers.length ? `${xfers.length} ${xfers.length > 1 ? 'transferências' : 'transferência'}` : '';
+    if (!xfers.length) { $('#xfers').innerHTML = `<div class="empty ok"><span class="ic">${icon('check')}</span><b>Tudo acertado</b><p>Os saldos das famílias estão zerados.</p></div>`; return; }
+    $('#xfers').innerHTML = xfers.map(t => `<div class="li xf ${isSettled(t) ? 'done' : ''}"><span class="avs">${famAv(famById(t.from))}${famAv(famById(t.to))}</span>
+      <div style="min-width:0"><div class="route"><span>${esc(shortFam(t.fromName))}</span>${icon('arrow')}<span>${esc(shortFam(t.toName))}</span></div></div>
+      <div class="amt num">${brl(t.amount)}</div>
+      <button class="chk" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${isSettled(t)}" aria-label="${isSettled(t) ? 'Desmarcar pagamento' : 'Marcar como pago'}">${icon('check')}</button></div>`).join('')
+      + `<div class="sub" style="margin-top:16px">Menor número possível de transferências entre as famílias.</div>`;
+  }
+  $('#xfers').addEventListener('click', e => {
+    const b = e.target.closest('[data-settle]'); if (!b) return; const k = b.dataset.settle, amt = +b.dataset.amt, cur = state.settled[k];
+    if (cur && Math.abs(cur.amount - amt) < 0.01) delete state.settled[k]; else state.settled[k] = { amount: amt, at: Date.now() };
+    save(); render(); toast(state.settled[k] ? 'Transferência marcada como paga' : 'Marcação removida');
+  });
+  const openFams = new Set();
+  function renderBalances() {
+    const split = C.split, w = [];
+    if (split.warnings.includes('noDrinkers')) w.push('Há despesas de álcool, mas ninguém está marcado como “bebe”. Elas são divididas entre todos.');
+    if (split.warnings.includes('orphanPayer')) w.push('Há despesas de uma pessoa removida; elas não contam como pagas.');
+    if (split.excluded) w.push(`${split.excluded} ${split.excluded > 1 ? 'gastos sem nota não confirmados estão' : 'gasto sem nota não confirmado está'} fora do acerto.`);
+    $('#warnBox').innerHTML = w.map(x => `<div class="alert">${icon('alert')}<span>${esc(x)}</span></div>`).join('');
+    $('#fams').innerHTML = split.families.map(f => {
+      const ps = split.persons.filter(p => p.familyId === f.id);
+      return `<details class="fam" data-fam="${f.id}" ${openFams.has(f.id) ? 'open' : ''}><summary>${famAv(f)}<div style="min-width:0"><div class="t1">${esc(shortFam(f.name))}</div><div class="t2 num">pagou ${brl(f.paid)} · parte ${brl(f.owed)}</div></div>${balCell(f.net)}${icon('chev').replace('class="i"', 'class="i chev"')}</summary>
+        <div class="people list">${ps.map(p => { const pp = C.P.per[p.id] || { days: 0, casa: 0, fora: 0 }; return `<div class="li"><div style="min-width:0"><div class="t1">${esc(p.name)}${p.drinks ? '<span class="dot" title="bebe álcool"></span>' : ''}</div><div class="t2 num">pagou ${brl(p.paid)} · parte ${brl(p.owed)}${state.splitMode === 'porcoes' ? ` · ${fmtN(pp.casa + pp.fora)} porções` : ''}</div></div>${balCell(p.net)}</div>`; }).join('')}</div></details>`;
+    }).join('') + '<div class="legendnote"><span class="dot" style="margin:0"></span>bebe álcool</div>';
+  }
+  $('#fams').addEventListener('toggle', e => { const d = e.target; if (d.dataset && d.dataset.fam) { if (d.open) openFams.add(d.dataset.fam); else openFams.delete(d.dataset.fam); } }, true);
+  function renderKitty() {
+    const k = kitty(state, C.split), kin = $('#kitty');
     if (document.activeElement !== kin) kin.value = fmtInput(k.per);
     if (!k.budget) { $('#kBody').innerHTML = `<div class="sub" style="margin-top:16px">Defina quanto cada família coloca na caixinha para acompanhar o que sobra.</div>`; return k; }
     const over = k.left < 0;
-    $('#kBody').innerHTML = `
-      <div class="meter ${over ? 'over' : ''}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(k.pct * 100)}"><div style="width:${Math.min(100, k.pct * 100)}%"></div></div>
-      <div class="meterrow num"><span>Gasto <b>${brl(k.spent)}</b> de ${brl(k.budget)}</span><span class="${over ? 'neg' : 'pos'}" style="color:var(--${over ? 'neg' : 'pos'});font-weight:600">${over ? 'Faltam ' + brl(-k.left) : 'Sobram ' + brl(k.left)}</span></div>
+    $('#kBody').innerHTML = `<div class="meter ${over ? 'over' : ''}" role="progressbar" aria-label="Caixinha usada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(k.pct * 100)}"><div style="width:${Math.min(100, k.pct * 100)}%"></div></div>
+      <div class="meterrow num"><span>Gasto <b>${brl(k.spent)}</b> de ${brl(k.budget)}</span><span style="color:var(--${over ? 'neg' : 'pos'});font-weight:600">${over ? 'Faltam ' + brl(-k.left) : 'Sobram ' + brl(k.left)}</span></div>
       <div class="list" style="margin-top:16px">${k.families.map(f => `<div class="li" style="grid-template-columns:auto minmax(0,1fr) auto">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(shortFam(f.name))}</div><div class="t2 w num">Colocou ${brl(f.contributed)} · parte ${brl(f.share)}</div></div>
         <div class="bal ${Math.abs(f.back) < 0.005 ? 'zero' : f.back > 0 ? 'pos' : 'neg'}"><span class="v num">${Math.abs(f.back) < 0.005 ? brl(0) : (f.back > 0 ? '+' : '−') + brl(Math.abs(f.back))}</span><span class="k">${Math.abs(f.back) < 0.005 ? 'exato' : f.back > 0 ? 'recebe de volta' : 'completa'}</span></div></div>`).join('')}</div>`;
     return k;
   }
   $('#kitty').addEventListener('input', () => { const v = parseMoney($('#kitty').value); state.kittyPerFamily = v > 0 ? round2(v) : 0; save(); render(); });
   $('#kitty').addEventListener('blur', () => { $('#kitty').value = fmtInput(state.kittyPerFamily); });
-
-  function renderOdds(split) {
-    const ws = surpriseWeights(split), tot = ws.reduce((s, x) => s + x.w, 0);
+  function renderOdds() {
+    const ws = surpriseWeights(C.split), tot = ws.reduce((s, x) => s + x.w, 0);
     if (!ws.length) { $('#odds').textContent = ''; return; }
-    const top = ws.slice().sort((a, b) => b.w - a.w).slice(0, 4);
-    $('#odds').innerHTML = 'Maiores chances: ' + top.map(x => `<b>${esc(x.name)}</b> <span class="num">${(x.w / tot * 100).toFixed(0)}%</span>`).join(' · ');
+    $('#odds').innerHTML = 'Maiores chances: ' + ws.slice().sort((a, b) => b.w - a.w).slice(0, 4).map(x => `<b>${esc(x.name)}</b> <span class="num">${(x.w / tot * 100).toFixed(0)}%</span>`).join(' · ');
   }
   let spinning = false;
   $('#spinBtn').onclick = () => {
-    if (spinning) return;
-    const ws = surpriseWeights(computeSplit(state));
-    if (!ws.length) return toast('Adicione pessoas primeiro', 'alert');
-    const win = weightedPick(ws), n = $('#sName'), fm = $('#sFam');
-    spinning = true; $('#spinBtn').disabled = true; n.className = 'name rolling';
-    let i = 0, d = 60;
-    const tick = () => {
-      const p = ws[Math.floor(Math.random() * ws.length)]; n.textContent = p.name; fm.textContent = p.familyName; d *= 1.18;
-      if (d < 260) setTimeout(tick, d);
-      else { n.className = 'name final'; n.textContent = win.name; fm.textContent = `${win.familyName} paga a próxima`; spinning = false; $('#spinBtn').disabled = false; }
-    };
+    if (spinning) return; const ws = surpriseWeights(computeSplit(state)); if (!ws.length) return toast('Adicione pessoas primeiro', 'alert');
+    const win = weightedPick(ws), n = $('#sName'), fm = $('#sFam'); spinning = true; $('#spinBtn').disabled = true; n.className = 'name rolling'; let d = 60;
+    const tick = () => { const p = ws[Math.floor(Math.random() * ws.length)]; n.textContent = p.name; fm.textContent = p.familyName; d *= 1.18;
+      if (d < 260) setTimeout(tick, d); else { n.className = 'name final'; n.textContent = win.name; fm.textContent = `${win.familyName} paga a próxima`; spinning = false; $('#spinBtn').disabled = false; } };
     tick();
   };
-
-  function renderExpenses() {
-    const n = state.expenses.length;
-    $('#expMeta').textContent = n ? `${n} ${n > 1 ? 'itens' : 'item'}` : '';
-    if (!n) { $('#expList').innerHTML = `<div class="empty"><span class="ic">${icon('receipt')}</span><b>Nenhuma despesa</b><p>Use o formulário para registrar o primeiro gasto da viagem.</p></div>`; return; }
-    $('#expList').innerHTML = state.expenses.map(e => {
-      const c = CATEGORIES[e.category] || CATEGORIES.food, pi = personInfo(e.payerId);
-      return `<div class="li exp ${e.id === editingId ? 'sel' : ''}" data-id="${e.id}" tabindex="0" role="button" aria-label="Editar ${esc(e.description || c.label)}">
-        <span class="av" style="--c:${c.color}">${icon(c.icon)}</span>
-        <div style="min-width:0"><div class="t1">${esc(e.description || c.label)}</div><div class="t2">${pi ? esc(pi.m.name || 'Sem nome') + ' · ' + esc(shortFam(pi.f.name)) : 'Pagador removido'} · ${esc(c.label)}</div></div>
-        <div class="amt num">${brl(e.amount)}</div>
-        <button class="del" data-del="${e.id}" aria-label="Excluir despesa">${icon('trash')}</button></div>`;
-    }).join('');
-  }
-  const expList = $('#expList');
-  expList.onclick = e => {
-    const b = e.target.closest('[data-del]');
-    if (!b) { const r = e.target.closest('.exp'); if (r) startEdit(r.dataset.id); return; }
-    e.stopPropagation();
-    const id = b.dataset.del, row = b.closest('.exp'); row.classList.add('out');
-    if (id === editingId) stopEdit();
-    setTimeout(() => { state.expenses = state.expenses.filter(x => x.id !== id); save(); render(); toast('Despesa excluída'); }, 180);
-  };
-  expList.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('exp')) { e.preventDefault(); startEdit(e.target.dataset.id); } };
-
-  function renderFamEdit() {
-    $('#famEdit').innerHTML = state.families.map(f => `<div class="fbox" data-fid="${f.id}">
-      <div class="fhead">${famAv(f)}<input class="ghost" data-fname value="${esc(f.name)}" aria-label="Nome da família"></div>
-      ${f.members.map(m => `<div class="mem" data-mid="${m.id}"><input class="ghost" data-mname value="${esc(m.name)}" placeholder="Nome" aria-label="Nome do membro">
-        <label class="switch"><input type="checkbox" role="switch" data-drinks ${m.drinks ? 'checked' : ''} aria-label="${esc(m.name)} bebe álcool">Bebe</label>
-        <button class="del" data-rm aria-label="Remover ${esc(m.name)}">${icon('x')}</button></div>`).join('')}
-      <button class="btn text addmem" data-add>${icon('plus')}Adicionar membro</button></div>`).join('');
-  }
-  const famEl = $('#famEdit');
-  famEl.addEventListener('input', e => {
-    const fid = e.target.closest('[data-fid]')?.dataset.fid, f = state.families.find(x => x.id === fid); if (!f) return;
-    if (e.target.matches('[data-fname]')) { f.name = e.target.value; e.target.previousElementSibling.textContent = famInitial(f.name); }
-    if (e.target.matches('[data-mname]')) f.members.find(x => x.id === e.target.closest('[data-mid]').dataset.mid).name = e.target.value;
-    save(); render();
-  });
-  famEl.addEventListener('focusout', e => { if (e.target.matches('[data-fname]') && !e.target.value.trim()) { const f = state.families.find(x => x.id === e.target.closest('[data-fid]').dataset.fid); f.name = 'Família ' + (famIdx(f.id) + 1); e.target.value = f.name; save(); render(); } });
-  famEl.addEventListener('change', e => {
-    if (!e.target.matches('[data-drinks]')) return;
-    const f = state.families.find(x => x.id === e.target.closest('[data-fid]').dataset.fid);
-    f.members.find(x => x.id === e.target.closest('[data-mid]').dataset.mid).drinks = e.target.checked;
-    save(); render();
-  });
-  famEl.addEventListener('click', e => {
-    const fEl = e.target.closest('[data-fid]'); if (!fEl) return;
-    const f = state.families.find(x => x.id === fEl.dataset.fid);
-    if (e.target.closest('[data-add]')) {
-      f.members.push({ id: uid(), name: 'Membro ' + (f.members.length + 1), drinks: false });
-      save(); renderFamEdit(); render();
-      const ins = famEl.querySelectorAll(`[data-fid="${f.id}"] [data-mname]`); ins[ins.length - 1].select();
-    }
-    if (e.target.closest('[data-rm]')) {
-      const mid = e.target.closest('[data-mid]').dataset.mid, m = f.members.find(x => x.id === mid);
-      const n = state.expenses.filter(x => x.payerId === mid).length;
-      if (n && !confirm(`${m.name} pagou ${n} despesa(s). Remover a pessoa e essas despesas?`)) return;
-      state.expenses = state.expenses.filter(x => x.payerId !== mid);
-      f.members = f.members.filter(x => x.id !== mid);
-      save(); renderFamEdit(); render(); toast('Membro removido');
-    }
-  });
-
   let lastText = '';
-  function renderShare(split, xfers, k) {
-    lastText = summaryText(state, split, xfers, k);
-    $('#shareText').value = lastText;
-    $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText);
-  }
-  $('#copyBtn').onclick = async () => {
-    try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); }
-    toast('Resumo copiado');
-  };
-  if (!navigator.share) $('#shareBtn').title = 'Seu navegador não suporta compartilhamento; o texto será copiado.';
-  $('#shareBtn').onclick = async () => {
-    if (navigator.share) { try { await navigator.share({ title: 'Racha da Viagem', text: lastText }); } catch (e) {} }
-    else $('#copyBtn').click();
-  };
-  $('#resetBtn').onclick = () => {
-    if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return;
-    state = example(); stopEdit(); save(); renderFamEdit(); render(); toast('Exemplo restaurado');
-  };
+  function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
+  $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
+  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Racha da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
+  $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
 
-  function render() {
-    const split = computeSplit(state), xfers = settle(split.families);
-    renderSummary(split); renderPayers(); renderXfers(xfers); renderBalances(split); renderChart(split);
-    const k = renderKitty(split); renderOdds(split); renderExpenses(); renderShare(split, xfers, k);
+  // ---------- MODO COZINHA ----------
+  let wakeLock = null, cookCtx = null;
+  const lockScreen = async () => { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; paintWake(); }); } } catch (e) { wakeLock = null; } paintWake(); };
+  const paintWake = () => { const b = $('#wakeBadge'); if (b) b.innerHTML = wakeLock ? `${icon('sun')}Tela sempre ligada` : ('wakeLock' in navigator ? 'Tela pode apagar' : ''); if (b) b.hidden = !b.textContent; };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#cookDlg').open) lockScreen(); });
+  function openCook(o) {
+    let day = o.day, meal = o.meal, ids;
+    if (o.recipeId) { // find the next meal that uses this recipe
+      ids = [o.recipeId]; const slot = upcomingSlots(999).find(s => cellRecipes(s.c).includes(o.recipeId)) || null;
+      if (slot) { day = slot.day; meal = slot.meal; } else { day = null; meal = null; }
+    } else ids = cellRecipes(cellOf(state, day, meal));
+    cookCtx = { day, meal, ids, idx: 0, done: new Set() }; paintCook(); $('#cookDlg').showModal(); lockScreen();
+  }
+  function paintCook() {
+    const { day, meal, ids, idx, done } = cookCtx, r = getRecipe(state, ids[idx]); if (!r) return;
+    const cp = day ? C.P.cell[day + '|' + meal] || { portions: 0, people: 0 } : null, portionsN = cp && cp.portions ? cp.portions : r.yield, f = portionsN / (r.yield || 1);
+    const rt = day && C.rota[day + '|' + meal], warns = day ? mealConflicts(state, day, meal).filter(w => w.recipe === r.title) : [];
+    $('#cookBody').innerHTML = `<div class="cookhd"><div style="min-width:0"><h2 id="cookTitle">${esc(r.title)}</h2>
+        <p>${day ? `${MEALS[meal]} · ${dLabel(day)} · ${cp.people} pessoas · ` : ''}<b class="num">${fmtN(portionsN)} porções</b> (receita original: ${r.yield})</p>
+        ${rt ? `<p>Cozinha: <b>${esc(shortFam(famById(rt.cook).name))}</b> · Limpa: <b>${esc(shortFam(famById(rt.clean).name))}</b></p>` : ''}
+        <div class="badges"><span class="badge" id="wakeBadge" hidden></span><span class="badge num">~${brl(recipeCost(state, r).perPortion * portionsN)} no total</span></div></div>
+        <button class="iconbtn" data-close aria-label="Fechar modo cozinha">${icon('x')}</button></div>
+      ${ids.length > 1 ? `<div class="pills">${ids.map((id, i) => `<button data-ci="${i}" aria-pressed="${i === idx}">${esc((getRecipe(state, id) || {}).title)}</button>`).join('')}</div>` : ''}
+      ${warns.map(w => `<div class="warnline" style="font-size:16px;margin-top:8px">${icon('alert')}<span>${esc(w.member)}: ${esc(w.issue)}</span></div>`).join('')}
+      <h3>Ingredientes</h3>${r.ingredients.map((ing, i) => `<label class="ck ${done.has('i' + i) ? 'done' : ''}"><input type="checkbox" data-ck="i${i}" ${done.has('i' + i) ? 'checked' : ''}><span><b>${ingAmount(ing, f)}</b> ${esc(ing.name)}</span></label>`).join('')}
+      ${r.steps && r.steps.length ? `<h3>Preparo</h3>${r.steps.map((s, i) => `<label class="ck ${done.has('s' + i) ? 'done' : ''}"><input type="checkbox" data-ck="s${i}" ${done.has('s' + i) ? 'checked' : ''}><span>${i + 1}. ${esc(s)}</span></label>`).join('')}` : ''}
+      <button class="btn secondary block" data-close style="margin-top:24px">Fechar</button>`;
+    paintWake();
+  }
+  $('#cookBody').addEventListener('change', e => { const k = e.target.dataset.ck; if (!k) return; if (e.target.checked) cookCtx.done.add(k); else cookCtx.done.delete(k); e.target.closest('.ck').classList.toggle('done', e.target.checked); });
+  $('#cookBody').addEventListener('click', e => {
+    if (e.target.closest('[data-close]')) { $('#cookDlg').close(); return; }
+    const b = e.target.closest('[data-ci]'); if (b) { cookCtx.idx = +b.dataset.ci; cookCtx.done = new Set(); paintCook(); }
+  });
+  $('#cookDlg').addEventListener('close', () => { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } });
+  $('#photoDlg').addEventListener('click', e => { if (e.target === $('#photoDlg')) $('#photoDlg').close(); });
+
+  // ---------- render ----------
+  function render(opts = {}) {
+    C = compute();
+    renderSummary(); renderPending(); renderNext(); renderChart();
+    renderMatrix(); renderDay(); renderTrip(); renderRecipes(); renderShop();
+    if (!opts.skipPeople && !$('#people').contains(document.activeElement)) renderPeople();
+    renderPayers(); renderExpenses();
+    renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
     setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
   }
-  // ---- small bridge (handy for debugging / a future shared-sync layer)
-  const clone = o => JSON.parse(JSON.stringify(o));
-  const famEditFocused = () => document.getElementById('famEdit').contains(document.activeElement);
-  window.App = {
-    onLocalChange: null,
-    getState: () => clone(state),
-    exampleState: () => example(),
-    // Switch storage to a per-trip cache key (so each trip room is cached separately/offline).
-    setRoom(code) {
-      KEY = code ? BASE_KEY + '-trip-' + code : BASE_KEY;
-      try { const c = JSON.parse(localStorage.getItem(KEY)); if (c && Array.isArray(c.families)) { state = c; if (!state.settled) state.settled = {}; renderFamEdit(); render(); } } catch (e) {}
-    },
-    // Apply state received from the server (no echo back to the sync layer).
-    replaceState(next) {
-      next.settled = next.settled || {};
-      const before = JSON.stringify(state); if (before === JSON.stringify(next)) return;
-      const famChanged = JSON.stringify(state.families) !== JSON.stringify(next.families);
-      if (editingId && !next.expenses.some(e => e.id === editingId)) stopEdit();
-      state = next; cache();
-      if (famChanged && !famEditFocused()) renderFamEdit();
-      render();
-    },
-    rerenderFamilies() { if (!famEditFocused()) renderFamEdit(); },
-    toast, icon,
-  };
-  famEl.addEventListener('focusout', () => setTimeout(() => { if (!famEditFocused()) renderFamEdit(); }, 0));
-
-
-  hydrate(document); renderSeg(); renderFamEdit(); render();
+  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui };
+  hydrate(document); renderSeg(); renderProof(); renderQuick();
+  render(); setView(ui.view, { keepScroll: true }); setSub(ui.sub);
 })();
 </script>
 </body>
