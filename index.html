@@ -419,7 +419,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
         <div class="ch"><h2 id="qTitle">Lançamento rápido</h2><span class="meta">escreva como no WhatsApp</span></div>
         <div class="quickrow">
           <label class="sr" for="quick">Lançamento rápido</label>
-          <input class="inp" id="quick" placeholder="Ex.: 80 gasolina Botelho sem nota" autocomplete="off" enterkeyhint="done">
+          <input class="inp" id="quick" placeholder="Ex.: 80 gasolina família B sem nota" autocomplete="off" enterkeyhint="done">
           <button class="iconbtn mic" id="micBtn" type="button" aria-label="Ditar por voz" hidden><span data-i="mic"></span></button>
         </div>
         <div class="preview" id="qPreview" aria-live="polite"></div>
@@ -823,7 +823,11 @@ function parseQuick(text, families) {
   const cand = toks.map((t, i) => ({ t, i })).filter(x => x.t.length >= 2 && !STOP.has(x.t) && !catSet.has(x.t) && !proofSet.has(x.t) && !/^\d/.test(x.t));
   const fams = families || [], used = new Set();
   let famHit = null;
-  for (const c of cand) { const f = fams.find(f => nameMatch(c.t, normTxt(String(f.name).replace(/^fam[ií]lia\s+/i, '')).replace(/[^a-z0-9]/g, ''))); if (f) { famHit = f; used.add(c.i); break; } }
+  // "família B" / "fam B": nome curto (uma letra) depois da palavra família
+  for (let i = 0; i < toks.length - 1 && !famHit; i++) if (toks[i] === 'familia' || toks[i] === 'fam') {
+    const f = fams.find(f => toks[i + 1] && normTxt(String(f.name).replace(/^fam[ií]lia\s+/i, '')).replace(/[^a-z0-9]/g, '') === toks[i + 1]);
+    if (f) { famHit = f; used.add(i); used.add(i + 1); } }
+  if (!famHit) for (const c of cand) { const f = fams.find(f => nameMatch(c.t, normTxt(String(f.name).replace(/^fam[ií]lia\s+/i, '')).replace(/[^a-z0-9]/g, ''))); if (f) { famHit = f; used.add(c.i); break; } }
   let mem = null;
   for (const c of cand) { if (used.has(c.i)) continue;
     const hits = []; fams.forEach(f => f.members.forEach(mb => { if (nameMatch(c.t, normTxt(mb.name).replace(/[^a-z0-9]/g, ''))) hits.push({ f, mb }); }));
@@ -1396,10 +1400,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function example() {
     const F = (name, members, extra) => ({ id: uid(), name, ...extra, members: members.map(([n, d, type, diet]) => ({ id: uid(), name: n, drinks: d, type: type || 'adulto', ...(diet ? { diet } : {}) })) });
     const fams = [
-      F('Família Bonifácio', [['Carlos', true], ['Ana', true], ['Pedro', false, 'adolescente'], ['Lia', false, 'crianca']]),
-      F('Família Botelho', [['Marcos', true], ['Júlia', false], ['Rafa', true]]),
-      F('Família Vasconcelos', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'amendoim' }], ['Nina', false, 'bebe']]),
-      F('Família Sena', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'camarão' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
+      F('Família A', [['Carlos', true], ['Ana', true], ['Pedro', false, 'adolescente'], ['Lia', false, 'crianca']]),
+      F('Família B', [['Marcos', true], ['Júlia', false], ['Rafa', true]]),
+      F('Família C', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'kiwi (exemplo)' }], ['Nina', false, 'bebe']]),
+      F('Família D', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'abacaxi (exemplo)' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
     ];
     const p = (fi, mi) => fams[fi].members[mi].id;
     let t = Date.now();
@@ -1552,7 +1556,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let qParsed = null;
   function renderQuick() {
     const txt = $('#quick').value, el = $('#qPreview');
-    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago por Sena”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; return; }
+    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago pela família D”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; return; }
     const q = qParsed = parseQuick(txt, state.families), pi = q.payerId && personInfo(q.payerId), cat = CATEGORIES[q.category || 'food'];
     const b = (ok, html) => `<span class="badge ${ok ? 'acc' : 'warn'}">${html}</span>`;
     el.innerHTML = [

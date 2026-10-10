@@ -4,7 +4,7 @@
   "private": true,
   "description": "Rateio da Viagem: protótipo client-side para planejar e dividir gastos de viagem entre famílias",
   "scripts": {
-    "test": "node tests/test.js",
+    "test": "node tests/test.js && node tests/surnames.test.js",
     "test:contrast": "node tests/contrast.js",
     "test:overflow": "node tests/overflow.js",
     "shots": "node tests/shot3.js"

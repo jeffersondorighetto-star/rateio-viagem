@@ -41,19 +41,21 @@ Em todos os modos, **saldo = pago − parte**. A soma dos saldos é zero. **Quem
 - **Custo por porção** de cada receita na biblioteca.
 
 ## Gastos sem nota
-- **Lançamento rápido** (`parseQuick`): uma linha, por exemplo `80 gasolina Botelho sem nota`, `churrasco 350 pago por Sena` ou `~200 gasolina Marcso` (aceita erro de digitação). Mostra uma prévia (valor, categoria, quem pagou, comprovante, estimado) antes de lançar. Tem botão de ditado por voz (pt-BR) quando o navegador suporta.
+- **Lançamento rápido** (`parseQuick`): uma linha, por exemplo `80 gasolina família B sem nota`, `churrasco 350 pago pela família D` ou `~200 gasolina Marcso` (aceita erro de digitação). Mostra uma prévia (valor, categoria, quem pagou, comprovante, estimado) antes de lançar. Tem botão de ditado por voz (pt-BR) quando o navegador suporta.
 - **Comprovante**: Nota fiscal / Comprovante (Pix, cartão) / Sem nota. Dá para anexar uma **foto**, comprimida para um JPEG pequeno (~60 KB) salvo no aparelho, com aviso se o armazenamento estiver enchendo, e uma observação.
 - **Confirmação**: um gasto sem nota fica “Aguardando confirmação” até **outra família** tocar em Confirmar. Fica registrado quem confirmou.
 - **Estimado**: o valor aparece como “~R$” e na lista de Pendentes até ser trocado pelo valor real. Tem uma calculadora de combustível (km ÷ km/L × R$/L) com o botão “Usar valor”.
 - O resumo do WhatsApp agrupa por tipo de comprovante e lista os itens não confirmados e os estimados.
 
 ## Dados de exemplo
+Tudo inventado: famílias, nomes e dietas são fictícios.
+
 | Família | Membros (✓ = bebe) | Observações |
 |---|---|---|
-| Bonifácio | Carlos ✓, Ana ✓, Pedro (adolescente), Lia (criança) | |
-| Botelho | Marcos ✓, Júlia, Rafa ✓ | |
-| Vasconcelos | Beto ✓, Clara ✓ (vegetariana), Davi (criança, alergia a amendoim), Nina (bebê) | |
-| Sena | Tiago ✓, Bia (alergia a camarão), Leo (criança) | chegam no jantar de 28/12 |
+| Família A | Carlos ✓, Ana ✓, Pedro (adolescente), Lia (criança) | |
+| Família B | Marcos ✓, Júlia, Rafa ✓ | |
+| Família C | Beto ✓, Clara ✓ (vegetariana, fictício), Davi (criança, alergia a kiwi, fictício), Nina (bebê) | |
+| Família D | Tiago ✓, Bia (alergia a abacaxi, fictício), Leo (criança) | chegam no jantar de 28/12 |
 
 Viagem de 26/12/2026 a 03/01/2027 (9 dias; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. **Restaurar exemplo** (no rodapé) volta tudo ao início.
 
