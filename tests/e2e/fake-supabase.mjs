@@ -12,7 +12,13 @@ export function createClient(url, key, opts) {
     linkIdentity: async ({ options }) => { if (localStorage.getItem('fake-no-link')) return { data: null, error: { message: 'Manual linking is disabled' } };
       const r = await call({ kind: 'link', args: { login: login() } }); if (r.error) return r; localStorage.setItem(SK, JSON.stringify(r.user)); return go(options.redirectTo); },
   };
-  const from = table => ({ select: () => { const q = call({ kind: 'select', table, args: {} }); return { eq: (col, val) => call({ kind: 'select', table, args: { col, val } }), then: (a, b) => q.then(a, b) }; } });
+  const from = table => ({ select: () => ({ eq: (col, val) => ({ then: (a, b) => call({ kind: 'select', table, args: { col, val } }).then(a, b),
+    gte: (gc, gv) => call({ kind: 'select', table, args: { col, val, gte: [gc, gv] } }) }), then: (a, b) => call({ kind: 'select', table, args: {} }).then(a, b) }) });
+  const b64 = blob => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
+  const storage = { from: bucket => ({
+    upload: async (path, blob, o = {}) => call({ kind: 'storage', args: { kind: 'upload', bucket, path, size: blob.size, contentType: o.contentType || blob.type, upsert: !!o.upsert, data: await b64(blob) } }),
+    createSignedUrl: async (path, expiresIn) => { const r = await call({ kind: 'storage', args: { kind: 'sign', bucket, path, expiresIn } }); if (r.data) r.data.signedUrl = url + r.data.signedUrl; return r; },
+    remove: async paths => call({ kind: 'storage', args: { kind: 'remove', bucket, path: paths[0] } }) }) };
   const rpc = (fn, args) => call({ kind: 'rpc', table: fn, args });
   const channel = () => {
     const handlers = []; let es = null;
@@ -23,5 +29,5 @@ export function createClient(url, key, opts) {
         ch._es = es; return ch; } };
     return ch;
   };
-  return { auth, from, rpc, channel, removeChannel: ch => ch && ch._es && ch._es.close() };
+  return { auth, from, rpc, channel, storage, removeChannel: ch => ch && ch._es && ch._es.close() };
 }

@@ -622,6 +622,7 @@ dialog.gate .field{margin-bottom:12px}
             <label for="items">Itens comprados <span class="sub">(opcional — abate da lista de compras)</span></label>
             <input class="inp sm" id="items" placeholder="Ex.: picanha 2 kg, carvão, cerveja 2 fardos">
           </div>
+          <p class="hint" id="privHint">Não escreva dado de saúde (remédio, alergia, diagnóstico) nem documento (CPF, RG, cartão) na descrição, observação ou itens.</p>
           <div class="formactions">
             <button class="btn primary block" type="submit" id="submitBtn"><span data-i="plus"></span><span>Adicionar despesa</span></button>
             <button class="btn secondary" type="button" id="cancelEdit">Cancelar</button>
@@ -2545,7 +2546,18 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#weights').addEventListener('change', e => { const k = e.target.dataset.w; if (!k) return; const v = parseMoney(e.target.value); if (v >= 0 && v <= 5) { state.weights[k] = v; save(); render(); } else toast('Peso entre 0 e 5', 'alert'); });
 
   // ---------- GASTOS ----------
-  let selCat = 'food', selProof = 'nf', editingId = null, pendingPhoto = null;
+  let selCat = 'food', selProof = 'nf', editingId = null, pendingPhoto = null, pendingBlob = null, removePhoto = false;
+  // Comprovante para o bucket privado: redesenhado no canvas (descarta EXIF/GPS), JPEG até 150 KB.
+  async function photoBlob(img) {
+    for (const max of [1280, 1024, 800, 640]) {
+      const k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      for (let q = 0.8; q >= 0.4; q -= 0.1) { const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', q)); if (b && b.size <= PHOTO_MAX_BYTES) return b; }
+    }
+    return null;
+  }
+  const curExp = () => editingId && state.expenses.find(x => x.id === editingId);
+  const photoLockedForMe = () => { const e = curExp(); return !!(shared && e && e.photoPath && !isOrganizer()); };
   function renderSeg() {
     $('#catSeg').innerHTML = Object.entries(CATEGORIES).map(([k, c]) => `<button type="button" data-cat="${k}" aria-pressed="${k === selCat}">${icon(c.icon)}<span>${esc(c.label)}</span></button>`).join('');
     $('#fuelBox').hidden = selCat !== 'gas'; $('#itemsField').hidden = selCat === 'gas';
@@ -2553,12 +2565,16 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function renderProof() {
     $('#proofSeg').innerHTML = Object.entries(PROOF).map(([k, p]) => `<button type="button" data-proof="${k}" aria-pressed="${k === selProof}">${esc(p.label)}</button>`).join('');
     $('#proofExtra').hidden = selProof === 'nf';
-    $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span><button type="button" class="btn text sm" id="rmPhoto">Remover foto</button></span>`
+    const ce = curExp(), sent = shared && ce && ce.photoPath && !removePhoto, lockedP = photoLockedForMe();
+    $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span>${lockedP ? '' : '<button type="button" class="btn text sm" id="rmPhoto">Remover foto</button>'}</span>`
+      : sent ? `<span style="display:inline-flex;gap:8px;align-items:center">Comprovante enviado ${lockedP ? '' : '<button type="button" class="btn text sm" id="rmPhoto">Apagar comprovante</button>'}</span>`
       : (selProof === 'none' ? 'Sem nota: uma foto e uma observação ajudam na confirmação.' : 'Opcional: foto do comprovante.');
+    if (lockedP) $('#photoPrev').insertAdjacentHTML('beforeend', '<div class="hint">Comprovante já enviado: só o organizador troca ou apaga.</div>');
+    const lab = $('label[for="photo"]'); if (lab) { lab.toggleAttribute('aria-disabled', lockedP); lab.style.pointerEvents = lockedP ? 'none' : ''; lab.style.opacity = lockedP ? '.5' : ''; }
   }
   $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); };
   $('#proofSeg').onclick = e => { const b = e.target.closest('[data-proof]'); if (!b) return; selProof = b.dataset.proof; renderProof(); };
-  $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { pendingPhoto = null; renderProof(); } });
+  $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { if (!pendingPhoto && curExp() && curExp().photoPath) removePhoto = true; pendingPhoto = null; pendingBlob = null; renderProof(); } });
   $('#photo').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
     try {
@@ -2566,7 +2582,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
       const max = 480, k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
       cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
       let q = 0.7, url = cv.toDataURL('image/jpeg', q); while (url.length > 60000 && q > 0.3) { q -= 0.1; url = cv.toDataURL('image/jpeg', q); }
-      pendingPhoto = url; renderProof();
+      pendingPhoto = url; pendingBlob = shared ? await photoBlob(img) : null;
+      if (shared && !pendingBlob) toast('Foto grande demais para enviar; fica só neste aparelho', 'alert');
+      renderProof();
     } catch (err) { toast('Não consegui ler a foto', 'alert'); }
     e.target.value = '';
   });
@@ -2595,12 +2613,18 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const data = { amount, category: selCat, description: $('#desc').value.trim(), payerId: $('#payer').value, proof: selProof, estimated: $('#estChk').checked,
       note: selProof === 'nf' ? '' : $('#note').value.trim(), photo: selProof === 'nf' ? null : pendingPhoto, items: selCat === 'gas' ? '' : $('#items').value.trim() };
     const ed = editingId && state.expenses.find(x => x.id === editingId);
-    if (ed) { if (ed.proof === 'none' && (data.proof !== 'none' || ed.payerId !== data.payerId)) delete ed.confirmedBy; if (ed.estimated && !data.estimated) toast('Valor real registrado'); Object.assign(ed, data); }
-    else state.expenses.unshift({ id: uid(), ...data, ts: Date.now() });
+    const blob = selProof === 'nf' ? null : pendingBlob, rm = removePhoto || (selProof === 'nf' && ed && ed.photoPath);
+    if (shared && ed && ed.photoPath && !isOrganizer() && (blob || rm)) { toast('Só o organizador troca ou apaga o comprovante', 'alert'); data.photo = ed.photo || null; }
+    let id;
+    if (ed) { id = ed.id; if (ed.proof === 'none' && (data.proof !== 'none' || ed.payerId !== data.payerId)) delete ed.confirmedBy; if (ed.estimated && !data.estimated) toast('Valor real registrado'); Object.assign(ed, data); }
+    else { id = uid(); state.expenses.unshift({ id, ...data, ts: Date.now() }); }
+    const canPhoto = shared && photoQ && (!ed || !ed.photoPath || isOrganizer());
+    if (canPhoto && rm && !blob && ed && ed.photoPath) { const path = ed.photoPath; delete ed.photoPath; photoQ.remove(path).catch(x => toast(errMsg(x), 'alert')); }
+    if (canPhoto && blob) photoQ.enqueue(id, blob, 'image/jpeg').then(r => { if (r === 'offline') toast('Foto guardada: envia quando a internet voltar'); }).catch(() => {});
     stopEdit(); save(); render(); toast(ed ? 'Despesa atualizada' : 'Despesa adicionada');
   };
   function stopEdit() {
-    editingId = null; pendingPhoto = null; selProof = 'nf';
+    editingId = null; pendingPhoto = null; pendingBlob = null; removePhoto = false; selProof = 'nf';
     ['#amt', '#desc', '#note', '#items', '#payerSearch', '#fKm', '#fKml', '#fPrice'].forEach(s => { $(s).value = ''; }); $('#estChk').checked = false;
     $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
     $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false);
@@ -2608,7 +2632,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   function startEdit(id) {
     const e = state.expenses.find(x => x.id === id); if (!e) return;
-    editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; renderSeg(); renderProof();
+    editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; pendingBlob = null; removePhoto = false; renderSeg(); renderProof();
     $('#payerSearch').value = ''; renderPayers();
     $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId; $('#estChk').checked = !!e.estimated;
     $('#note').value = e.note || ''; $('#items').value = e.items || '';
@@ -2628,7 +2652,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (!list.length) { $('#expList').innerHTML = `<div class="empty"><span class="ic">${icon('receipt')}</span><b>${n ? 'Nada neste filtro' : 'Nenhuma despesa'}</b><p>${n ? 'Tudo em dia por aqui.' : 'Use o formulário ou o lançamento rápido.'}</p></div>`; return; }
     $('#expList').innerHTML = list.map(e => {
       const c = CATEGORIES[e.category] || CATEGORIES.food, pi = personInfo(e.payerId), pr = proofOf(e), cf = e.confirmedBy && famById(e.confirmedBy);
-      const others = state.families.filter(f => !pi || f.id !== pi.f.id);
+      const others = state.families.filter(f => (!pi || f.id !== pi.f.id) && (!state.syncMode || isOrganizer() || f.id === myFamily));
       return `<div class="li exp ${e.id === editingId ? 'sel' : ''}" data-id="${e.id}" tabindex="0" role="button" aria-label="Editar ${esc(e.description || c.label)}">
         <span class="av" style="--c:${c.color}">${icon(c.icon)}</span>
         <div style="min-width:0"><div class="t1">${esc(e.description || c.label)}</div><div class="t2">${pi ? esc(pi.m.name || 'Sem nome') + ' · ' + esc(shortFam(pi.f.name)) : 'Pagador removido'} · ${esc(c.label)}</div>
@@ -2637,8 +2661,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
             ${e.estimated ? '<span class="badge warn">Estimado</span>' : ''}
             ${needsConfirm(e) ? `<span class="badge warn">Aguardando confirmação</span><button class="badge acc" data-confirm>${icon('check')}Confirmar</button>` : ''}
             ${pr === 'none' && cf ? `<span class="badge ok">${icon('check')}Confirmado por ${esc(shortFam(cf.name))}</span>` : ''}
-            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : ''}</div>
-          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('')}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
+            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : e.photoPath ? `<button class="badge" data-rphoto>${icon('camera')}Comprovante</button>` : ''}</div>
+          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('') || `<span class="t2">${myFamily ? 'A sua família pagou este gasto: outra família confirma.' : 'Peça ao organizador para ligar você à sua família (Acertos › Dados › Membros).'}</span>`}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
         <div class="amt num">${e.estimated ? '~' : ''}${brl(e.amount)}</div>
         <button class="del" data-del="${e.id}" aria-label="Excluir despesa">${icon('trash')}</button></div>`;
     }).join('');
@@ -2651,6 +2675,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (e.target.closest('[data-cfx]')) { confirming = null; renderExpenses(); return; }
     const cf = e.target.closest('[data-cf]'); if (cf) { ex.confirmedBy = cf.dataset.cf; ex.confirmedAt = Date.now(); confirming = null; save(); render(); toast(`Confirmado por ${shortFam(famById(cf.dataset.cf).name)}`); return; }
     if (e.target.closest('[data-photo]')) { $('#photoBig').src = ex.photo; $('#photoDlg').showModal(); return; }
+    if (e.target.closest('[data-rphoto]')) { if (!photoQ) return toast('Sem conexão com o servidor', 'alert');
+      photoQ.url(ex.photoPath).then(u => { $('#photoBig').src = u; $('#photoDlg').showModal(); }).catch(x => toast(/not found|404/i.test(String(x && (x.message || x.statusCode))) ? 'Comprovante ainda não chegou ao servidor' : errMsg(x), 'alert')); return; }
     if (e.target.closest('.chooser')) return;
     const b = e.target.closest('[data-del]');
     if (!b) { startEdit(id); return; }
@@ -2778,8 +2804,24 @@ Corte as frutas e monte a mesa com pães e frios.`,
   // ---------- EVENTO COMPARTILHADO: status, entrada, aprovação, organizador, dados (export/import) ----------
   const STATUS_TXT = { idle: 'Conectando…', saving: 'Salvando…', synced: 'Sincronizado', pending: 'Pendente', offline: 'Offline', error: 'Erro', locked: 'Travado', waiting: 'Aguardando' };
   let syncInfo = { name: session && session.name, createdBy: null }, myUserId = null, lastStatus = 'idle';
-  let myRole = null, myStatus = null, members = [], membersTimer = null, pendingPoll = null, live = false;
+  let myRole = null, myStatus = null, myFamily = null, members = [], membersTimer = null, pendingPoll = null, live = false;
   const isOrganizer = () => shared && myRole === 'organizer' && myStatus === 'approved';
+  // Configurações do evento (datas, refeições, divisão, caixinha, pesos, preços/quantidades): só o organizador no modo compartilhado.
+  const canSettings = () => !shared || isOrganizer();
+  const SETTINGS_SEL = '#tStart,#tEnd,#mealToggles [data-mt],#kitty,#modeSeg [data-mode],#weights [data-w],#estEditor [data-price],#estEditor [data-staple],#estEditor [data-est],#inclChk';
+  const SETTINGS_BOX = ['#mealToggles', '#kitty', '#modeSeg', '#weights', '#estEditor'];
+  const SETTINGS_HINT = 'Só o organizador muda as configurações do evento. Você vê os valores atuais.';
+  function paintSettingsLock() {
+    const ro = !canSettings();
+    $$(SETTINGS_SEL).forEach(el => { el.disabled = ro; if (ro) el.setAttribute('aria-disabled', 'true'); else el.removeAttribute('aria-disabled'); });
+    SETTINGS_BOX.forEach(sel => { const box = $(sel); if (!box) return; const host = box.closest('.field') || box;
+      let h = host.nextElementSibling; if (!h || !h.classList.contains('orghint')) { h = document.createElement('p'); h.className = 'hint orghint'; h.textContent = SETTINGS_HINT; host.after(h); }
+      h.hidden = !ro; });
+  }
+  ['click', 'change', 'input'].forEach(type => document.addEventListener(type, e => {
+    if (canSettings() || !e.target.closest || !e.target.closest(SETTINGS_SEL)) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if (type !== 'input') { toast('Só o organizador muda isto', 'alert'); render(); }
+  }, true));
   function paintSync(st, info = {}) {
     lastStatus = st;
     const pill = $('#syncPill'); if (!pill) return;
@@ -2808,7 +2850,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (/too_many_attempts/.test(m)) return 'Muitas tentativas com código errado. Espere 10 minutos e tente de novo.';
     if (/revoked/.test(m)) return 'O organizador removeu este aparelho do evento. Fale com ele.';
     if (/organizer_login_required/.test(m)) return 'Para criar um evento, entre primeiro com o GitHub.';
+    if (/organizer_only/.test(m) && /organizer_allowlist/.test(String(e && e.hint))) return 'Esta conta GitHub não está na lista de quem pode criar eventos. Quem cuida do Supabase adiciona o seu usuário (guia de instalação, passo 5.6).';
     if (/organizer_only/.test(m)) return 'Só o organizador pode fazer isso.';
+    if (/last_organizer/.test(m)) return 'O evento precisa de pelo menos um organizador. Promova outra pessoa antes.';
+    if (/cannot_demote_creator|cannot_revoke_creator/.test(m)) return 'Quem criou o evento continua organizador.';
+    if (/not_your_family/.test(m)) return 'Você só confirma pela sua família.';
+    if (/family_not_found/.test(m)) return 'Família não encontrada.';
     if (/anonymous.*disabled|Anonymous sign-ins are disabled/i.test(m)) return 'O login anônimo está desligado no Supabase (Authentication › Sign In / Providers).';
     if (/provider is not enabled|Unsupported provider/i.test(m)) return 'O login com GitHub não está ligado no Supabase (veja o passo 4 do guia).';
     if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o servidor. Tente de novo com internet.';
@@ -2925,7 +2972,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     myStatus = m.status; paintSync('waiting');
     const revoked = m.status === 'revoked';
     $('#gateBody').innerHTML = `<h2 id="gateTitle">${revoked ? 'Acesso removido' : 'Aguardando aprovação'}</h2>
-      <p style="margin-bottom:12px">Evento: <b>${esc(m.event_name || session.name || '—')}</b><br>Você: <b>${esc(m.display_name || session.me || '—')}</b></p>
+      <p style="margin-bottom:12px">Você: <b>${esc(m.display_name || session.me || '—')}</b><br><span class="hint">Os dados do evento (nome, famílias, gastos) só aparecem depois da aprovação.</span></p>
       <p class="hint" style="margin-bottom:16px">${revoked ? 'O organizador removeu este aparelho do evento. Se foi engano, peça para ele aprovar de novo.' : 'O organizador precisa aprovar este aparelho (no celular dele: Acertos › Dados › Membros). Esta tela atualiza sozinha.'}</p>
       <div class="actions">${revoked ? '' : '<button class="btn primary" type="button" id="waitCheck">Verificar agora</button>'}<button class="btn secondary" type="button" id="waitLeave">Sair do evento</button></div>`;
     $('#gateDlg').oncancel = ev => ev.preventDefault();
@@ -2946,12 +2993,14 @@ Corte as frutas e monte a mesa com pães e frios.`,
       if (row.status !== 'approved') { live = false; showWaiting({ ...row, event_name: syncInfo.name }); }
       else if (myStatus !== 'approved') checkWaiting();
       if (row.role) myRole = row.role;
+      if ('family_id' in row) myFamily = row.family_id || null;
+      render();
     }
     if (isOrganizer()) { clearTimeout(membersTimer); membersTimer = setTimeout(loadMembers, 300); }
   }
   async function loadMembers() {
     if (!isOrganizer() || !sbClient) return;
-    const r = await sbClient.from('event_members').select('user_id,display_name,role,status,joined_at').eq('event_id', session.eventId);
+    const r = await sbClient.from('event_members').select('user_id,display_name,role,status,joined_at,family_id').eq('event_id', session.eventId);
     if (!r.error) { members = r.data || []; renderData(); }
   }
   async function goLive() {
@@ -2961,10 +3010,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
       if (e && e.code === 'not_member') { localStorage.removeItem(SESSION_KEY); sync = null; return openGate({ msg: 'Este aparelho não está neste evento. Entre de novo com o código.' }); }
       paintSync(/fetch|network|Failed/i.test(String(e && e.message)) ? 'offline' : 'error', { error: e });
     }
-    try { const m = await sync.membership(); myRole = m.role || null; myStatus = m.status; } catch (e) {}
+    try { const m = await sync.membership(); myRole = m.role || null; myStatus = m.status; myFamily = m.family_id || null; } catch (e) {}
     if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
     if (!live) { live = true; sync.subscribe(); }
     loadMembers(); renderData();
+  }
+  // Fila de comprovantes no IndexedDB (sobrevive a fechar o app sem internet)
+  let photoQ = null;
+  function idbStore() {
+    const open = () => new Promise((res, rej) => { const r = indexedDB.open('rateio-fotos', 1); r.onupgradeneeded = () => r.result.createObjectStore('fila', { keyPath: 'path' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('fila', mode), st = t.objectStore('fila'); const q = fn(st); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+    return { put: it => tx('readwrite', st => st.put(it)), del: p => tx('readwrite', st => st.delete(p)), all: () => tx('readonly', st => st.getAll()).then(x => x || []) };
   }
   // called by the module script once supabase-js is loaded
   async function attachBackend(sb) {
@@ -2988,8 +3044,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
       loadBase: () => { try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; } },
       saveBase: b => { try { localStorage.setItem(BASE_KEY, JSON.stringify(b)); } catch (e) {} } });
     sync.setUser(myUserId);
+    if (sb.storage) photoQ = createPhotoQueue({ storage: sb.storage.from('comprovantes'), eventId: session.eventId, store: idbStore(), isOrganizer,
+      onUploaded: (id, path) => { const e = state.expenses.find(x => x.id === id); if (e && e.photoPath !== path) { e.photoPath = path; save(); render(); } toast('Comprovante enviado'); },
+      onError: (id, code) => toast(code === 'exists' ? 'Comprovante já existe: só o organizador troca' : code === 'too_big' ? 'Foto acima de 150 KB' : code === 'denied' ? 'Sem permissão para enviar comprovante' : 'Erro ao enviar comprovante', 'alert') });
     await goLive();
-    addEventListener('online', () => { if (live) sync.resync(); });
+    if (photoQ) photoQ.process().catch(() => {});
+    addEventListener('online', () => { if (live) sync.resync(); if (photoQ) photoQ.process().catch(() => {}); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && live) sync.resync(); });
     if (sessionStorage.getItem('rateio-e2-created')) { sessionStorage.removeItem('rateio-e2-created'); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start' }), 80); toast('Evento criado. Compartilhe o link.'); }
     if (linkCode && session.code && linkCode !== session.code && isOrganizer()) toast('Este link tem um código antigo do evento.');
@@ -3003,9 +3063,14 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const list = members.slice().sort((a, b) => order[a.status] - order[b.status] || String(a.display_name).localeCompare(String(b.display_name)));
     const np = list.filter(m => m.status === 'pending').length;
     return `<h3 class="subhead" style="margin-top:16px">Membros${np ? ` · <span class="chip warn">${np} aguardando</span>` : ''}</h3>
-      <ul class="memlist">${list.map(m => `<li><span class="mname"><b>${esc(m.display_name || '—')}</b><small>${m.role === 'organizer' ? 'organizador' : esc(ST_LABEL[m.status] || m.status)}${m.user_id === myUserId ? ' · você' : ''}</small></span>
-        <span class="mact">${m.user_id === myUserId || m.role === 'organizer' ? '' : m.status === 'pending' ? `<button class="btn primary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar</button><button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Recusar</button>`
-          : m.status === 'approved' ? `<button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Remover</button>` : `<button class="btn secondary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar de novo</button>`}</span></li>`).join('') || '<li class="hint">Ninguém entrou ainda.</li>'}</ul>
+      <ul class="memlist">${list.map(m => { const me = m.user_id === myUserId, creator = m.user_id === syncInfo.createdBy, org = m.role === 'organizer';
+        const famOpts = `<select class="inp sm" data-fam="${esc(m.user_id)}" aria-label="Família de ${esc(m.display_name || '—')}"><option value="">Família…</option>${state.families.map(f => `<option value="${esc(f.id)}" ${f.id === m.family_id ? 'selected' : ''}>${esc(shortFam(f.name))}</option>`).join('')}</select>`;
+        const acts = m.status === 'pending' ? `<button class="btn primary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar</button><button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Recusar</button>`
+          : m.status === 'approved' ? `${famOpts}${org ? (creator ? '' : `<button class="btn secondary sm" data-m="demote" data-u="${esc(m.user_id)}">${me ? 'Deixar de organizar' : 'Tirar de organizador'}</button>`) : `<button class="btn secondary sm" data-m="promote" data-u="${esc(m.user_id)}">Tornar organizador</button>`}${me || creator ? '' : `<button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Remover</button>`}`
+          : `<button class="btn secondary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar de novo</button>`;
+        return `<li><span class="mname"><b>${esc(m.display_name || '—')}</b><small>${org ? 'organizador' : esc(ST_LABEL[m.status] || m.status)}${creator ? ' · criou' : ''}${me ? ' · você' : ''}${m.status === 'approved' && !m.family_id && !org ? ' · sem família' : ''}</small></span>
+        <span class="mact">${acts}</span></li>`; }).join('') || '<li class="hint">Ninguém entrou ainda.</li>'}</ul>
+      <p class="hint" style="margin-top:4px">Ligue cada pessoa à família dela: o membro só confirma gastos “sem nota” pela própria família. Organizadores mudam configurações, aprovam e removem.</p>
       <h3 class="subhead" style="margin-top:16px">Segurança do evento</h3>
       <label class="check" style="margin:4px 0 8px"><input type="checkbox" id="repend"> <span>Ao trocar o código, pedir nova aprovação de todos</span></label>
       <div class="actwrap" style="margin-top:0"><div class="actions">
@@ -3025,7 +3090,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         ${isOrganizer() && code ? `<span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>` : ''}
         <span>Você: <b>${esc(session.me || '—')}</b>${isOrganizer() ? ' · organizador' : myStatus === 'approved' ? ' · membro aprovado' : ''}</span>
         <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${n ? ` · ${n} pendente(s)` : ''}</span>
-        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos e pesos. <b>Ficam só neste aparelho:</b> fotos, cardápio, receitas, compras e dieta/alergia.</span></div>`;
+        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos, configurações, receitas, cardápio e comprovantes (bucket privado). <b>Ficam só neste aparelho:</b> dieta/alergia.</span></div>`;
       if (isOrganizer() && code) h += `<div class="actwrap" style="margin-top:0"><div class="actions">
           <button class="btn secondary" data-d="copylink"><span data-i="copy"></span><span>Copiar link</span></button>
           <button class="btn secondary" data-d="sharelink"><span data-i="share"></span><span>Enviar link</span></button>
@@ -3048,11 +3113,21 @@ Corte as frutas e monte a mesa com pães e frios.`,
     body.innerHTML = h; hydrate(body);
   }
   const rpcOrToast = async (fn, args, ok) => { const r = await sbClient.rpc(fn, args); if (r.error) { toast(errMsg(r.error), 'alert'); return null; } if (ok) toast(ok); return r; };
+  $('#dataBody').addEventListener('change', async e => {
+    const sel = e.target.closest('[data-fam]'); if (!sel || !isOrganizer()) return;
+    sel.disabled = true; const who = (members.find(x => x.user_id === sel.dataset.fam) || {}).display_name || '';
+    const f = famById(sel.value);
+    await rpcOrToast('set_member_family', { p_event: session.eventId, p_user: sel.dataset.fam, p_family: sel.value || null }, f ? `${who} · ${shortFam(f.name)}` : `${who} sem família`);
+    loadMembers();
+  });
   $('#dataBody').addEventListener('click', async e => {
     const m = e.target.closest('[data-m]');
     if (m && isOrganizer()) { m.disabled = true; const who = (members.find(x => x.user_id === m.dataset.u) || {}).display_name || '';
-      if (m.dataset.m === 'revoke' && !confirm(`Remover ${who} do evento? O aparelho perde o acesso na hora.`)) { m.disabled = false; return; }
-      await rpcOrToast(m.dataset.m === 'approve' ? 'approve_member' : 'revoke_member', { p_event: session.eventId, p_user: m.dataset.u }, m.dataset.m === 'approve' ? `${who} aprovado(a)` : `${who} removido(a)`);
+      const k = m.dataset.m;
+      if (k === 'revoke' && !confirm(`Remover ${who} do evento? O aparelho perde o acesso na hora. Depois, use «Trocar código» para o link antigo parar de valer.`)) { m.disabled = false; return; }
+      if (k === 'demote' && m.dataset.u === myUserId && !confirm('Deixar de organizar? Você passa a só ver as configurações.')) { m.disabled = false; return; }
+      if (k === 'promote' || k === 'demote') await rpcOrToast('set_member_role', { p_event: session.eventId, p_user: m.dataset.u, p_role: k === 'promote' ? 'organizer' : 'member' }, k === 'promote' ? `${who} agora organiza` : `${who} não organiza mais`);
+      else await rpcOrToast(k === 'approve' ? 'approve_member' : 'revoke_member', { p_event: session.eventId, p_user: m.dataset.u }, k === 'approve' ? `${who} aprovado(a)` : `${who} removido(a)`);
       return loadMembers(); }
     const b = e.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
     if (a === 'gate' || a === 'other') openGate();
@@ -3128,7 +3203,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     renderPayers(); renderExpenses();
     renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
     setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
-    renderData();
+    renderData(); paintSettingsLock();
   }
   window.App = { __edit: fn => { fn(state); save(); render(); }, getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui,
     backendOn, shared, attachBackend, openGate, sync: () => sync };
