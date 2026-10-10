@@ -29,6 +29,11 @@ begin
   if not exists (select 1 from public.families f where f.event_id = new.event_id and f.id = new.family_id and f.deleted_at is null) then
     raise exception 'family_not_found' using errcode = '23503';
   end if;
+  -- membro só confirma pela própria família (event_members.family_id, definida pelo organizador); organizador por qualquer uma
+  if not public.is_event_organizer(new.event_id) and not exists (
+       select 1 from public.event_members m where m.event_id = new.event_id and m.user_id = auth.uid() and m.family_id = new.family_id) then
+    raise exception 'not_your_family' using errcode = '42501';
+  end if;
   new.confirmed_by := auth.uid(); new.confirmed_at := now(); new.voided_at := null;
   return new;
 end $$;
@@ -51,7 +56,7 @@ create trigger void_confirmation after update on public.expenses
 
 alter table public.expense_confirmations enable row level security;
 revoke all on public.expense_confirmations from anon, authenticated;
-grant select, insert on public.expense_confirmations to authenticated;
+grant select on public.expense_confirmations to authenticated; -- insert por coluna em 0013
 drop policy if exists confirmations_select on public.expense_confirmations;
 create policy confirmations_select on public.expense_confirmations for select to authenticated using (public.is_event_member(event_id));
 drop policy if exists confirmations_insert on public.expense_confirmations;
@@ -75,7 +80,7 @@ drop trigger if exists version_guard on public.event_overrides;
 create trigger version_guard before insert or update on public.event_overrides for each row execute function public.tg_version();
 alter table public.event_overrides enable row level security;
 revoke all on public.event_overrides from anon, authenticated;
-grant select, insert, update on public.event_overrides to authenticated;
+grant select on public.event_overrides to authenticated; -- insert/update por coluna em 0013
 drop policy if exists overrides_select on public.event_overrides;
 create policy overrides_select on public.event_overrides for select to authenticated using (public.is_event_member(event_id));
 drop policy if exists overrides_insert on public.event_overrides;

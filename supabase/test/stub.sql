@@ -28,3 +28,5 @@ alter default privileges in schema public grant all on functions to anon, authen
 do $$ begin
   if not exists (select 1 from pg_publication where pubname='supabase_realtime') then create publication supabase_realtime; end if;
 end $$;
+-- identidades do Auth (o Supabase guarda aqui o login do GitHub em identity_data.user_name)
+create table if not exists auth.identities (user_id uuid, provider text, identity_data jsonb);

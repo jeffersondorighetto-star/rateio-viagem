@@ -67,12 +67,13 @@ revoke all on public.events, public.event_secrets, public.event_members, public.
               public.expenses, public.settlement_marks, public.join_attempts from anon, authenticated;
 
 grant select on public.events to authenticated;
--- configurações do evento: qualquer membro aprovado (nome, trava e código só por RPC do organizador)
+-- configurações do evento: só o organizador (política em 0009). Nome, trava e código só por RPC.
 grant update (start_date, end_date, meals, split_mode, include_unconfirmed, kitty_per_family)
   on public.events to authenticated;
+-- event_members: só leitura para clientes; nome, família e papel mudam por RPC (0003, 0009, 0013)
 grant select on public.event_members to authenticated;
-grant update (display_name, family_id) on public.event_members to authenticated;
-grant select, insert, update on public.families, public.people, public.expenses, public.settlement_marks to authenticated;
+-- INSERT/UPDATE por COLUNA (a mesma lista do apply_ops) ficam em 0013_hardening.sql, depois da coluna version existir
+grant select on public.families, public.people, public.expenses, public.settlement_marks to authenticated;
 
 drop policy if exists events_select on public.events;
 create policy events_select on public.events for select to authenticated using (public.is_event_member(id));
@@ -85,8 +86,6 @@ drop policy if exists members_select on public.event_members;
 create policy members_select on public.event_members for select to authenticated
   using (user_id = auth.uid() or public.is_event_member(event_id));
 drop policy if exists members_update_self on public.event_members;
-create policy members_update_self on public.event_members for update to authenticated
-  using (user_id = auth.uid() and status <> 'revoked') with check (user_id = auth.uid());
 
 do $$
 declare t text;

@@ -65,7 +65,7 @@ begin
     execute format('create trigger version_guard before insert or update on public.%I for each row execute function public.tg_version()', t);
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
-    execute format('grant select, insert, update on public.%I to authenticated', t);
+    execute format('grant select on public.%I to authenticated', t); -- insert/update por coluna em 0013
     execute format('drop policy if exists %I on public.%I', t || '_select', t);
     execute format('create policy %I on public.%I for select to authenticated using (public.is_event_member(event_id))', t || '_select', t);
     execute format('drop policy if exists %I on public.%I', t || '_insert', t);

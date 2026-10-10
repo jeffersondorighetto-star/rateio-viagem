@@ -9,6 +9,24 @@ language sql immutable set search_path = '' as $$ select encode(extensions.diges
 create or replace function public._is_anonymous() returns boolean
 language sql stable set search_path = '' as $$ select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, true) $$;
 
+-- Quem pode criar evento: lista fechada (cota do projeto Free). Sem acesso de clientes; editar no SQL Editor:
+--   insert into public.organizer_allowlist (github_login) values ('seu-usuario-github');
+-- O login vem de auth.identities (dado do GitHub, não editável pelo usuário; user_metadata é editável e NÃO é usado).
+create table if not exists public.organizer_allowlist (
+  github_login text primary key check (github_login ~ '^[A-Za-z0-9-]{1,39}$'),
+  note         text,
+  added_at     timestamptz not null default now()
+);
+alter table public.organizer_allowlist enable row level security;
+revoke all on public.organizer_allowlist from anon, authenticated;
+create or replace function public._may_organize() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from auth.identities i join public.organizer_allowlist a
+                   on lower(a.github_login) = lower(i.identity_data ->> 'user_name')
+                  where i.user_id = auth.uid() and i.provider = 'github');
+$$;
+revoke all on function public._may_organize() from public, anon, authenticated;
+
 create or replace function public.create_event(p_name text, p_code text, p_display_name text)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare
@@ -18,6 +36,7 @@ declare
 begin
   if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
   if public._is_anonymous() then raise exception 'organizer_login_required' using errcode = '42501'; end if;
+  if not public._may_organize() then raise exception 'organizer_only' using errcode = '42501', hint = 'GitHub fora de public.organizer_allowlist'; end if;
   if not public._code_ok(v_code) then raise exception 'invalid_code_format' using errcode = '22023'; end if;
   if char_length(btrim(coalesce(p_name, ''))) not between 1 and 80 then raise exception 'invalid_name' using errcode = '22023'; end if;
   if char_length(btrim(coalesce(p_display_name, ''))) not between 1 and 40 then raise exception 'invalid_display_name' using errcode = '22023'; end if;
@@ -35,7 +54,8 @@ begin
 end $$;
 
 -- Resultado em jsonb (sem exceção no código errado, para a tentativa ficar registrada):
--- {ok:true, event_id, event_name, status, role} | {ok:false, error:'invalid_code'|'too_many_attempts'|'revoked'|...}
+-- {ok:true, event_id, event_name (só se aprovado), status, role} | {ok:false, error:'invalid_code'|'too_many_attempts'|'revoked'|...}
+-- Pendente não recebe nada sobre o evento além do id (o nome pode ter sobrenome de família).
 drop function if exists public.join_event(text, text);
 create or replace function public.join_event(p_code text, p_display_name text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
@@ -63,18 +83,19 @@ begin
   if m.user_id is null then
     insert into public.event_members (event_id, user_id, display_name, role, status, joined_code_version)
     values (s.event_id, v_uid, btrim(p_display_name), 'member', 'pending', s.code_version);
-    return jsonb_build_object('ok', true, 'event_id', s.event_id, 'event_name', v_name, 'status', 'pending', 'role', 'member');
+    return jsonb_build_object('ok', true, 'event_id', s.event_id, 'status', 'pending', 'role', 'member');
   end if;
   if m.status = 'revoked' then return jsonb_build_object('ok', false, 'error', 'revoked'); end if;
   update public.event_members set display_name = btrim(p_display_name) where event_id = s.event_id and user_id = v_uid;
-  return jsonb_build_object('ok', true, 'event_id', s.event_id, 'event_name', v_name, 'status', m.status, 'role', m.role);
+  return jsonb_build_object('ok', true, 'event_id', s.event_id, 'status', m.status, 'role', m.role)
+         || case when m.status = 'approved' then jsonb_build_object('event_name', v_name) else '{}'::jsonb end;
 end $$;
 
 -- Situação do próprio aparelho num evento (funciona também para pendente/revogado).
 create or replace function public.my_membership(p_event uuid)
 returns jsonb language sql stable security definer set search_path = '' as $$
-  select coalesce((select jsonb_build_object('status', m.status, 'role', m.role, 'display_name', m.display_name,
-                                             'event_name', e.name, 'locked', e.locked)
+  select coalesce((select jsonb_build_object('status', m.status, 'role', m.role, 'display_name', m.display_name)
+                          || case when m.status = 'approved' then jsonb_build_object('event_name', e.name, 'locked', e.locked, 'family_id', m.family_id) else '{}'::jsonb end
                      from public.event_members m join public.events e on e.id = m.event_id
                     where m.event_id = p_event and m.user_id = auth.uid()), jsonb_build_object('status', 'none'));
 $$;
