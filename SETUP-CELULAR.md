@@ -56,11 +56,14 @@ As famílias entram só com o código (login anônimo) e ficam **aguardando** at
 4. Toque em **Run**. Se aparecer um aviso sobre operação destrutiva ou «RLS», toque em **Run this query** para confirmar. O esperado é **Success. No rows returned**.
    O script cria também o espaço privado de fotos **comprovantes** (Storage). Dieta e alergia **não** vão para o banco: ficam só no celular de cada um.
 5. Pode rodar de novo sem problema: o script não apaga dados.
-6. **Quem pode criar evento** (só você): toque em **New query** de novo, cole a linha abaixo e toque em **Run**:
+6. **Quem pode criar evento** (só você): a lista usa o **número** da conta GitHub, não o nome de usuário (o nome pode ser trocado e depois usado por outra pessoa; o número não muda).
+   - Para achar o número de uma conta, abra `https://api.github.com/users/NOME-DE-USUARIO` no navegador e copie o campo `"id"`. O seu (`jeffersondorighetto-star`) é **286220167**.
+   - Toque em **New query** de novo, cole a linha abaixo e toque em **Run**:
    ```sql
-   insert into public.organizer_allowlist (github_login) values ('jeffersondorighetto-star') on conflict do nothing;
+   insert into public.organizer_allowlist (github_id, note) values (286220167, 'jeffersondorighetto-star') on conflict do nothing;
    ```
-   Sem essa linha ninguém cria evento, nem você. Outra conta GitHub que tentar recebe «não está na lista».
+   Sem essa linha ninguém cria evento, nem você. Outra conta GitHub que tentar recebe «não está na lista». (Se você já tinha rodado a versão antiga, com o nome de usuário, o script novo recria a lista vazia: rode esta linha de novo.)
+7. **Fotos de comprovante: apagar até 30 dias depois da viagem.** Depois da data de fim, o app mostra a você (organizador) «apague os comprovantes até DD/MM» com o botão **Apagar agora**. O mesmo botão fica em Acertos › Dados › **Apagar comprovantes do evento**. Não apague por SQL: o Supabase bloqueia `delete` em `storage.objects` (e deixaria o arquivo perdido no armazenamento).
 
 ## 6. Copiar o endereço e a chave pública (1 min)
 

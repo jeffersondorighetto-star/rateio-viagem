@@ -21,10 +21,13 @@ Objetivo: conferir se o evento compartilhado dá **os mesmos acertos** que as fa
    - Divergência acima de R$ 1,00 por família: anote família, valor no app, valor real e um palpite (gasto esquecido, estimado não corrigido, sem nota não confirmado).
 6. **Conferir que nada sensível subiu**: no Supabase, Table Editor › `people` e `expenses` não devem ter dieta nem alergia (a dieta fica só no aparelho; **não existe tabela de dieta** no banco). Na importação, as fotos antigas do JSON ficam só no aparelho (não sobem para o bucket).
 7. **Mandar no chat só os números**: «Família A: app R$ x × real R$ y» (e B, C, D) e o modo de divisão. Sem nomes de pessoas nem de famílias.
-8. **Limpar no mesmo dia** (o plano Free não tem backup e guarda log de API por 1 dia): Acertos › Dados › **Travar evento** e depois **Sair do evento neste aparelho**. Depois, no SQL Editor:
+8. **Limpar no mesmo dia** (o plano Free não tem backup e guarda log de API por 1 dia):
+   1. Acertos › Dados › **Apagar comprovantes do evento** (o Storage não apaga em cascata; o botão apaga as fotos pela Storage API e tira a foto dos gastos). Por SQL não dá: o Supabase bloqueia `delete` em `storage.objects`. Alternativa pela tela: Storage › `comprovantes` › pasta do evento › Delete.
+   2. **Travar evento** e depois **Sair do evento neste aparelho**.
+   3. No SQL Editor:
    ```sql
-   -- 1) comprovantes do evento (o Storage não apaga em cascata)
-   delete from storage.objects where bucket_id = 'comprovantes'
+   -- 1) conferir que não sobrou foto do evento (tem que dar 0)
+   select count(*) from storage.objects where bucket_id = 'comprovantes'
      and name like (select id::text from public.events where name = 'TESTE validação viagem') || '/%';
    -- 2) o evento (apaga em cascata famílias, pessoas, gastos, receitas, cardápio, confirmações e acertos)
    delete from public.events where name = 'TESTE validação viagem';
@@ -34,7 +37,12 @@ Objetivo: conferir se o evento compartilhado dá **os mesmos acertos** que as fa
           (select count(*) from storage.objects o where o.bucket_id = 'comprovantes'
              and not exists (select 1 from public.events e where o.name like e.id::text || '/%')) as fotos_orfas;
    ```
-   Se o SQL Editor recusar o `delete` em `storage.objects`, apague pela tela: Storage › `comprovantes` › pasta do evento › Delete. Apague também o JSON do celular se não for mais usar.
+   Apague também o JSON do celular se não for mais usar.
+
+## Regra dos comprovantes (eventos reais)
+- Ao fotografar, **cubra CPF e nome** (o app avisa junto ao botão Foto). Nota sem CPF basta.
+- O organizador apaga as fotos do evento **até 30 dias depois da data de fim**. Depois do fim, o app mostra «apague os comprovantes até DD/MM» com o botão **Apagar agora** (também em Acertos › Dados). Só o organizador vê e só as fotos daquele evento são apagadas; gastos e valores ficam.
+- Conferência no D+30: `select count(*) from storage.objects where bucket_id = 'comprovantes' and name like '<id do evento>/%'` = 0.
 
 ## Critério de aceite
 - Contagens e total iguais na prévia; diferença máxima ≤ R$ 0,01 na conversão.
