@@ -54,8 +54,13 @@ As famílias entram só com o código (login anônimo) e ficam **aguardando** at
 2. Abra **[SQL Editor › New query](https://supabase.com/dashboard/project/_/sql/new)**.
 3. Toque na área de texto, segure e **Colar**. Confira que a primeira linha começa com `-- ====` e a última fala em «RLS enabled».
 4. Toque em **Run**. Se aparecer um aviso sobre operação destrutiva ou «RLS», toque em **Run this query** para confirmar. O esperado é **Success. No rows returned**.
-   O script cria também o espaço privado de fotos **comprovantes** (Storage) e as regras de dieta, que o app ainda não usa.
-5. Pode rodar de novo sem problema: o script não apaga nada.
+   O script cria também o espaço privado de fotos **comprovantes** (Storage). Dieta e alergia **não** vão para o banco: ficam só no celular de cada um.
+5. Pode rodar de novo sem problema: o script não apaga dados.
+6. **Quem pode criar evento** (só você): toque em **New query** de novo, cole a linha abaixo e toque em **Run**:
+   ```sql
+   insert into public.organizer_allowlist (github_login) values ('jeffersondorighetto-star') on conflict do nothing;
+   ```
+   Sem essa linha ninguém cria evento, nem você. Outra conta GitHub que tentar recebe «não está na lista».
 
 ## 6. Copiar o endereço e a chave pública (1 min)
 
@@ -75,7 +80,8 @@ Pronto. A partir daqui, o bot coloca essas duas no app, testa e publica.
 
 1. Abra o app, toque em **Criar ou entrar em evento › Entrar com GitHub** e autorize.
 2. Crie o evento e toque em **Enviar link** para o grupo das famílias.
-3. Quem abrir o link fica **Aguardando aprovação**. Você aprova em **Acertos › Dados › Membros**.
+3. Quem abrir o link fica **Aguardando aprovação** (sem ver nada do evento, nem o nome). Você aprova em **Acertos › Dados › Membros** e escolhe a **família** de cada pessoa: cada uma só confirma gastos «sem nota» pela própria família.
+   Datas, refeições, modo de divisão, caixinha, pesos e preços só o organizador muda; os outros veem só leitura. Para dividir a tarefa, use **Tornar organizador**.
 4. Fim da viagem e acerto feito: **Travar evento** (fica só leitura). Link vazou: **Trocar código**.
 
 ---

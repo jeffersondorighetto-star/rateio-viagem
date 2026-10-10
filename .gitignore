@@ -6,3 +6,24 @@ shots/
 *.export.json
 exports/
 .env
+# Dados reais e mídia nunca entram no repositório (revisão de governança 5.2).
+# JSON: só padrões específicos (package.json e outros arquivos versionados continuam rastreados).
+data/
+dados/
+exports/
+*.export.json
+rateatouille-*.json
+racha-viagem-*.json
+backup*.json
+*.jpg
+*.jpeg
+*.heic
+*.heif
+*.webp
+*.csv
+*.tsv
+*.xlsx
+dump*.sql
+*.dump
+*.backup
+*.bak
