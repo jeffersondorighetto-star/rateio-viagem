@@ -1,11 +1,13 @@
 -- =====================================================================
--- Rateatouille — backend mínimo (MVP) para o Supabase
--- Cole TUDO no Supabase › SQL Editor › New query › Run.
--- Idempotente: pode rodar de novo sem perder dados.
+-- Rateatouille — banco do evento compartilhado (Supabase)
+-- ARQUIVO GERADO por supabase/build.sh a partir de supabase/migrations/. Não edite à mão.
+-- Cole TUDO no Supabase › SQL Editor › New query › Run. Idempotente: pode rodar de novo sem perder dados.
 -- Sem segredos e sem dados reais. Nada de CPF, conta, cartão ou Pix.
--- Fora deste MVP (de propósito): dieta/alergia, receitas, cardápio,
--- fotos, aprovação de organizador, fila offline e versionamento.
 -- =====================================================================
+
+-- >>>>> migrations/0001_core_tables.sql
+-- 0001 — Extensões, tabelas base e gatilho de updated_at/autoria.
+-- Idempotente. Sem segredos e sem dados reais. Nada de CPF, conta, cartão ou Pix.
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -153,17 +155,62 @@ begin
   end loop;
 end $$;
 
+-- >>>>> migrations/0002_membership_access.sql
+-- 0002 — Papéis e status de membro, trava do evento e regras de acesso (RLS).
+-- Só membros APROVADOS leem; só aprovados com evento destravado gravam. Sem DELETE para clientes.
+
+alter table public.events add column if not exists locked boolean not null default false;
+alter table public.events add column if not exists code_version int not null default 1;
+alter table public.event_secrets add column if not exists code_version int not null default 1;
+alter table public.event_secrets add column if not exists rotated_at timestamptz;
+
+alter table public.event_members add column if not exists role text not null default 'member';
+alter table public.event_members add column if not exists status text not null default 'pending';
+alter table public.event_members add column if not exists joined_code_version int not null default 1;
+alter table public.event_members add column if not exists decided_by uuid;
+alter table public.event_members add column if not exists decided_at timestamptz;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'event_members_role_chk') then
+    alter table public.event_members add constraint event_members_role_chk check (role in ('organizer','member'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'event_members_status_chk') then
+    alter table public.event_members add constraint event_members_status_chk check (status in ('pending','approved','revoked'));
+  end if;
+end $$;
+-- Bancos criados com o script do MVP: o criador de cada evento vira organizador aprovado.
+update public.event_members m set role = 'organizer', status = 'approved', decided_by = m.user_id, decided_at = now()
+  from public.events e
+ where e.id = m.event_id and e.created_by = m.user_id and m.decided_at is null;
+create index if not exists event_members_event_status_idx on public.event_members (event_id, status);
+
+-- Tentativas de código (limite: 5 erros em 10 min por usuário). Sem policy: só funções.
+create table if not exists public.join_attempts (
+  user_id uuid not null,
+  at      timestamptz not null default now()
+);
+create index if not exists join_attempts_user_at_idx on public.join_attempts (user_id, at);
+
 -- ---------------------------------------------------------------------
--- Função de pertencimento (usada pelas policies)
+-- Funções de acesso (security definer: leem event_members sem recursão de RLS)
 -- ---------------------------------------------------------------------
 create or replace function public.is_event_member(e uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.event_members m
-                 where m.event_id = e and m.user_id = auth.uid());
+                 where m.event_id = e and m.user_id = auth.uid() and m.status = 'approved');
+$$;
+create or replace function public.is_event_writable(e uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.event_members m join public.events ev on ev.id = m.event_id
+                 where m.event_id = e and m.user_id = auth.uid() and m.status = 'approved' and not ev.locked);
+$$;
+create or replace function public.is_event_organizer(e uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.event_members m
+                 where m.event_id = e and m.user_id = auth.uid() and m.status = 'approved' and m.role = 'organizer');
 $$;
 
 -- ---------------------------------------------------------------------
--- RLS + privilégios (sem DELETE para clientes; exclusão é lógica)
+-- RLS + privilégios
 -- ---------------------------------------------------------------------
 alter table public.events           enable row level security;
 alter table public.event_secrets    enable row level security;
@@ -172,29 +219,32 @@ alter table public.families         enable row level security;
 alter table public.people           enable row level security;
 alter table public.expenses         enable row level security;
 alter table public.settlement_marks enable row level security;
+alter table public.join_attempts    enable row level security;
 
-revoke all on public.events, public.event_secrets, public.event_members, public.families,
-              public.people, public.expenses, public.settlement_marks from anon, authenticated;
+revoke all on public.events, public.event_secrets, public.event_members, public.families, public.people,
+              public.expenses, public.settlement_marks, public.join_attempts from anon, authenticated;
 
 grant select on public.events to authenticated;
-grant update (name, start_date, end_date, meals, split_mode, include_unconfirmed, kitty_per_family, weights)
+-- configurações do evento: qualquer membro aprovado (nome, trava e código só por RPC do organizador)
+grant update (start_date, end_date, meals, split_mode, include_unconfirmed, kitty_per_family)
   on public.events to authenticated;
 grant select on public.event_members to authenticated;
 grant update (display_name, family_id) on public.event_members to authenticated;
 grant select, insert, update on public.families, public.people, public.expenses, public.settlement_marks to authenticated;
--- event_secrets: nenhum privilégio, nenhuma policy.
 
 drop policy if exists events_select on public.events;
 create policy events_select on public.events for select to authenticated using (public.is_event_member(id));
 drop policy if exists events_update on public.events;
 create policy events_update on public.events for update to authenticated
-  using (public.is_event_member(id)) with check (public.is_event_member(id));
+  using (public.is_event_writable(id)) with check (public.is_event_writable(id));
 
+-- membros aprovados veem a lista (inclusive pendentes, para o organizador decidir); cada um vê a própria linha
 drop policy if exists members_select on public.event_members;
-create policy members_select on public.event_members for select to authenticated using (public.is_event_member(event_id));
+create policy members_select on public.event_members for select to authenticated
+  using (user_id = auth.uid() or public.is_event_member(event_id));
 drop policy if exists members_update_self on public.event_members;
 create policy members_update_self on public.event_members for update to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = auth.uid() and status <> 'revoked') with check (user_id = auth.uid());
 
 do $$
 declare t text;
@@ -203,16 +253,27 @@ begin
     execute format('drop policy if exists %I on public.%I', t || '_select', t);
     execute format('create policy %I on public.%I for select to authenticated using (public.is_event_member(event_id))', t || '_select', t);
     execute format('drop policy if exists %I on public.%I', t || '_insert', t);
-    execute format('create policy %I on public.%I for insert to authenticated with check (public.is_event_member(event_id))', t || '_insert', t);
+    execute format('create policy %I on public.%I for insert to authenticated with check (public.is_event_writable(event_id))', t || '_insert', t);
     execute format('drop policy if exists %I on public.%I', t || '_update', t);
-    execute format('create policy %I on public.%I for update to authenticated using (public.is_event_member(event_id)) with check (public.is_event_member(event_id))', t || '_update', t);
+    execute format('create policy %I on public.%I for update to authenticated using (public.is_event_writable(event_id)) with check (public.is_event_writable(event_id))', t || '_update', t);
   end loop;
 end $$;
 
--- ---------------------------------------------------------------------
--- RPCs: criar evento e entrar com código
--- Código: 8 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789 (sem 0/O, 1/I/L).
--- ---------------------------------------------------------------------
+revoke all on function public.is_event_member(uuid), public.is_event_writable(uuid), public.is_event_organizer(uuid) from public, anon;
+grant execute on function public.is_event_member(uuid), public.is_event_writable(uuid), public.is_event_organizer(uuid) to authenticated;
+
+-- >>>>> migrations/0003_event_rpcs.sql
+-- 0003 — RPCs: criar evento (organizador com GitHub), entrar com código (fica pendente),
+-- aprovar, revogar e mudar papel (girar código, travar e renomear ficam na 0004, com a versão por linha). Todas security definer com search_path fixo.
+-- Código: 8 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789 (sem 0/O, 1/I/L), gerado no cliente.
+
+create or replace function public._code_ok(c text) returns boolean
+language sql immutable set search_path = '' as $$ select c ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$' $$;
+create or replace function public._code_lookup(c text) returns text
+language sql immutable set search_path = '' as $$ select encode(extensions.digest(c, 'sha256'), 'hex') $$;
+create or replace function public._is_anonymous() returns boolean
+language sql stable set search_path = '' as $$ select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, true) $$;
+
 create or replace function public.create_event(p_name text, p_code text, p_display_name text)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare
@@ -221,58 +282,510 @@ declare
   v_id   uuid;
 begin
   if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
-  if v_code !~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$' then raise exception 'invalid_code_format' using errcode = '22023'; end if;
+  if public._is_anonymous() then raise exception 'organizer_login_required' using errcode = '42501'; end if;
+  if not public._code_ok(v_code) then raise exception 'invalid_code_format' using errcode = '22023'; end if;
   if char_length(btrim(coalesce(p_name, ''))) not between 1 and 80 then raise exception 'invalid_name' using errcode = '22023'; end if;
   if char_length(btrim(coalesce(p_display_name, ''))) not between 1 and 40 then raise exception 'invalid_display_name' using errcode = '22023'; end if;
   if (select count(*) from public.events where created_by = v_uid) >= 20 then raise exception 'too_many_events' using errcode = '54000'; end if;
-
   insert into public.events (name, created_by) values (btrim(p_name), v_uid) returning id into v_id;
   begin
-    insert into public.event_secrets (event_id, code_lookup, code_hash)
-    values (v_id, encode(extensions.digest(v_code, 'sha256'), 'hex'), extensions.crypt(v_code, extensions.gen_salt('bf', 8)));
+    insert into public.event_secrets (event_id, code_lookup, code_hash, code_version)
+    values (v_id, public._code_lookup(v_code), extensions.crypt(v_code, extensions.gen_salt('bf', 8)), 1);
   exception when unique_violation then
-    raise exception 'code_taken' using errcode = '23505';   -- o cliente gera outro código e tenta de novo
+    raise exception 'code_taken' using errcode = '23505';
   end;
-  insert into public.event_members (event_id, user_id, display_name) values (v_id, v_uid, btrim(p_display_name));
+  insert into public.event_members (event_id, user_id, display_name, role, status, joined_code_version, decided_by, decided_at)
+  values (v_id, v_uid, btrim(p_display_name), 'organizer', 'approved', 1, v_uid, now());
   return v_id;
 end $$;
 
+-- Resultado em jsonb (sem exceção no código errado, para a tentativa ficar registrada):
+-- {ok:true, event_id, event_name, status, role} | {ok:false, error:'invalid_code'|'too_many_attempts'|'revoked'|...}
+drop function if exists public.join_event(text, text);
 create or replace function public.join_event(p_code text, p_display_name text)
-returns uuid language plpgsql security definer set search_path = '' as $$
+returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   v_uid  uuid := auth.uid();
   v_code text := upper(btrim(coalesce(p_code, '')));
-  v_id   uuid;
-  v_hash text;
+  s      record;
+  m      record;
+  v_name text;
 begin
   if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
-  if char_length(btrim(coalesce(p_display_name, ''))) not between 1 and 40 then raise exception 'invalid_display_name' using errcode = '22023'; end if;
-  if v_code !~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$' then raise exception 'invalid_code' using errcode = '22023'; end if;
-  select s.event_id, s.code_hash into v_id, v_hash
-    from public.event_secrets s where s.code_lookup = encode(extensions.digest(v_code, 'sha256'), 'hex');
-  if v_id is null or extensions.crypt(v_code, v_hash) <> v_hash then
-    raise exception 'invalid_code' using errcode = '22023';
+  if char_length(btrim(coalesce(p_display_name, ''))) not between 1 and 40 then return jsonb_build_object('ok', false, 'error', 'invalid_display_name'); end if;
+  delete from public.join_attempts where at < now() - interval '1 day';
+  if (select count(*) from public.join_attempts where user_id = v_uid and at > now() - interval '10 minutes') >= 5 then
+    return jsonb_build_object('ok', false, 'error', 'too_many_attempts');
   end if;
-  insert into public.event_members (event_id, user_id, display_name) values (v_id, v_uid, btrim(p_display_name))
-  on conflict (event_id, user_id) do update set display_name = excluded.display_name;
-  return v_id;
+  select es.event_id, es.code_hash, es.code_version into s
+    from public.event_secrets es where public._code_ok(v_code) and es.code_lookup = public._code_lookup(v_code);
+  if s.event_id is null or extensions.crypt(v_code, s.code_hash) <> s.code_hash then
+    insert into public.join_attempts (user_id) values (v_uid);
+    return jsonb_build_object('ok', false, 'error', 'invalid_code');
+  end if;
+  select name into v_name from public.events where id = s.event_id;
+  select * into m from public.event_members where event_id = s.event_id and user_id = v_uid;
+  if m.user_id is null then
+    insert into public.event_members (event_id, user_id, display_name, role, status, joined_code_version)
+    values (s.event_id, v_uid, btrim(p_display_name), 'member', 'pending', s.code_version);
+    return jsonb_build_object('ok', true, 'event_id', s.event_id, 'event_name', v_name, 'status', 'pending', 'role', 'member');
+  end if;
+  if m.status = 'revoked' then return jsonb_build_object('ok', false, 'error', 'revoked'); end if;
+  update public.event_members set display_name = btrim(p_display_name) where event_id = s.event_id and user_id = v_uid;
+  return jsonb_build_object('ok', true, 'event_id', s.event_id, 'event_name', v_name, 'status', m.status, 'role', m.role);
 end $$;
 
-revoke all on function public.create_event(text, text, text) from public, anon;
-revoke all on function public.join_event(text, text) from public, anon;
-revoke all on function public.is_event_member(uuid) from public, anon;
-grant execute on function public.create_event(text, text, text) to authenticated;
-grant execute on function public.join_event(text, text) to authenticated;
-grant execute on function public.is_event_member(uuid) to authenticated;
+-- Situação do próprio aparelho num evento (funciona também para pendente/revogado).
+create or replace function public.my_membership(p_event uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select coalesce((select jsonb_build_object('status', m.status, 'role', m.role, 'display_name', m.display_name,
+                                             'event_name', e.name, 'locked', e.locked)
+                     from public.event_members m join public.events e on e.id = m.event_id
+                    where m.event_id = p_event and m.user_id = auth.uid()), jsonb_build_object('status', 'none'));
+$$;
 
--- ---------------------------------------------------------------------
--- Tempo real (Supabase Realtime aplica a RLS acima a cada evento)
--- ---------------------------------------------------------------------
+create or replace function public._require_organizer(p_event uuid) returns void
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  if not public.is_event_organizer(p_event) then raise exception 'organizer_only' using errcode = '42501'; end if;
+end $$;
+
+create or replace function public.approve_member(p_event uuid, p_user uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+declare v_ver int;
+begin
+  perform public._require_organizer(p_event);
+  select code_version into v_ver from public.event_secrets where event_id = p_event;
+  update public.event_members set status = 'approved', joined_code_version = greatest(joined_code_version, v_ver),
+         decided_by = auth.uid(), decided_at = now()
+   where event_id = p_event and user_id = p_user;
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+end $$;
+
+create or replace function public.revoke_member(p_event uuid, p_user uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  perform public._require_organizer(p_event);
+  if p_user = auth.uid() then raise exception 'cannot_revoke_self' using errcode = '22023'; end if;
+  if p_user = (select created_by from public.events where id = p_event) then raise exception 'cannot_revoke_creator' using errcode = '22023'; end if;
+  update public.event_members set status = 'revoked', decided_by = auth.uid(), decided_at = now()
+   where event_id = p_event and user_id = p_user;
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+end $$;
+
+create or replace function public.set_member_role(p_event uuid, p_user uuid, p_role text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  perform public._require_organizer(p_event);
+  if p_role not in ('organizer', 'member') then raise exception 'invalid_role' using errcode = '22023'; end if;
+  if p_user = (select created_by from public.events where id = p_event) and p_role <> 'organizer' then raise exception 'cannot_demote_creator' using errcode = '22023'; end if;
+  update public.event_members set role = p_role, decided_by = auth.uid(), decided_at = now()
+   where event_id = p_event and user_id = p_user and status = 'approved';
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+end $$;
+
+do $$
+declare f text;
+begin
+  foreach f in array array['create_event(text,text,text)','join_event(text,text)','my_membership(uuid)','approve_member(uuid,uuid)',
+    'revoke_member(uuid,uuid)','set_member_role(uuid,uuid,text)'] loop
+    execute format('revoke all on function public.%s from public, anon', f);
+    execute format('grant execute on function public.%s to authenticated', f);
+  end loop;
+  foreach f in array array['_code_ok(text)','_code_lookup(text)','_is_anonymous()','_require_organizer(uuid)'] loop
+    execute format('revoke all on function public.%s from public, anon, authenticated', f);
+  end loop;
+end $$;
+
+-- >>>>> migrations/0004_versioning_ops.sql
+-- 0004 — Versão por linha (o servidor recusa versão velha) e operações idempotentes (client_ops + apply_ops).
+-- Regra: INSERT começa em version = 1; UPDATE só passa se NEW.version = OLD.version + 1 (senão erro PT409 'version_conflict' = HTTP 409 no PostgREST; 40001 faria o PostgREST repetir a transação).
+-- O cliente manda só os campos alterados com a versão que conhecia; em conflito recebe a linha atual e mescla campo a campo.
+
+do $$
+declare t text;
+begin
+  foreach t in array array['events','families','people','expenses','settlement_marks'] loop
+    execute format('alter table public.%I add column if not exists version int not null default 1', t);
+  end loop;
+end $$;
+grant update (version) on public.events to authenticated;
+
+create or replace function public.tg_version() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'INSERT' then new.version := 1; return new; end if;
+  -- mudanças feitas por funções do servidor (RPCs, gatilhos) sobem a versão sozinhas
+  if current_setting('rateio.server_write', true) = 'on' then
+    new.version := old.version + 1; return new;
+  end if;
+  if new.version is distinct from old.version + 1 then
+    raise exception 'version_conflict' using errcode = 'PT409', detail = format('current=%s sent=%s', old.version, new.version);
+  end if;
+  return new;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['events','families','people','expenses','settlement_marks'] loop
+    execute format('drop trigger if exists version_guard on public.%I', t);
+    execute format('create trigger version_guard before insert or update on public.%I for each row execute function public.tg_version()', t);
+  end loop;
+end $$;
+
+-- RPCs do organizador mexem em events (trava, nome, código): marcam a escrita como do servidor.
+create or replace function public._server_write() returns void
+language sql set search_path = '' as $$ select set_config('rateio.server_write', 'on', true) $$;
+revoke all on function public._server_write() from public, anon, authenticated;
+
+create or replace function public.lock_event(p_event uuid, p_locked boolean default true)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  perform public._require_organizer(p_event); perform public._server_write();
+  update public.events set locked = coalesce(p_locked, true) where id = p_event;
+end $$;
+create or replace function public.rename_event(p_event uuid, p_name text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  perform public._require_organizer(p_event);
+  if char_length(btrim(coalesce(p_name, ''))) not between 1 and 80 then raise exception 'invalid_name' using errcode = '22023'; end if;
+  perform public._server_write();
+  update public.events set name = btrim(p_name) where id = p_event;
+end $$;
+create or replace function public.rotate_code(p_event uuid, p_new_code text, p_repend boolean default false)
+returns int language plpgsql security definer set search_path = '' as $$
+declare v_code text := upper(btrim(coalesce(p_new_code, ''))); v_ver int;
+begin
+  perform public._require_organizer(p_event);
+  if not public._code_ok(v_code) then raise exception 'invalid_code_format' using errcode = '22023'; end if;
+  begin
+    update public.event_secrets set code_lookup = public._code_lookup(v_code),
+           code_hash = extensions.crypt(v_code, extensions.gen_salt('bf', 8)),
+           code_version = code_version + 1, rotated_at = now()
+     where event_id = p_event returning code_version into v_ver;
+  exception when unique_violation then raise exception 'code_taken' using errcode = '23505';
+  end;
+  perform public._server_write();
+  update public.events set code_version = v_ver where id = p_event;
+  if p_repend then
+    update public.event_members set status = 'pending', decided_by = auth.uid(), decided_at = now()
+     where event_id = p_event and status = 'approved' and role <> 'organizer';
+  end if;
+  return v_ver;
+end $$;
+
+do $$
+declare f text;
+begin
+  foreach f in array array['rotate_code(uuid,text,boolean)','lock_event(uuid,boolean)','rename_event(uuid,text)'] loop
+    execute format('revoke all on function public.%s from public, anon', f);
+    execute format('grant execute on function public.%s to authenticated', f);
+  end loop;
+end $$;
+
+-- Operações já aplicadas (idempotência da fila do aparelho).
+create table if not exists public.client_ops (
+  op_id      uuid primary key,
+  event_id   uuid not null references public.events(id) on delete cascade,
+  user_id    uuid not null,
+  applied_at timestamptz not null default now()
+);
+create index if not exists client_ops_event_idx on public.client_ops (event_id, applied_at);
+alter table public.client_ops enable row level security;
+revoke all on public.client_ops from anon, authenticated;
+grant select, insert on public.client_ops to authenticated;
+drop policy if exists client_ops_select on public.client_ops;
+create policy client_ops_select on public.client_ops for select to authenticated using (user_id = auth.uid());
+drop policy if exists client_ops_insert on public.client_ops;
+create policy client_ops_insert on public.client_ops for insert to authenticated
+  with check (user_id = auth.uid() and public.is_event_writable(event_id));
+
+-- apply_ops(evento, [{op_id, table, row, expected_version}]) -> [{op_id, status: ok|dup|conflict|error, row, error}]
+-- SECURITY INVOKER: roda com as permissões e a RLS de quem chama. Cada operação numa subtransação.
+--   expected_version null  -> INSERT (row completa)
+--   expected_version n     -> UPDATE só dos campos enviados, se a versão no servidor ainda for n
+create or replace function public.apply_ops(p_event uuid, p_ops jsonb)
+returns jsonb language plpgsql security invoker set search_path = '' as $$
+declare
+  op jsonb; r jsonb; t text; res jsonb := '[]'::jsonb; allowed text[]; pkc text[]; cols text[];
+  v_exp int; v_op uuid; n int; cur jsonb; pkw text; collist text;
+begin
+  if auth.uid() is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
+  if jsonb_typeof(p_ops) <> 'array' or jsonb_array_length(p_ops) > 200 then raise exception 'too_many_ops' using errcode = '54000'; end if;
+  for op in select value from jsonb_array_elements(p_ops) loop
+    t := op->>'table';
+    allowed := case t
+      when 'events'           then array['start_date','end_date','meals','split_mode','include_unconfirmed','kitty_per_family']
+      when 'families'         then array['name','color','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
+      when 'people'           then array['family_id','first_name','type','drinks','pos','arrive','arrive_meal','depart','depart_meal','deleted_at']
+      when 'expenses'         then array['description','amount','category','payer_person_id','participants','proof','estimated','note','items','client_ts','photo_path','deleted_at']
+      when 'settlement_marks' then array['amount','deleted_at']
+      when 'event_overrides'  then array['value','deleted_at']
+      when 'expense_confirmations' then array['expense_id','family_id']
+      else null end;
+    pkc := case t when 'events' then array['id'] when 'settlement_marks' then array['event_id','from_family','to_family']
+                  when 'event_overrides' then array['event_id','kind','key'] else array['event_id','id'] end;
+    v_op := nullif(op->>'op_id', '')::uuid;
+    if allowed is null or v_op is null or jsonb_typeof(op->'row') <> 'object' then
+      res := res || jsonb_build_array(jsonb_build_object('op_id', op->>'op_id', 'status', 'error', 'error', 'bad_op')); continue;
+    end if;
+    r := (op->'row') || case when t = 'events' then jsonb_build_object('id', p_event) else jsonb_build_object('event_id', p_event) end;
+    v_exp := nullif(op->>'expected_version', '')::int;
+    pkw := (select string_agg(format('x.%1$I = (jsonb_populate_record(null::public.%2$I, $1)).%1$I', c, t), ' and ') from unnest(pkc) c);
+    begin
+      if exists (select 1 from public.client_ops where op_id = v_op) then
+        execute format('select to_jsonb(x) from public.%I x where %s', t, pkw) into cur using r;
+        res := res || jsonb_build_array(jsonb_build_object('op_id', v_op, 'status', 'dup', 'row', cur)); continue;
+      end if;
+      cols := array(select k from jsonb_object_keys(r) k where k = any(allowed) and not k = any(pkc));
+      if v_exp is null then
+        if t = 'events' then raise exception 'bad_op' using errcode = '22023'; end if;
+        collist := (select string_agg(format('%I', c), ',') from unnest(pkc || cols) c);
+        execute format('insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)', t, collist, collist, t) using r;
+      else
+        if t = 'expense_confirmations' then raise exception 'insert_only' using errcode = '42501'; end if;
+        if coalesce(array_length(cols, 1), 0) = 0 then raise exception 'empty_patch' using errcode = '22023'; end if;
+        collist := (select string_agg(format('%I', c), ',') from unnest(cols) c);
+        execute format('update public.%1$I x set (%2$s, version) = (select %2$s, $2 + 1 from jsonb_populate_record(null::public.%1$I, $1)) where %3$s and x.version = $2',
+                       t, collist, pkw) using r, v_exp;
+        get diagnostics n = row_count;
+        if n = 0 then raise exception 'version_conflict' using errcode = 'PT409'; end if;
+      end if;
+      insert into public.client_ops (op_id, event_id, user_id) values (v_op, p_event, auth.uid());
+      execute format('select to_jsonb(x) from public.%I x where %s', t, pkw) into cur using r;
+      res := res || jsonb_build_array(jsonb_build_object('op_id', v_op, 'status', 'ok', 'row', cur));
+    exception
+      when unique_violation or sqlstate 'PT409' then
+        execute format('select to_jsonb(x) from public.%I x where %s', t, pkw) into cur using r;
+        res := res || jsonb_build_array(jsonb_build_object('op_id', v_op, 'status', 'conflict', 'row', cur));
+      when others then
+        res := res || jsonb_build_array(jsonb_build_object('op_id', v_op, 'status', 'error', 'error', sqlerrm, 'code', sqlstate));
+    end;
+  end loop;
+  return res;
+end $$;
+revoke all on function public.apply_ops(uuid, jsonb) from public, anon;
+grant execute on function public.apply_ops(uuid, jsonb) to authenticated;
+
+-- >>>>> migrations/0005_confirmations_overrides.sql
+-- 0005 — Confirmação de gasto "sem nota" (só inserção) e sobreposições do evento (pesos, preços, quantidades).
+
+-- Uma confirmação ativa por gasto. Clientes só inserem. O servidor anula (voided_at) quando o gasto muda
+-- de pagador ou deixa de ser "sem nota" (mesma regra do app). Sem UPDATE/DELETE para clientes.
+create table if not exists public.expense_confirmations (
+  event_id     uuid not null references public.events(id) on delete cascade,
+  id           uuid not null,
+  expense_id   text not null check (expense_id ~ '^[A-Za-z0-9_-]{1,40}$'),
+  family_id    text not null check (family_id ~ '^[A-Za-z0-9_-]{1,40}$'),
+  confirmed_by uuid,
+  confirmed_at timestamptz not null default now(),
+  voided_at    timestamptz,
+  primary key (event_id, id)
+);
+create unique index if not exists expense_confirmations_active_key
+  on public.expense_confirmations (event_id, expense_id) where voided_at is null;
+
+create or replace function public.tg_confirmation_insert() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare v_payer_family text; v_proof text;
+begin
+  if not public.is_event_writable(new.event_id) then raise exception 'not_allowed' using errcode = '42501'; end if;
+  select p.family_id, e.proof into v_payer_family, v_proof
+    from public.expenses e left join public.people p on p.event_id = e.event_id and p.id = e.payer_person_id
+   where e.event_id = new.event_id and e.id = new.expense_id and e.deleted_at is null;
+  if v_proof is null then raise exception 'expense_not_found' using errcode = '23503'; end if;
+  if v_proof <> 'none' then raise exception 'only_sem_nota' using errcode = '23514'; end if;
+  if new.family_id = v_payer_family then raise exception 'payer_family_cannot_confirm' using errcode = '23514'; end if;
+  if not exists (select 1 from public.families f where f.event_id = new.event_id and f.id = new.family_id and f.deleted_at is null) then
+    raise exception 'family_not_found' using errcode = '23503';
+  end if;
+  new.confirmed_by := auth.uid(); new.confirmed_at := now(); new.voided_at := null;
+  return new;
+end $$;
+drop trigger if exists confirmation_insert on public.expense_confirmations;
+create trigger confirmation_insert before insert on public.expense_confirmations
+  for each row execute function public.tg_confirmation_insert();
+
+create or replace function public.tg_expense_void_confirmation() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.payer_person_id is distinct from old.payer_person_id or new.proof <> 'none' or new.deleted_at is not null then
+    update public.expense_confirmations set voided_at = now()
+     where event_id = new.event_id and expense_id = new.id and voided_at is null;
+  end if;
+  return new;
+end $$;
+drop trigger if exists void_confirmation on public.expenses;
+create trigger void_confirmation after update on public.expenses
+  for each row execute function public.tg_expense_void_confirmation();
+
+alter table public.expense_confirmations enable row level security;
+revoke all on public.expense_confirmations from anon, authenticated;
+grant select, insert on public.expense_confirmations to authenticated;
+drop policy if exists confirmations_select on public.expense_confirmations;
+create policy confirmations_select on public.expense_confirmations for select to authenticated using (public.is_event_member(event_id));
+drop policy if exists confirmations_insert on public.expense_confirmations;
+create policy confirmations_insert on public.expense_confirmations for insert to authenticated with check (public.is_event_writable(event_id));
+
+-- Sobreposições: um registro por peso/preço/quantidade, nunca o objeto inteiro.
+create table if not exists public.event_overrides (
+  event_id   uuid not null references public.events(id) on delete cascade,
+  kind       text not null check (kind in ('weight','price','plan_qty')),
+  key        text not null check (key ~ '^[A-Za-z0-9_:.-]{1,80}$'),
+  value      jsonb not null check (jsonb_typeof(value) in ('number','string','boolean','object') and pg_column_size(value) <= 512),
+  version    int not null default 1,
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
+  primary key (event_id, kind, key)
+);
+create index if not exists overrides_event_upd_idx on public.event_overrides (event_id, updated_at);
+drop trigger if exists touch on public.event_overrides;
+create trigger touch before insert or update on public.event_overrides for each row execute function public.tg_touch();
+drop trigger if exists version_guard on public.event_overrides;
+create trigger version_guard before insert or update on public.event_overrides for each row execute function public.tg_version();
+alter table public.event_overrides enable row level security;
+revoke all on public.event_overrides from anon, authenticated;
+grant select, insert, update on public.event_overrides to authenticated;
+drop policy if exists overrides_select on public.event_overrides;
+create policy overrides_select on public.event_overrides for select to authenticated using (public.is_event_member(event_id));
+drop policy if exists overrides_insert on public.event_overrides;
+create policy overrides_insert on public.event_overrides for insert to authenticated with check (public.is_event_writable(event_id));
+drop policy if exists overrides_update on public.event_overrides;
+create policy overrides_update on public.event_overrides for update to authenticated
+  using (public.is_event_writable(event_id)) with check (public.is_event_writable(event_id));
+
+-- Caminho da foto no Storage (o app ainda guarda fotos só no aparelho; envio fica para depois).
+alter table public.expenses add column if not exists photo_path text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'expenses_photo_path_chk') then
+    alter table public.expenses add constraint expenses_photo_path_chk
+      check (photo_path is null or photo_path ~ '^[0-9a-f-]{36}/[A-Za-z0-9_-]{1,40}\.jpg$');
+  end if;
+end $$;
+
+-- >>>>> migrations/0006_storage_comprovantes.sql
+-- 0006 — Bucket privado "comprovantes": <event_id>/<expense_id>.jpg, até 150 KB, JPEG/WebP.
+-- Ler e enviar: membros aprovados (enviar só com evento destravado). Trocar e apagar: só organizador.
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('comprovantes', 'comprovantes', false, 153600, array['image/jpeg','image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 153600, allowed_mime_types = array['image/jpeg','image/webp'];
+
+-- Evento dono do arquivo, ou null se o caminho fugir do padrão.
+create or replace function public.proof_event_id(p_name text) returns uuid
+language sql immutable set search_path = '' as $$
+  select case when p_name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[A-Za-z0-9_-]{1,40}\.jpg$'
+              then split_part(p_name, '/', 1)::uuid end
+$$;
+grant execute on function public.proof_event_id(text) to authenticated;
+
+drop policy if exists comprovantes_select on storage.objects;
+create policy comprovantes_select on storage.objects for select to authenticated
+  using (bucket_id = 'comprovantes' and public.is_event_member(public.proof_event_id(name)));
+drop policy if exists comprovantes_insert on storage.objects;
+create policy comprovantes_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'comprovantes' and public.is_event_writable(public.proof_event_id(name)));
+drop policy if exists comprovantes_update on storage.objects;
+create policy comprovantes_update on storage.objects for update to authenticated
+  using (bucket_id = 'comprovantes' and public.is_event_organizer(public.proof_event_id(name)))
+  with check (bucket_id = 'comprovantes' and public.is_event_organizer(public.proof_event_id(name)));
+drop policy if exists comprovantes_delete on storage.objects;
+create policy comprovantes_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'comprovantes' and public.is_event_organizer(public.proof_event_id(name)));
+
+-- >>>>> migrations/0007_person_diet.sql
+-- 0007 — Dieta/alergia (DADO DE SAÚDE, LGPD art. 11). SÓ SQL: o app continua guardando dieta no aparelho
+-- até a revisão da Astreia. Mínimo necessário, aceite do responsável obrigatório, só membros aprovados,
+-- nunca em texto de WhatsApp/export público, e expurgo 30 dias depois do fim do evento.
+
+create table if not exists public.person_diet (
+  event_id         uuid not null references public.events(id) on delete cascade,
+  person_id        text not null check (person_id ~ '^[A-Za-z0-9_-]{1,40}$'),
+  veg              boolean not null default false,
+  no_lactose       boolean not null default false,
+  no_gluten        boolean not null default false,
+  allergy_text     text check (allergy_text is null or char_length(allergy_text) <= 80),
+  guardian_consent boolean not null check (guardian_consent),   -- sem aceite do responsável não grava
+  consent_by       uuid,
+  consent_at       timestamptz,
+  version          int not null default 1,
+  updated_at       timestamptz not null default now(),
+  primary key (event_id, person_id)
+);
+
+create or replace function public.tg_person_diet() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if not public.is_event_writable(new.event_id) then raise exception 'not_allowed' using errcode = '42501'; end if;
+  if not exists (select 1 from public.people p where p.event_id = new.event_id and p.id = new.person_id and p.deleted_at is null) then
+    raise exception 'person_not_found' using errcode = '23503';
+  end if;
+  if tg_op = 'INSERT' or new.guardian_consent is distinct from old.guardian_consent or new.consent_by is distinct from old.consent_by then
+    new.consent_by := auth.uid(); new.consent_at := now();
+  end if;
+  return new;
+end $$;
+drop trigger if exists diet_consent on public.person_diet;
+create trigger diet_consent before insert or update on public.person_diet for each row execute function public.tg_person_diet();
+drop trigger if exists touch on public.person_diet;
+create trigger touch before insert or update on public.person_diet for each row execute function public.tg_touch();
+drop trigger if exists version_guard on public.person_diet;
+create trigger version_guard before insert or update on public.person_diet for each row execute function public.tg_version();
+
+alter table public.person_diet enable row level security;
+revoke all on public.person_diet from anon, authenticated;
+grant select, insert, update on public.person_diet to authenticated;
+drop policy if exists diet_select on public.person_diet;
+create policy diet_select on public.person_diet for select to authenticated using (public.is_event_member(event_id));
+drop policy if exists diet_insert on public.person_diet;
+create policy diet_insert on public.person_diet for insert to authenticated with check (public.is_event_writable(event_id));
+drop policy if exists diet_update on public.person_diet;
+create policy diet_update on public.person_diet for update to authenticated
+  using (public.is_event_writable(event_id)) with check (public.is_event_writable(event_id));
+-- Retirar o dado = organizador chama purge_health (não há DELETE para clientes).
+
+-- Organizador apaga a dieta do evento a qualquer momento.
+create or replace function public.purge_health(p_event uuid) returns int
+language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  perform public._require_organizer(p_event);
+  delete from public.person_diet where event_id = p_event;
+  get diagnostics n = row_count; return n;
+end $$;
+revoke all on function public.purge_health(uuid) from public, anon;
+grant execute on function public.purge_health(uuid) to authenticated;
+
+-- Expurgo automático: eventos terminados há mais de 30 dias (ou sem data e criados há mais de 90 dias).
+-- Só para o servidor (pg_cron ou SQL Editor); clientes não executam.
+create or replace function public.purge_expired_health() returns int
+language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  delete from public.person_diet d using public.events e
+   where e.id = d.event_id
+     and ((e.end_date is not null and e.end_date < current_date - 30)
+       or (e.end_date is null and e.created_at < now() - interval '90 days'));
+  get diagnostics n = row_count; return n;
+end $$;
+revoke all on function public.purge_expired_health() from public, anon, authenticated;
+
+-- Se a extensão pg_cron estiver ligada (Database › Extensions), agenda o expurgo diário às 04:00 UTC.
+do $$ begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.unschedule(jobid) from cron.job where jobname = 'rateio_purge_health';
+    perform cron.schedule('rateio_purge_health', '0 4 * * *', 'select public.purge_expired_health()');
+  end if;
+end $$;
+
+-- >>>>> migrations/0008_realtime.sql
+-- 0008 — Tempo real (o Supabase Realtime aplica a RLS acima a cada evento). Dieta NÃO entra no tempo real.
 do $$
 declare t text;
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    foreach t in array array['events','event_members','families','people','expenses','settlement_marks'] loop
+    foreach t in array array['events','event_members','families','people','expenses','settlement_marks','expense_confirmations','event_overrides'] loop
       if not exists (select 1 from pg_publication_tables
                      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
         execute format('alter publication supabase_realtime add table public.%I', t);

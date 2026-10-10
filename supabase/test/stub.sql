@@ -10,8 +10,18 @@ create schema if not exists auth;
 create or replace function auth.uid() returns uuid language sql stable as
   $$ select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
                      (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'))::uuid $$;
+create or replace function auth.jwt() returns jsonb language sql stable as
+  $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+-- Storage (imita o Supabase: RLS ligada em storage.objects)
+create schema if not exists storage;
+create table if not exists storage.buckets (id text primary key, name text, public boolean default false, file_size_limit bigint, allowed_mime_types text[]);
+create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id), name text, owner uuid default auth.uid(), metadata jsonb);
+alter table storage.objects enable row level security;
+grant usage on schema storage to anon, authenticated;
+grant select, insert, update, delete on storage.objects to anon, authenticated;
+grant select on storage.buckets to anon, authenticated;
 grant usage on schema auth, extensions, public to anon, authenticated;
-grant execute on function auth.uid() to anon, authenticated;
+grant execute on function auth.uid(), auth.jwt() to anon, authenticated;
 -- Supabase concede tudo por padrão em public; simulamos isso para provar que o script revoga.
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on functions to anon, authenticated;

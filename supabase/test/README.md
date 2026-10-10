@@ -1,7 +1,7 @@
 # Testes locais do supabase.sql (não rodar no Supabase)
 
-- `stub.sql`: imita o Supabase (papéis `anon`/`authenticated`, `auth.uid()`, schema `extensions`, publicação `supabase_realtime`).
-- `run.sh`: roda o `supabase.sql` 3 vezes (idempotência, inclusive com dados) e `rls_test.sql` com 4 usuários.
+- `stub.sql`: imita o Supabase (papéis `anon`/`authenticated`, `auth.uid()`, `auth.jwt()` com `is_anonymous`, schema `extensions`, `storage.buckets`/`storage.objects` com RLS, publicação `supabase_realtime`).
+- `run.sh`: gera o `supabase.sql` das migrações, roda 3 vezes (idempotência, inclusive com dados), testa a atualização a partir do script do MVP e roda `rls_test.sql` (imprime PASS/FAIL; falha se houver FAIL).
 - `postgrest.test.js`: supabase-js 2.117.3 (mesma versão do app) contra PostgREST 12 local, usando o motor de sincronização do `index.html`.
 
 ```bash

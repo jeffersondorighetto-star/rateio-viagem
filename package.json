@@ -9,7 +9,9 @@
     "test:sql": "bash supabase/test/run.sh",
     "test:contrast": "node tests/contrast.js",
     "test:overflow": "node tests/overflow.js",
-    "shots": "node tests/shot3.js"
+    "shots": "node tests/shot3.js",
+    "build:sql": "bash supabase/build.sh",
+    "test:rest": "node supabase/test/postgrest.test.js"
   },
   "devDependencies": {
     "playwright-core": "^1.64.0"

@@ -7,16 +7,30 @@ Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: card
 - Local: dê dois cliques em `index.html`, ou rode `python3 -m http.server 8080` e abra `http://localhost:8080`.
 - Testes da lógica: `npm test` (ou `node tests/test.js`) na raiz do repositório, sem dependências. São 4 blocos: divisão, lançamento rápido/comprovantes, planejamento e receitas.
 
-## Evento compartilhado (MVP com Supabase, branch `rateio-e2`)
+## Evento compartilhado (Supabase, branch `rateio-e2`, design completo do Arquitas, alvo 22/11)
 Opcional. Com `SUPABASE_URL` e `SUPABASE_ANON_KEY` em `null` (padrão), o app funciona como antes, só no aparelho.
-- **Onde configurar:** bloco `window.RATEIO_CONFIG` perto do fim do `index.html` (procure `CONFIGURAÇÃO DO BANCO COMPARTILHADO`). Só a Project URL e a chave publishable/anon, que são públicas por desenho. **Nunca** a secret/service_role nem a senha do banco.
-- **Banco:** `supabase/supabase.sql` (idempotente; colar no SQL Editor). Passo a passo pelo celular: [`SETUP-CELULAR.md`](SETUP-CELULAR.md).
-- **Entrada:** login anônimo + código de 8 caracteres (alfabeto sem 0/O/1/I/L). Link `…/rateio-viagem/#CÓDIGO`. Criar evento ou entrar fica numa tela inicial; «Continuar só neste aparelho» mantém o modo local.
-- **Sincroniza:** evento (datas, refeições ligadas, modo de divisão, caixinha, pesos), famílias, pessoas (só primeiro nome, tipo, bebe, chegada/saída), gastos e marcações de acerto. Tempo real por evento; a última gravação por linha vale; exclusão é lógica (`deleted_at`).
-- **Fica só no aparelho (nunca vai ao servidor):** fotos, cardápio, receitas, compras/preços e **dieta/alergia** (dado de saúde, aguardando revisão da Astreia). No evento, «por porções» usa presença e tipo da pessoa, não o cardápio local, para dar o mesmo saldo em todos os aparelhos.
-- **Sem internet:** pílula «Offline» + aviso; o que for lançado fica pendente no aparelho e é enviado quando a conexão volta (também depois de fechar e abrir o app).
-- **Dados (Acertos › Dados):** Exportar JSON, Importar JSON (só quem criou o evento, com prévia de contagens, total e saldos antes/depois, tolerância R$ 0,01) e «Trazer os dados deste aparelho» (lê `racha-viagem-v3` sem apagá-lo). `?offline=1` abre a versão local intacta.
-- **Fora deste MVP:** aprovação pelo organizador, revogação/rotação de código, fotos no servidor, versionamento/merge por campo, limite de tentativas de código.
+- **Onde configurar:** bloco `window.RATEIO_CONFIG` perto do fim do `index.html` (procure `CONFIGURAÇÃO DO BANCO COMPARTILHADO`). Só a Project URL e a chave publishable/anon, que são públicas por desenho. **Nunca** a secret/service_role, a senha do banco nem o Client Secret do GitHub.
+- **Banco:** migrações em ordem em `supabase/migrations/` (fonte da verdade). `supabase/supabase.sql` é **gerado** por `bash supabase/build.sh` (arquivo único para colar no SQL Editor pelo celular; idempotente, também atualiza um banco criado com o script do MVP). Passo a passo: [`SETUP-CELULAR.md`](SETUP-CELULAR.md).
+
+| Migração | O que faz |
+|---|---|
+| `0001_core_tables` | eventos, segredo do código (sha256 para busca + bcrypt), membros, famílias, pessoas, gastos, acertos; `updated_at`/autoria por gatilho |
+| `0002_membership_access` | papel `organizer`/`member`, status `pending`/`approved`/`revoked`, `locked` no evento; RLS: só **aprovado** lê, só aprovado com evento destravado grava; sem DELETE para clientes |
+| `0003_event_rpcs` | `create_event` (só usuário **não anônimo**, ou seja GitHub), `join_event` (fica pendente; 5 erros em 10 min bloqueiam), `my_membership`, `approve_member`, `revoke_member`, `set_member_role` |
+| `0004_versioning_ops` | `version` por linha + gatilho que recusa versão velha (`PT409` = HTTP 409); `rotate_code` (opção de pedir nova aprovação de todos), `lock_event`, `rename_event`; `client_ops` + `apply_ops` (lote idempotente por `op_id`, patch só dos campos alterados, devolve a linha atual em conflito) |
+| `0005_confirmations_overrides` | `expense_confirmations` só-inserção (uma ativa por gasto; família do pagador não confirma; troca de pagador/comprovante anula) e `event_overrides` (peso/preço/quantidade, um registro por chave) |
+| `0006_storage_comprovantes` | bucket privado `comprovantes`, caminho `<evento>/<gasto>.jpg`, até 150 KB, JPEG/WebP; ler/enviar: aprovados; trocar/apagar: organizador. **O app ainda não envia fotos.** |
+| `0007_person_diet` | dieta/alergia com aceite do responsável obrigatório, só aprovados veem, `purge_health` (organizador) e `purge_expired_health` (servidor, 30 dias após o fim; agenda no pg_cron se estiver ligado). **Só SQL: o app mantém dieta no aparelho até a revisão da Astreia.** |
+| `0008_realtime` | tabelas no Realtime (dieta fica fora) |
+
+- **Entrada:** famílias entram anônimas com o código de 8 caracteres (sem 0/O/1/I/L) e veem **Aguardando aprovação** até o organizador aprovar. O organizador entra com **GitHub** (o evento não se perde ao trocar de celular; lista «Seus eventos»). Link `…/rateio-viagem/#CÓDIGO`.
+- **Painel do organizador (Acertos › Dados):** membros (aguardando primeiro) com Aprovar/Recusar/Remover, **Trocar código** (opcional: pedir nova aprovação de todos) e **Travar/Destravar** (só leitura para todos). Só o organizador vê o código e importa dados.
+- **Gravação com versão:** cada aparelho manda só os campos que mudou, com a versão que conhecia (`apply_ops`). Campos diferentes do mesmo gasto: as duas edições ficam. **Mesmo campo nos dois aparelhos: vale o servidor** e aparece um aviso no topo («valeu o valor de lá…»). Repetir a mesma operação (rede caiu na resposta) não duplica (`op_id`).
+- **Sincroniza:** evento (datas, refeições ligadas, modo de divisão, caixinha), pesos (`event_overrides`), famílias, pessoas (só primeiro nome, tipo, bebe, chegada/saída), gastos, confirmações e marcações de acerto. Exclusão é lógica (`deleted_at`).
+- **Fica só no aparelho (por enquanto):** fotos, cardápio, receitas, compras/preços e **dieta/alergia**. No evento, «por porções» usa presença e tipo da pessoa, não o cardápio local, para dar o mesmo saldo em todos os aparelhos.
+- **Sem internet:** pílula «Offline» + aviso; o que for lançado fica pendente e é enviado quando a conexão volta (também depois de fechar e abrir o app), mesclando campo a campo com o que mudou no servidor.
+- **Dados:** Exportar JSON, Importar JSON (só organizador, com prévia de contagens, total e saldos antes/depois, tolerância R$ 0,01) e «Trazer os dados deste aparelho». `?offline=1` abre a versão local intacta. Validação com a viagem real: [`docs/VALIDACAO.md`](docs/VALIDACAO.md).
+- **Ainda não feito no app:** envio de fotos ao bucket, dieta no servidor (depende da Astreia), receitas/cardápio compartilhados, `set_member_role` na tela.
 
 ## Navegação (barra inferior)
 | Aba | O que tem |
@@ -106,12 +120,19 @@ tests/test.js       testes da lógica (Node puro)
 tests/contrast.js   auditoria de contraste WCAG AA em todas as abas (Playwright)
 tests/overflow.js   auditoria de texto vazando / cortado em várias larguras (Playwright)
 tests/shot3.js      capturas das telas + auditoria de layout, salvas em shots/ (ignorada pelo git)
+tests/sync.test.js  modo compartilhado com servidor falso em memória (vários aparelhos, aprovação, versões, offline)
+tests/fake-core.js  servidor falso que imita o supabase.sql (usado pelos testes de sync e e2e)
+tests/e2e/          ponta a ponta com 2–3 celulares (Playwright) contra backend falso
+supabase/migrations/ migrações em ordem; supabase/build.sh gera supabase/supabase.sql
+supabase/test/      stub do Supabase, testes de RLS (psql) e supabase-js contra PostgREST local
+docs/VALIDACAO.md   roteiro de validação com os dados reais da viagem (só fora do repositório)
 ```
 
 ## Como rodar os testes
-- `node tests/sync.test.js`: mapeamento estado ⇄ linhas e motor de sincronização com cliente falso (2 aparelhos, tempo real, offline, recarga, conflito, não-membro, códigos, importação).
-- `node tests/e2e/shared.e2e.js`: ponta a ponta no Chrome a 375 px, com backend falso (`tests/e2e/fake-backend.js`): criar evento, importar, entrar por link, código errado, lançar e ver ao vivo, acerto, offline e volta, `?offline=1`, contraste AA e overflow.
-- `PGHOST=/tmp PGPORT=54329 PGUSER=postgres bash supabase/test/run.sh`: roda o `supabase.sql` 3 vezes num Postgres local com stub do Supabase e os testes de RLS.
+- `node tests/sync.test.js`: mapeamento estado ⇄ linhas (sem vazar dieta/foto/receitas) e motor de sincronização contra `tests/fake-core.js`: anônimo não cria, pendente bloqueado, aprovação, tempo real, confirmação só-inserção + anulação, mesclagem por campo, mesmo campo = servidor + aviso, offline e recarga, `op_id` repetido, travar, remover ao vivo, trocar código com reaprovação.
+- `node tests/e2e/shared.e2e.js`: ponta a ponta no Chrome a 375 px com 3 celulares e backend falso: login GitHub (simulado) e criar evento, importar, entrar por link, código errado, **Aguardando aprovação**, organizador aprova, lançar e ver ao vivo, acerto, offline + conflito no mesmo campo (aviso), travar/destravar, `?offline=1`, trocar código (link antigo falha; aprovado volta a aguardar), remover membro; contraste AA e overflow em todas as telas novas.
+- `PGHOST=/tmp PGPORT=54329 PGUSER=postgres bash supabase/test/run.sh`: gera o `supabase.sql`, roda 3 vezes num Postgres local com stub do Supabase (idempotência, inclusive com dados), atualiza um banco criado pelo script do MVP e roda `rls_test.sql` (89 verificações: pendente negado, aprovar/remover/trocar código/travar, versão velha recusada, `apply_ops` conflito/dup, confirmações, storage, dieta, limite de tentativas, isolamento entre eventos).
+- `NODE_PATH=<dir com @supabase/supabase-js> node supabase/test/postgrest.test.js`: supabase-js 2.117.3 + motor do app contra PostgREST 12 local com o SQL real (ver `supabase/test/README.md`).
 
 Os comandos rodam na raiz do repositório.
 - **Lógica** (sem instalar nada, só Node 18+): `npm test`

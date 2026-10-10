@@ -396,6 +396,17 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 @media(max-width:480px){.syncpill{font-size:0;gap:0;width:32px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
 .syncbanner{max-width:1120px;margin:8px auto 0;padding:0 16px}
 .syncbanner .callout{overflow-wrap:anywhere}
+.noticebox{position:fixed;left:0;right:0;top:calc(64px + var(--sat));z-index:45;max-width:560px;margin:0 auto;padding:0 12px}
+
+.noticebox .callout{align-items:flex-start;border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);box-shadow:0 6px 24px rgba(0,0,0,.18)}.noticebox .callout>div{flex:1;min-width:0}.noticebox ul{margin:4px 0 0 18px;padding:0}.noticebox li{margin:2px 0}
+.noticebox .btn.text{min-height:32px;padding:0 8px;flex:none;color:inherit}
+.memlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.memlist li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
+.memlist .mname{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}.memlist .mname small{color:var(--text-2);font-size:13px}
+.memlist .mact{display:flex;gap:8px;flex-wrap:wrap}
+.subhead{font-size:15px;font-weight:650;color:var(--text)}
+.chip.warn{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--text-2);cursor:pointer}.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--brand,var(--pos));flex:none}
 dialog.gate{width:min(560px,100%);max-height:100%;border:0;border-radius:var(--r-lg);padding:20px;background:var(--bg);color:var(--text);overflow:auto}
 dialog.gate::backdrop{background:rgba(0,0,0,.55)}
 dialog.gate h2{margin:0 0 4px;font-size:20px}
@@ -419,6 +430,7 @@ dialog.gate .field{margin-bottom:12px}
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
 <div class="syncbanner" id="syncBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="syncBannerText"></span></div></div>
+<div class="syncbanner noticebox" id="noticeBox" hidden aria-live="polite"></div>
 
 <nav class="tabbar" id="tabbar" role="tablist" aria-label="Seções">
   <button role="tab" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
@@ -1329,7 +1341,7 @@ function summaryText(state, split, xfers, k) {
 }
 // ===================== Evento compartilhado (Supabase): mapeamento estado <-> linhas =====================
 // O servidor só guarda linhas; todo cálculo continua aqui no cliente.
-// NUNCA vão para o servidor: receitas, cardápio (plan), preços, quantidades, dieta/alergia (member.diet) e fotos (expense.photo).
+// NUNCA vão para o servidor (por enquanto): receitas, cardápio (plan), preços, quantidades, dieta/alergia (member.diet) e fotos (expense.photo).
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sem 0/O, 1/I/L
 function genEventCode(rand) {
   const out = [];
@@ -1339,18 +1351,25 @@ function genEventCode(rand) {
 }
 const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const validCode = s => new RegExp('^[' + CODE_ALPHABET + ']{8}$').test(s);
-const SYNC_TABLES = ['families', 'people', 'expenses', 'settlement_marks'];
-const SYNC_PK = { families: ['event_id', 'id'], people: ['event_id', 'id'], expenses: ['event_id', 'id'], settlement_marks: ['event_id', 'from_family', 'to_family'] };
+const newUuid = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+// Tabelas com versão por linha, gravadas por apply_ops. "events" só recebe UPDATE.
+const SYNC_TABLES = ['families', 'people', 'expenses', 'settlement_marks', 'event_overrides'];
+const SYNC_PK = { events: ['id'], families: ['event_id', 'id'], people: ['event_id', 'id'], expenses: ['event_id', 'id'],
+  settlement_marks: ['event_id', 'from_family', 'to_family'], event_overrides: ['event_id', 'kind', 'key'], expense_confirmations: ['event_id', 'id'] };
 const SYNC_COLS = {
-  events: ['id', 'name', 'start_date', 'end_date', 'meals', 'split_mode', 'include_unconfirmed', 'kitty_per_family', 'weights'],
+  events: ['id', 'start_date', 'end_date', 'meals', 'split_mode', 'include_unconfirmed', 'kitty_per_family'],
   families: ['event_id', 'id', 'name', 'color', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
   people: ['event_id', 'id', 'family_id', 'first_name', 'type', 'drinks', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
-  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmed_by_family_id', 'confirmed_at', 'client_ts', 'deleted_at'],
+  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'client_ts', 'deleted_at'],
   settlement_marks: ['event_id', 'from_family', 'to_family', 'amount', 'deleted_at'],
+  event_overrides: ['event_id', 'kind', 'key', 'value', 'deleted_at'],
+  expense_confirmations: ['event_id', 'id', 'expense_id', 'family_id', 'confirmed_at', 'voided_at'],
 };
-const TS_COLS = new Set(['deleted_at', 'confirmed_at']);
+const TS_COLS = new Set(['deleted_at', 'confirmed_at', 'voided_at']);
 const NUM_COLS = new Set(['amount', 'kitty_per_family', 'pos', 'client_ts']);
 const MEAL_KEYS = ['cafe', 'almoco', 'lanche', 'jantar'];
+const MEMBER_TYPE_KEYS = ['adulto', 'adolescente', 'crianca', 'bebe'];
 const clip = (s, n) => s == null || s === '' ? null : String(s).slice(0, n);
 const dateOrNull = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? String(d) : null;
 const mealOrNull = m => MEAL_KEYS.includes(m) ? m : null;
@@ -1362,31 +1381,34 @@ function pickRow(table, r) {
     let v = r[c] === undefined ? null : r[c];
     if (TS_COLS.has(c)) v = isoOrNull(v);
     else if (NUM_COLS.has(c) && v != null) v = Number(v);
+    else if (c === 'value' && v != null && typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) v = Number(v);
     o[c] = v;
   }
   return o;
 }
 const rowKey = (table, r) => SYNC_PK[table].map(c => r[c]).join('|');
+const stableStr = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(stableStr).join(',') + ']' : '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}') : JSON.stringify(v === undefined ? null : v);
+const same = (a, b) => stableStr(a) === stableStr(b);
 // Split "<de>_<para>" using the known family ids (ids may contain "_").
 function splitSettleKey(k, famIds) {
   for (const a of famIds) if (k.startsWith(a + '_') && famIds.includes(k.slice(a.length + 1))) return [a, k.slice(a.length + 1)];
   const i = k.indexOf('_'); return i > 0 ? [k.slice(0, i), k.slice(i + 1)] : null;
 }
-function stateToRows(state, eventId, eventName) {
-  const ev = { id: eventId, name: clip(eventName || state.eventName || 'Evento', 80),
+// app state -> rows. Confirmations are not rows here: `confirm` lists the desired {expense_id, family_id}.
+function stateToRows(state, eventId) {
+  const ev = { id: eventId,
     start_date: dateOrNull(state.trip && state.trip.start), end_date: dateOrNull(state.trip && state.trip.end),
     meals: Object.fromEntries(MEAL_KEYS.map(m => [m, !!(state.trip && state.trip.meals && state.trip.meals[m])])),
     split_mode: ['porcoes', 'pessoa', 'igual'].includes(state.splitMode) ? state.splitMode : 'pessoa',
     include_unconfirmed: state.includeUnconfirmed !== false,
-    kitty_per_family: Math.max(0, Math.round((Number(state.kittyPerFamily) || 0) * 100) / 100),
-    weights: Object.fromEntries(Object.entries(state.weights || {}).filter(([k, v]) => typeof v === 'number' && isFinite(v) && v >= 0 && ['adulto', 'adolescente', 'crianca', 'bebe'].includes(k))) };
+    kitty_per_family: Math.min(1e6, Math.max(0, Math.round((Number(state.kittyPerFamily) || 0) * 100) / 100)) };
   if (ev.start_date && ev.end_date && ev.end_date < ev.start_date) ev.end_date = null;
-  const rows = { events: pickRow('events', ev), families: [], people: [], expenses: [], settlement_marks: [] };
+  const rows = { events: pickRow('events', ev), families: [], people: [], expenses: [], settlement_marks: [], event_overrides: [], confirm: [] };
   (state.families || []).forEach((f, fi) => {
     rows.families.push(pickRow('families', { event_id: eventId, id: f.id, name: clip(f.name, 60) || 'Família', color: clip(f.color, 40), pos: fi,
       arrive: dateOrNull(f.arrive), arrive_meal: mealOrNull(f.arriveMeal), depart: dateOrNull(f.depart), depart_meal: mealOrNull(f.departMeal) }));
     (f.members || []).forEach((m, mi) => rows.people.push(pickRow('people', { event_id: eventId, id: m.id, family_id: f.id,
-      first_name: (clip(String(m.name || '').trim(), 40) || '?'), type: ['adulto', 'adolescente', 'crianca', 'bebe'].includes(m.type) ? m.type : 'adulto',
+      first_name: (clip(String(m.name || '').trim(), 40) || '?'), type: MEMBER_TYPE_KEYS.includes(m.type) ? m.type : 'adulto',
       drinks: !!m.drinks, pos: mi, arrive: dateOrNull(m.arrive), arrive_meal: mealOrNull(m.arriveMeal), depart: dateOrNull(m.depart), depart_meal: mealOrNull(m.departMeal) })));
   });
   for (const e of state.expenses || []) {
@@ -1396,14 +1418,16 @@ function stateToRows(state, eventId, eventName) {
       participants: Array.isArray(e.participants) ? e.participants.slice(0, 100) : null,
       proof: ['nf', 'comp', 'none'].includes(e.proof) ? e.proof : 'nf', estimated: !!e.estimated, note: clip(e.note, 300),
       items: e.items == null || e.items === '' ? null : (typeof e.items === 'string' ? e.items.slice(0, 2000) : e.items),
-      confirmed_by_family_id: e.confirmedBy || null, confirmed_at: e.confirmedBy ? isoOrNull(e.confirmedAt) : null,
       client_ts: Number.isFinite(Number(e.ts)) ? Math.round(Number(e.ts)) : null }));
+    if (e.confirmedBy) rows.confirm.push({ expense_id: e.id, family_id: e.confirmedBy });
   }
   const famIds = (state.families || []).map(f => f.id);
   for (const [k, v] of Object.entries(state.settled || {})) {
     const p = splitSettleKey(k, famIds); if (!p || !v) continue;
     rows.settlement_marks.push(pickRow('settlement_marks', { event_id: eventId, from_family: p[0], to_family: p[1], amount: Math.round((Number(v.amount) || 0) * 100) / 100 }));
   }
+  for (const [k, v] of Object.entries(state.weights || {}))
+    if (MEMBER_TYPE_KEYS.includes(k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 10) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'weight', key: k, value: v }));
   return rows;
 }
 const SYNCED_KEYS = {
@@ -1414,150 +1438,289 @@ const SYNCED_KEYS = {
 // Keep only local-only fields (diet, photo, anything unknown) of the previous object.
 const localPart = (prev, kind) => { const o = {}; if (prev) for (const k in prev) if (!SYNCED_KEYS[kind].includes(k)) o[k] = prev[k]; return o; };
 const setIf = (o, k, v) => { if (v !== null && v !== undefined && v !== '') o[k] = v; };
-// rows (server shape) + previous local state -> app state. Local-only parts of prev are preserved.
-function rowsToState(rows, prev) {
-  prev = prev || {};
+// rows (server shape, lists) + previous local state -> app state. Local-only parts of prev are preserved.
+// meta: {name, locked} of the event (read-only for the client).
+function rowsToState(rows, prev, meta) {
+  prev = prev || {}; meta = meta || {};
   const live = t => (rows[t] || []).filter(r => !r.deleted_at);
   const ev = rows.events || {};
   const pf = Object.fromEntries((prev.families || []).map(f => [f.id, f]));
   const pm = {}; (prev.families || []).forEach(f => (f.members || []).forEach(m => { pm[m.id] = m; }));
   const pe = Object.fromEntries((prev.expenses || []).map(e => [e.id, e]));
-  const fams = live('families').slice().sort((a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id))).map(r => {
+  const byPos = (a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id));
+  const fams = live('families').slice().sort(byPos).map(r => {
     const f = { ...localPart(pf[r.id], 'family'), id: r.id, name: r.name, members: [] };
     setIf(f, 'arrive', r.arrive); setIf(f, 'arriveMeal', r.arrive_meal); setIf(f, 'depart', r.depart); setIf(f, 'departMeal', r.depart_meal);
     return f;
   });
   const byFam = Object.fromEntries(fams.map(f => [f.id, f]));
-  live('people').slice().sort((a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id))).forEach(r => {
+  live('people').slice().sort(byPos).forEach(r => {
     const f = byFam[r.family_id]; if (!f) return;
-    const m = { ...localPart(pm[r.id], 'member'), id: r.id, name: r.first_name, drinks: !!r.drinks, type: ['adulto', 'adolescente', 'crianca', 'bebe'].includes(r.type) ? r.type : 'adulto' };
+    const m = { ...localPart(pm[r.id], 'member'), id: r.id, name: r.first_name, drinks: !!r.drinks, type: MEMBER_TYPE_KEYS.includes(r.type) ? r.type : 'adulto' };
     setIf(m, 'arrive', r.arrive); setIf(m, 'arriveMeal', r.arrive_meal); setIf(m, 'depart', r.depart); setIf(m, 'departMeal', r.depart_meal);
     f.members.push(m);
   });
+  const conf = {}; for (const c of rows.confirmations || []) if (!c.voided_at) conf[c.expense_id] = c;
   const expenses = live('expenses').map(r => {
     const e = { ...localPart(pe[r.id], 'expense'), id: r.id, amount: Number(r.amount), category: CATEGORIES[r.category] ? r.category : 'food', description: r.description || '', payerId: r.payer_person_id || null, proof: ['nf', 'comp', 'none'].includes(r.proof) ? r.proof : 'nf' };
     if (r.estimated) e.estimated = true; setIf(e, 'note', r.note); setIf(e, 'items', r.items); setIf(e, 'participants', r.participants);
-    if (r.confirmed_by_family_id) { e.confirmedBy = r.confirmed_by_family_id; if (r.confirmed_at) e.confirmedAt = Date.parse(r.confirmed_at); }
+    const c = conf[r.id]; if (c && e.proof === 'none') { e.confirmedBy = c.family_id; if (c.confirmed_at) e.confirmedAt = Date.parse(c.confirmed_at); }
     if (r.client_ts != null) e.ts = Number(r.client_ts);
     return e;
   }).sort((a, b) => (b.ts || 0) - (a.ts || 0) || String(a.id).localeCompare(String(b.id)));
   const settled = {};
-  for (const r of live('settlement_marks')) settled[r.from_family + '_' + r.to_family] = { amount: Number(r.amount), at: (prev.settled && prev.settled[r.from_family + '_' + r.to_family] || {}).at || Date.now() };
+  for (const r of live('settlement_marks')) { const k = r.from_family + '_' + r.to_family; settled[k] = { amount: Number(r.amount), at: (prev.settled && prev.settled[k] || {}).at || Date.now() }; }
+  const weights = {}; for (const r of live('event_overrides')) if (r.kind === 'weight' && typeof r.value === 'number') weights[r.key] = r.value;
   const meals = ev.meals || (prev.trip && prev.trip.meals) || { cafe: true, almoco: true, lanche: false, jantar: true };
-  return { ...prev, eventName: ev.name || prev.eventName, families: fams, expenses, settled,
+  return { ...prev, eventName: meta.name || prev.eventName, eventLocked: !!meta.locked, families: fams, expenses, settled,
     trip: { ...(prev.trip || {}), start: ev.start_date || '', end: ev.end_date || '', meals: { ...meals } },
     splitMode: ev.split_mode || prev.splitMode || 'pessoa', includeUnconfirmed: ev.include_unconfirmed !== false,
-    kittyPerFamily: ev.kitty_per_family != null ? Number(ev.kitty_per_family) : (prev.kittyPerFamily || 0), weights: { ...(ev.weights || {}) },
-    // local-only (never synced): recipes, plan, prices, planQty
+    kittyPerFamily: ev.kitty_per_family != null ? Number(ev.kitty_per_family) : (prev.kittyPerFamily || 0), weights,
+    // local-only (never synced for now): recipes, plan, prices, planQty
     recipes: prev.recipes || [], plan: prev.plan || {}, prices: prev.prices || {}, planQty: prev.planQty || {}, syncMode: true };
 }
-const stableStr = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(stableStr).join(',') + ']' : '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}') : JSON.stringify(v === undefined ? null : v);
-const sameRow = (a, b) => stableStr(a) === stableStr(b);
-// What must be written: changed/new rows, and soft-deletes for rows that disappeared locally.
-function diffRows(base, cur) {
-  const out = { events: null, upserts: {} };
-  if (cur.events && (!base.events || !sameRow(base.events, cur.events))) out.events = cur.events;
+
+// ---- Edits: what this device changed relative to the server base, field by field.
+// base: {events: row, versions: {table: {key: n}}, <table>: {key: row}, confirmations: {id: row}}
+function computeEdits(base, cur, opts = {}) {
+  const now = opts.now || (() => new Date().toISOString());
+  const out = { events: null, rows: {}, confirm: [] };
+  if (cur.events && base.events) { const p = {}; for (const c of SYNC_COLS.events) if (c !== 'id' && !same(base.events[c], cur.events[c])) p[c] = cur.events[c]; if (Object.keys(p).length) out.events = p; }
   const curFams = new Set((cur.families || []).map(f => f.id));
   for (const t of SYNC_TABLES) {
-    const b = base[t] || {}, list = [], seen = new Set();
-    for (const r of cur[t] || []) { const k = rowKey(t, r); seen.add(k); if (!b[k] || !sameRow(b[k], r)) list.push(r); }
+    const b = base[t] || {}, seen = new Set(), list = [];
+    for (const r of cur[t] || []) {
+      const k = rowKey(t, r); seen.add(k);
+      if (!b[k]) { list.push({ key: k, insert: true, patch: r }); continue; }
+      const p = {}; for (const c of SYNC_COLS[t]) if (!SYNC_PK[t].includes(c) && !same(b[k][c], r[c])) p[c] = r[c];
+      if (Object.keys(p).length) list.push({ key: k, patch: p });
+    }
     for (const k in b) {
       if (seen.has(k) || b[k].deleted_at) continue;
-      if (t === 'people' && !curFams.has(b[k].family_id)) continue; // orphan (family not loaded/removed): never delete what we could not show
-      list.push({ ...b[k], deleted_at: new Date().toISOString() });
+      if (t === 'people' && !curFams.has(b[k].family_id)) continue; // orphan: never delete what we could not show
+      list.push({ key: k, patch: { deleted_at: (opts.delTs && opts.delTs(t, k)) || now() } });
     }
-    if (list.length) out.upserts[t] = list;
+    if (list.length) out.rows[t] = list;
   }
+  const active = {}; for (const c of Object.values(base.confirmations || {})) if (!c.voided_at) active[c.expense_id] = c;
+  for (const c of cur.confirm || []) if (!active[c.expense_id]) out.confirm.push(c);
   return out;
 }
-const indexRows = (t, list) => Object.fromEntries((list || []).map(r => { const p = pickRow(t, r); return [rowKey(t, p), p]; }));
-
-// Sync engine: last write wins per row; edits made offline stay pending in memory+cache and are retried.
-// client: a supabase-js v2 client (or the fake one in tests). Hooks: getState(), setState(s), onStatus(status, info).
-function createSync({ client, eventId, getState, setState, onStatus, loadBase, saveBase, debounceMs = 600, retryMs = 15000, timers }) {
-  const T = timers || { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) };
-  const base = { events: null }; SYNC_TABLES.forEach(t => { base[t] = {}; });
-  let timer = null, flushing = false, again = false, status = 'idle', channel = null, eventName = '', createdBy = null;
-  const set = (s, info) => { status = s; onStatus && onStatus(s, info || {}); };
-  const curRows = () => stateToRows(getState(), eventId, eventName);
-  const pendingCount = () => { const d = diffRows(base, curRows()); return (d.events ? 1 : 0) + Object.values(d.upserts).reduce((s, l) => s + l.length, 0); };
-  const baseLists = () => { const o = { events: base.events }; SYNC_TABLES.forEach(t => { o[t] = Object.values(base[t]); }); return o; };
-  // Rebuild local state from server rows, keeping rows that still have unsent local edits.
-  const persist = () => { if (saveBase) try { saveBase(JSON.parse(JSON.stringify(base))); } catch (e) {} };
-  function rebuild(localEdits) {
-    const cur = curRows(), merged = { events: base.events };
-    const d = localEdits || diffRows(base, cur);
-    if (d.events) merged.events = d.events;
-    for (const t of SYNC_TABLES) {
-      const m = { ...base[t] };
-      for (const r of d.upserts[t] || []) m[rowKey(t, r)] = r;
-      merged[t] = Object.values(m);
+const rowLabel = r => r ? (r.description ? ' «' + r.description + '»' : r.name ? ' «' + r.name + '»' : r.first_name ? ' «' + r.first_name + '»' : '') : '';
+const conflictNotice = (t, key, f, mine, theirs, row) => ({ kind: 'conflict', table: t, key, field: f, mine, theirs,
+  text: `Outro aparelho alterou ${FIELD_LABEL[f] || f} (${TABLE_LABEL[t] || t}${rowLabel(row)}); valeu o valor de lá${moneyPair(f, mine, theirs)} e o seu não foi salvo.` });
+const moneyPair = (f, mine, theirs) => ['amount', 'kitty_per_family'].includes(f) && isFinite(mine) && isFinite(theirs)
+  ? ` (R$ ${Number(theirs).toFixed(2).replace('.', ',')}; o seu era R$ ${Number(mine).toFixed(2).replace('.', ',')})` : '';
+// Server rows changed under my pending edits (realtime or reload): keep my fields the server did not touch;
+// same field changed on both sides -> server wins + notice. getOld/getNew(t, key) return the base row before/after.
+function rebaseEdits(ed, getOld, getNew) {
+  const notices = [], out = { events: ed.events && { ...ed.events }, rows: {}, confirm: ed.confirm };
+  const filt = (t, key, patch, insert) => {
+    const nw = getNew(t, key), old = getOld(t, key);
+    if (!nw) return patch;
+    if (nw.deleted_at && !(old && old.deleted_at) && !patch.deleted_at) { notices.push({ kind: 'conflict', table: t, key, field: 'deleted_at', text: `Outro aparelho apagou ${TABLE_LABEL[t] || t}${rowLabel(nw)}; a sua alteração não foi salva.` }); return null; }
+    const p = {};
+    for (const [f, mine] of Object.entries(patch)) {
+      if (SYNC_PK[t].includes(f)) continue;
+      if (same(nw[f], mine)) continue;
+      if (!insert && old && same(nw[f], old[f])) { p[f] = mine; continue; }
+      notices.push(conflictNotice(t, key, f, mine, nw[f], nw));
     }
-    setState(rowsToState(merged, getState()));
+    return Object.keys(p).length ? p : null;
+  };
+  if (out.events) out.events = filt('events', '*', out.events, false);
+  for (const t in ed.rows) out.rows[t] = ed.rows[t].map(e => { const p = filt(t, e.key, e.patch, e.insert);
+    if (!p) return null; const nw = getNew(t, e.key); return nw ? { key: e.key, patch: p } : { ...e, patch: p }; }).filter(Boolean);
+  return { ed: out, notices };
+}
+const editCount = e => (e.events ? 1 : 0) + Object.values(e.rows).reduce((s, l) => s + l.length, 0) + e.confirm.length;
+// base + edits -> row lists for rowsToState
+function mergeBase(base, edits) {
+  const m = { events: base.events ? { ...base.events, ...(edits.events || {}) } : null, confirmations: Object.values(base.confirmations || {}) };
+  for (const t of SYNC_TABLES) {
+    const o = { ...(base[t] || {}) };
+    for (const e of edits.rows[t] || []) o[e.key] = e.insert ? e.patch : { ...o[e.key], ...e.patch };
+    m[t] = Object.values(o);
+  }
+  const active = new Set(m.confirmations.filter(c => !c.voided_at).map(c => c.expense_id));
+  for (const c of edits.confirm) if (!active.has(c.expense_id)) m.confirmations.push({ ...c, id: 'pending', confirmed_at: null, voided_at: null });
+  return m;
+}
+const FIELD_LABEL = { amount: 'valor', description: 'descrição', category: 'categoria', payer_person_id: 'quem pagou', proof: 'comprovante', note: 'observação',
+  items: 'itens', estimated: 'estimado', name: 'nome', first_name: 'nome', type: 'tipo', drinks: 'bebe', arrive: 'chegada', depart: 'saída',
+  arrive_meal: 'refeição de chegada', depart_meal: 'refeição de saída', deleted_at: 'exclusão', value: 'valor', split_mode: 'modo de divisão',
+  kitty_per_family: 'caixinha', start_date: 'início', end_date: 'fim', include_unconfirmed: 'incluir sem confirmação', meals: 'refeições', family_id: 'família', pos: 'ordem' };
+const TABLE_LABEL = { events: 'evento', families: 'família', people: 'pessoa', expenses: 'gasto', settlement_marks: 'acerto', event_overrides: 'peso', expense_confirmations: 'confirmação' };
+
+// Sync engine (full design): per-row versions, field patches through apply_ops (idempotent op_id),
+// field-by-field merge on conflict (same field: server wins + notice), offline edits kept and retried.
+// client: supabase-js v2 (or a fake). Hooks: getState(), setState(s), onStatus(status, info), onNotice(list), onMembership(row).
+function createSync({ client, eventId, getState, setState, onStatus, onNotice, onMembership, loadBase, saveBase, debounceMs = 600, retryMs = 15000, timers }) {
+  const T = timers || { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) };
+  const emptyBase = () => { const b = { events: null, meta: {}, versions: {}, confirmations: {} }; ['events', ...SYNC_TABLES].forEach(t => { b.versions[t] = {}; if (t !== 'events') b[t] = {}; }); return b; };
+  let base = emptyBase(), timer = null, flushing = false, again = false, status = 'idle', channel = null, me = null;
+  const opIds = {}, delTimes = {};
+  const set = (s, info) => { status = s; onStatus && onStatus(s, info || {}); };
+  const curRows = () => stateToRows(getState(), eventId);
+  const delTs = (t, k) => delTimes[t + '|' + k] || (delTimes[t + '|' + k] = new Date().toISOString());
+  const edits = () => computeEdits(base, curRows(), { delTs });
+  const pendingCount = () => editCount(edits());
+  const persist = () => { if (saveBase) try { saveBase(JSON.parse(JSON.stringify(base))); } catch (e) {} };
+  const meta = () => ({ name: base.meta.name, locked: base.meta.locked });
+  function rebuild(ed) { setState(rowsToState(mergeBase(base, ed || edits()), getState(), meta())); }
+  function absorb(t, raw) { // server row -> base (ignores older versions)
+    if (!raw) return false;
+    if (t === 'expense_confirmations') { if (raw.event_id !== eventId) return false; base.confirmations[raw.id] = pickRow(t, raw); return true; }
+    if (t === 'events') { if (raw.id !== eventId) return false; }
+    else if (raw.event_id !== eventId) return false;
+    const p = pickRow(t, raw), k = rowKey(t, p), v = Number(raw.version) || 1;
+    if ((base.versions[t][k] || 0) > v) return false;
+    base.versions[t][k] = v;
+    if (t === 'events') { base.events = p; base.meta = { name: raw.name, locked: !!raw.locked, created_by: raw.created_by }; }
+    else {
+      const was = base[t][k]; base[t][k] = p;
+      // mirror of the server trigger: payer change / proof leaves "sem nota" / delete voids the confirmation
+      if (t === 'expenses' && was && (was.payer_person_id !== p.payer_person_id || p.proof !== 'none' || p.deleted_at))
+        for (const c of Object.values(base.confirmations)) if (c.expense_id === p.id && !c.voided_at) c.voided_at = new Date().toISOString();
+    }
+    return true;
+  }
+  async function membership() {
+    const r = await client.rpc('my_membership', { p_event: eventId });
+    if (r.error) throw r.error; return r.data || { status: 'none' };
   }
   async function load() {
     set('saving', { phase: 'load' });
     const evq = await client.from('events').select('*').eq('id', eventId);
     if (evq.error) throw evq.error;
-    if (!evq.data || !evq.data.length) { const e = new Error('not_member'); e.code = 'not_member'; throw e; }
-    // Edits made on this device since the last server ack (from the saved base); null = first load, server wins.
-    const prevBase = loadBase ? loadBase() : null;
-    const edits = prevBase && prevBase.events ? diffRows(prevBase, curRows()) : { events: null, upserts: {} };
-    eventName = evq.data[0].name; createdBy = evq.data[0].created_by; base.events = pickRow('events', evq.data[0]);
-    for (const t of SYNC_TABLES) {
+    if (!evq.data || !evq.data.length) {
+      const m = await membership(); const e = new Error(m.status === 'none' ? 'not_member' : m.status); e.code = m.status === 'none' ? 'not_member' : m.status; e.membership = m; throw e;
+    }
+    // Edits made on this device since the last server ack (from the saved base); none on first load (server wins).
+    const prev = loadBase ? loadBase() : null;
+    const ed = prev && prev.events && prev.versions ? computeEdits(prev, curRows(), { delTs }) : { events: null, rows: {}, confirm: [] };
+    base = emptyBase();
+    absorb('events', evq.data[0]);
+    for (const t of [...SYNC_TABLES, 'expense_confirmations']) {
       const q = await client.from(t).select('*').eq('event_id', eventId);
       if (q.error) throw q.error;
-      base[t] = indexRows(t, q.data);
+      (q.data || []).forEach(r => absorb(t, r));
     }
-    rebuild(edits); persist(); set(pendingCount() ? 'pending' : 'synced');
-    return { name: eventName, createdBy };
+    let rb = { ed, notices: [] };
+    if (prev && prev.events) rb = rebaseEdits(ed, (t, k) => t === 'events' ? prev.events : (prev[t] || {})[k], (t, k) => t === 'events' ? base.events : base[t][k]);
+    rebuild(rb.ed); persist(); set(pendingCount() ? 'pending' : 'synced');
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
+    return { name: base.meta.name, createdBy: base.meta.created_by, locked: base.meta.locked };
   }
   function applyRemote(t, row) {
     if (!row) return;
-    const edits = diffRows(base, curRows()); // local edits relative to the base BEFORE the remote change
-    if (t === 'events') { if (row.id !== eventId) return; eventName = row.name; base.events = pickRow('events', row); }
-    else { if (row.event_id !== eventId) return; const p = pickRow(t, row); base[t][rowKey(t, p)] = p; }
-    rebuild(edits); persist();
+    if (t === 'event_members') { if (onMembership) onMembership(row); return; }
+    const ed = edits(); // local edits relative to the base BEFORE the remote change
+    const k = t === 'events' || t === 'expense_confirmations' ? null : rowKey(t, pickRow(t, row));
+    const old = t === 'events' ? base.events : k ? base[t][k] : null;
+    if (!absorb(t, row)) return;
+    const rb = editCount(ed) ? rebaseEdits(ed, (t2, k2) => t2 === 'events' ? (t === 'events' ? old : base.events) : (t2 === t && k2 === k ? old : base[t2][k2]),
+      (t2, k2) => t2 === 'events' ? base.events : base[t2][k2]) : { ed, notices: [] };
+    rebuild(rb.ed); persist();
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
   }
   function subscribe() {
     channel = client.channel('evento-' + eventId);
     channel.on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => applyRemote('events', p.new));
-    for (const t of SYNC_TABLES) channel.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'event_id=eq.' + eventId }, p => applyRemote(t, p.new));
+    for (const t of [...SYNC_TABLES, 'expense_confirmations', 'event_members'])
+      channel.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'event_id=eq.' + eventId }, p => applyRemote(t, p.new));
     channel.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') set('offline', { pending: pendingCount() }); else if (st === 'SUBSCRIBED') resync(); });
   }
-  async function resync() { try { await load(); await flush(); } catch (e) { set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() }); } }
   const isNet = e => !e || /fetch|network|Failed|timeout|offline/i.test(String(e.message || e)) || e.status === 0;
+  async function resync() { try { await load(); await flush(); } catch (e) { handleErr(e); } }
+  function handleErr(e) {
+    if (e && ['pending', 'revoked', 'not_member'].includes(e.code)) { set('error', { error: e, pending: pendingCount() }); if (onMembership) onMembership({ user_id: me, status: e.code === 'not_member' ? 'none' : e.code, _self: true }); return; }
+    set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() });
+    if (timer) T.clear(timer); timer = T.set(() => { timer = null; return flush(); }, retryMs);
+  }
   function schedule() { if (timer) T.clear(timer); set('saving'); timer = T.set(() => { timer = null; return flush(); }, debounceMs); }
+  const opId = sig => opIds[sig] || (opIds[sig] = newUuid());
+  // Build apply_ops payload from edits.
+  function buildOps(ed) {
+    const ops = [];
+    const add = (t, key, row, ver, info) => { const sig = t + '|' + key + '|' + ver + '|' + stableStr(row); ops.push({ op: { op_id: opId(sig), table: t, row, expected_version: ver }, t, key, info, sig }); };
+    if (ed.events) add('events', eventId, ed.events, base.versions.events[eventId] || 1, { patch: ed.events });
+    // order matters: families before people before expenses
+    for (const t of SYNC_TABLES) for (const e of ed.rows[t] || []) {
+      const src = e.insert ? e.patch : base[t][e.key];
+      const pk = Object.fromEntries(SYNC_PK[t].filter(c => c !== 'event_id').map(c => [c, src[c]]));
+      const row = e.insert ? Object.fromEntries(Object.entries(e.patch).filter(([c]) => c !== 'event_id')) : { ...pk, ...e.patch };
+      add(t, e.key, row, e.insert ? null : (base.versions[t][e.key] || 1), e);
+    }
+    for (const c of ed.confirm) { const sig0 = 'conf|' + c.expense_id + '|' + c.family_id; const id = opIds[sig0] || (opIds[sig0] = newUuid());
+      add('expense_confirmations', c.expense_id, { id, expense_id: c.expense_id, family_id: c.family_id }, null, { confirm: c }); }
+    return ops;
+  }
   async function flush() {
     if (flushing) { again = true; return; }
     flushing = true;
     try {
-      const d = diffRows(base, curRows());
-      if (d.events) {
-        const { id, ...patch } = d.events;
-        const r = await client.from('events').update(patch).eq('id', eventId);
-        if (r.error) throw r.error; base.events = d.events;
+      if (base.meta.locked) { // read-only event: drop local edits
+        const n = pendingCount();
+        if (n) { rebuild({ events: null, rows: {}, confirm: [] }); onNotice && onNotice([{ kind: 'locked', text: 'Evento travado pelo organizador: a alteração não foi salva.' }]); }
+        set('locked'); return;
       }
-      for (const t of SYNC_TABLES) {
-        const list = d.upserts[t]; if (!list) continue;
-        for (let i = 0; i < list.length; i += 200) {
-          const chunk = list.slice(i, i + 200);
-          const r = await client.from(t).upsert(chunk, { onConflict: SYNC_PK[t].join(',') });
+      for (let round = 0; round < 3; round++) {
+        const ed = edits(); const ops = buildOps(ed);
+        if (!ops.length) break;
+        const snap = JSON.parse(JSON.stringify(base)); // base before this round: my edits are measured against it
+        const notices = [], drop = {}; let retry = false;
+        for (let i = 0; i < ops.length; i += 100) {
+          const chunk = ops.slice(i, i + 100);
+          const r = await client.rpc('apply_ops', { p_event: eventId, p_ops: chunk.map(o => o.op) });
           if (r.error) throw r.error;
-          chunk.forEach(row => { base[t][rowKey(t, row)] = row; });
+          const byId = Object.fromEntries((r.data || []).map(x => [x.op_id, x]));
+          for (const o of chunk) {
+            const res = byId[o.op.op_id] || { status: 'error', error: 'no_result' };
+            if (res.status === 'ok' || res.status === 'dup') { absorb(o.t, res.row); delete opIds[o.sig]; continue; }
+            if (res.status === 'conflict') {
+              retry = true;
+              if (o.t === 'expense_confirmations') { notices.push({ kind: 'conflict', text: 'Outra família já confirmou este gasto; vale a confirmação dela.' }); drop[o.t + '|' + o.key] = 'all';
+                const q = await client.from('expense_confirmations').select('*').eq('event_id', eventId); (q.data || []).forEach(x => absorb('expense_confirmations', x)); continue; }
+              const S = res.row && pickRow(o.t, res.row), B = o.t === 'events' ? base.events : base[o.t][o.key];
+              const lost = [];
+              for (const [f, mine] of Object.entries(o.info.patch || {})) {
+                if (!S || SYNC_PK[o.t].includes(f) || f === 'event_id') continue;
+                const theirs = S[f], was = B ? B[f] : undefined;
+                if (same(theirs, mine)) continue;                 // same result on both sides
+                if (B && same(theirs, was)) continue;              // only I changed it: resend on new version
+                lost.push(f);                                      // both changed: server wins
+                notices.push(conflictNotice(o.t, o.key, f, mine, theirs, S));
+              }
+              if (lost.length) drop[o.t + '|' + o.key] = lost;
+              if (res.row) absorb(o.t, res.row);
+              continue;
+            }
+            // error: invalid data or permission. Data errors are dropped (server can't accept); permission => membership check
+            if (/42501|row-level|not_allowed|permission/i.test(String(res.code) + ' ' + String(res.error))) { const m = await membership().catch(() => null);
+              if (m && m.locked) { base.meta.locked = true; } else if (m && m.status !== 'approved' && onMembership) { onMembership({ user_id: me, status: m.status, _self: true }); }
+              throw Object.assign(new Error(res.error || 'permission'), { code: '42501' }); }
+            drop[o.t + '|' + o.key] = 'all';
+            notices.push({ kind: 'error', text: `O servidor recusou um(a) ${TABLE_LABEL[o.t] || o.t}: ${String(res.error).slice(0, 80)}. A alteração foi desfeita.` });
+          }
         }
+        // rebuild: keep my remaining edits, minus fields/rows that lost or were refused
+        const cur = getState(); const ed2 = computeEdits(snap, stateToRows(cur, eventId), { delTs });
+        const filt = { events: ed2.events, rows: {}, confirm: ed2.confirm.filter(c => drop['expense_confirmations|' + c.expense_id] !== 'all') };
+        if (filt.events && drop['events|' + eventId]) { const d = drop['events|' + eventId]; if (d === 'all') filt.events = null; else { d.forEach(f => delete filt.events[f]); if (!Object.keys(filt.events).length) filt.events = null; } }
+        for (const t in ed2.rows) filt.rows[t] = ed2.rows[t].map(e => { const d = drop[t + '|' + e.key]; if (!d) return e; if (d === 'all') return null;
+          const p = { ...e.patch }; d.forEach(f => delete p[f]); return Object.keys(p).length ? { ...e, patch: p } : null; }).filter(Boolean);
+        rebuild(filt); persist();
+        if (notices.length && onNotice) onNotice(notices);
+        if (!retry) break;
       }
-      persist(); set(pendingCount() ? 'pending' : 'synced');
-    } catch (e) {
-      set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() });
-      if (timer) T.clear(timer); timer = T.set(() => { timer = null; return flush(); }, retryMs);
-    } finally {
-      flushing = false;
-      if (again) { again = false; await flush(); }
-    }
+      set(base.meta.locked ? 'locked' : pendingCount() ? 'pending' : 'synced');
+    } catch (e) { handleErr(e); }
+    finally { flushing = false; if (again) { again = false; await flush(); } }
   }
-  return { load, subscribe, schedule, flush, resync, applyRemote, pendingCount, status: () => status,
-    info: () => ({ eventId, name: eventName, createdBy }), base, stop: () => { if (channel && client.removeChannel) client.removeChannel(channel); } };
+  return { load, subscribe, schedule, flush, resync, applyRemote, pendingCount, status: () => status, membership,
+    setUser: id => { me = id; }, info: () => ({ eventId, name: base.meta.name, createdBy: base.meta.created_by, locked: base.meta.locked }),
+    base: () => base, stop: () => { if (channel && client.removeChannel) client.removeChannel(channel); } };
 }
 
 // Import validation: counts and per-family balances before/after the round trip (tolerance R$ 0,01).
@@ -1573,7 +1736,9 @@ function importCheck(imported) {
   const sum = s => Math.round(s.expenses.reduce((a, e) => a + (Number(e.amount) || 0), 0) * 100) / 100;
   const count = s => ({ families: s.families.length, people: s.families.reduce((a, f) => a + f.members.length, 0), expenses: s.expenses.length, total: sum(s), marks: Object.keys(s.settled || {}).length });
   const shared = { ...imported, syncMode: true };
-  const before = count(imported), back = rowsToState(stateToRows(shared, 'check', 'check'), shared);
+  const rows = stateToRows(shared, 'check');
+  const fake = { ...rows, confirmations: rows.confirm.map(c => ({ ...c, id: c.expense_id, voided_at: null })) };
+  const before = count(imported), back = rowsToState(fake, shared);
   const after = count(back);
   const nb = computeSplit(shared).families, na = computeSplit(back).families;
   let maxDiff = 0; nb.forEach(f => { const g = na.find(x => x.id === f.id); maxDiff = Math.max(maxDiff, g ? Math.abs(g.net - f.net) : Infinity); });
@@ -1586,7 +1751,7 @@ function importCheck(imported) {
 }
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = { genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, diffRows, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
+  module.exports = { genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
 }
 </script>
 <script>
@@ -1748,7 +1913,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   if (!session || !session.eventId) session = null;
   const hashCode = normCode(decodeURIComponent(location.hash.slice(1)));
   const linkCode = validCode(hashCode) ? hashCode : null;
-  const shared = backendOn && !!session && (!linkCode || linkCode === session.code);
+  const shared = backendOn && !!session;
   const CACHE_KEY = shared ? `rateio-evento-${session.eventId}-cache` : KEY;   // modo local continua em racha-viagem-v3
   const BASE_KEY = shared ? `rateio-evento-${session.eventId}-base` : null;
   let state;
@@ -2508,38 +2673,74 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#cookDlg').addEventListener('close', () => { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } });
   $('#photoDlg').addEventListener('click', e => { if (e.target === $('#photoDlg')) $('#photoDlg').close(); });
 
-  // ---------- EVENTO COMPARTILHADO: status, entrada, dados (export/import) ----------
-  const STATUS_TXT = { idle: 'Conectando…', saving: 'Salvando…', synced: 'Sincronizado', pending: 'Pendente', offline: 'Offline', error: 'Erro' };
+  // ---------- EVENTO COMPARTILHADO: status, entrada, aprovação, organizador, dados (export/import) ----------
+  const STATUS_TXT = { idle: 'Conectando…', saving: 'Salvando…', synced: 'Sincronizado', pending: 'Pendente', offline: 'Offline', error: 'Erro', locked: 'Travado', waiting: 'Aguardando' };
   let syncInfo = { name: session && session.name, createdBy: null }, myUserId = null, lastStatus = 'idle';
+  let myRole = null, myStatus = null, members = [], membersTimer = null, pendingPoll = null, live = false;
+  const isOrganizer = () => shared && myRole === 'organizer' && myStatus === 'approved';
   function paintSync(st, info = {}) {
     lastStatus = st;
     const pill = $('#syncPill'); if (!pill) return;
     pill.hidden = !shared; pill.dataset.s = st; pill.textContent = STATUS_TXT[st] || st;
     const n = info.pending != null ? info.pending : (sync ? sync.pendingCount() : 0);
     let msg = '';
-    if (st === 'offline') msg = n ? `Sem conexão com o servidor: ${n} ${n === 1 ? 'alteração está' : 'alterações estão'} só neste aparelho e ${n === 1 ? 'será enviada' : 'serão enviadas'} quando a internet voltar. Evite editar o mesmo gasto em outro celular até lá.` : 'Sem conexão com o servidor. Você vê a última cópia deste aparelho; o que lançar agora fica pendente até a internet voltar.';
-    else if (st === 'error') { const e = info.error || {}; const perm = e.code === '42501' || /row-level|permission/i.test(e.message || '');
-      msg = perm ? 'Este aparelho não tem permissão neste evento. Entre de novo com o código (Acertos › Dados).' : `Erro ao salvar (${String(e.message || e).slice(0, 120)}). Suas alterações estão guardadas neste aparelho e serão reenviadas.`; }
+    if (st === 'offline') msg = n ? `Sem conexão com o servidor: ${n} ${n === 1 ? 'alteração está' : 'alterações estão'} só neste aparelho e ${n === 1 ? 'será enviada' : 'serão enviadas'} quando a internet voltar. Se outro celular mudar o mesmo campo, vale o que chegou primeiro ao servidor (você recebe um aviso).` : 'Sem conexão com o servidor. Você vê a última cópia deste aparelho; o que lançar agora fica pendente até a internet voltar.';
+    else if (st === 'error') { const e = info.error || {}; const perm = e.code === '42501' || /row-level|permission|pending|revoked/i.test((e.message || '') + (e.code || ''));
+      msg = perm ? 'Este aparelho não tem permissão de gravar neste evento agora (aguardando aprovação ou acesso removido).' : `Erro ao salvar (${String(e.message || e).slice(0, 120)}). Suas alterações estão guardadas neste aparelho e serão reenviadas.`; }
+    else if (state.eventLocked) msg = 'Evento travado pelo organizador: somente leitura. O que for alterado aqui não é salvo.';
     $('#syncBanner').hidden = !msg; $('#syncBannerText').textContent = msg;
     pill.setAttribute('aria-label', 'Sincronização: ' + pill.textContent);
   }
-  $('#syncPill').onclick = () => { if (sync) sync.resync(); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); };
+  function showNotices(list) {
+    if (!list || !list.length) return;
+    const box = $('#noticeBox'), items = list.slice(-3).map(n => `<li>${esc(n.text)}</li>`).join('');
+    box.innerHTML = `<div class="callout" role="status"><span data-i="alert"></span><div><b>${list.length === 1 ? 'Aviso de edição simultânea' : list.length + ' avisos de edição simultânea'}</b><ul>${items}</ul></div><button class="btn text" type="button" data-nclose>OK</button></div>`;
+    hydrate(box); box.hidden = false;
+  }
+  $('#noticeBox').addEventListener('click', e => { if (e.target.closest('[data-nclose]')) $('#noticeBox').hidden = true; });
+  $('#syncPill').onclick = () => { if (sync && live) sync.resync(); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); };
   const shareUrl = code => location.origin + location.pathname + '#' + code;
   const fmtCode = c => c ? c.slice(0, 4) + '-' + c.slice(4) : '';
-  const errMsg = e => { const m = String((e && (e.message || e.error_description)) || e || '');
+  const errMsg = e => { const m = String((e && (e.message || e.error_description || e.error)) || e || '');
     if (/invalid_code/.test(m)) return 'Código não confere. Confira as 8 letras e números.';
+    if (/too_many_attempts/.test(m)) return 'Muitas tentativas com código errado. Espere 10 minutos e tente de novo.';
+    if (/revoked/.test(m)) return 'O organizador removeu este aparelho do evento. Fale com ele.';
+    if (/organizer_login_required/.test(m)) return 'Para criar um evento, entre primeiro com o GitHub.';
+    if (/organizer_only/.test(m)) return 'Só o organizador pode fazer isso.';
     if (/anonymous.*disabled|Anonymous sign-ins are disabled/i.test(m)) return 'O login anônimo está desligado no Supabase (Authentication › Sign In / Providers).';
+    if (/provider is not enabled|Unsupported provider/i.test(m)) return 'O login com GitHub não está ligado no Supabase (veja o passo 4 do guia).';
     if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o servidor. Tente de novo com internet.';
-    if (/too_many_events/.test(m)) return 'Limite de eventos criados neste aparelho.';
+    if (/too_many_events/.test(m)) return 'Limite de eventos criados nesta conta.';
     return 'Erro: ' + m.slice(0, 160); };
 
-  // gate: criar evento / entrar com código
+  // ---- autenticação: membros entram anônimos; organizador entra com GitHub
   let sbClient = null, sbReady = null;
+  const ORG_RETURN = () => location.origin + location.pathname + '?org=1';
+  async function currentUser(sb) { const { data } = await sb.auth.getSession(); return data && data.session ? data.session.user : null; }
+  async function ensureAuth(sb) {
+    const u = await currentUser(sb);
+    if (u) { myUserId = u.id; if (sync) sync.setUser(u.id); return u; }
+    const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error;
+    myUserId = r.data.user.id; if (sync) sync.setUser(myUserId); return r.data.user;
+  }
+  async function githubLogin(sb) {
+    const u = await currentUser(sb);
+    if (u && !u.is_anonymous) return u;
+    sessionStorage.setItem('rateio-e2-org', '1');
+    if (u && u.is_anonymous && sb.auth.linkIdentity) { // mantém o mesmo usuário (eventos em que já entrou continuam)
+      const r = await sb.auth.linkIdentity({ provider: 'github', options: { redirectTo: ORG_RETURN() } });
+      if (!r.error) return null;
+    }
+    const r = await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: ORG_RETURN() } });
+    if (r.error) throw r.error; return null; // redireciona para o GitHub
+  }
+
+  // ---- gate: entrar com código / organizador (GitHub: criar e abrir meus eventos)
   function openGate(opts = {}) {
     if (!backendOn) return;
     const code = opts.code || linkCode || '';
     $('#gateBody').innerHTML = `<h2 id="gateTitle">Evento compartilhado</h2>
-      <p class="hint" style="margin-bottom:16px">As famílias veem e lançam os mesmos gastos ao vivo. Sem cadastro: entra quem tiver o código do evento.</p>
+      <p class="hint" style="margin-bottom:16px">As famílias veem e lançam os mesmos gastos ao vivo. Quem entra com o código fica <b>aguardando</b> até o organizador aprovar.</p>
       ${opts.msg ? `<p class="gateerr" role="alert">${esc(opts.msg)}</p>` : ''}
       <form class="card" id="joinForm" novalidate>
         <h3>Entrar com código</h3>
@@ -2549,15 +2750,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
         <p class="gateerr" id="joinErr" hidden></p>
         <button class="btn primary block" type="submit">Entrar no evento</button>
       </form>
-      <form class="card" id="createForm" novalidate>
-        <h3>Criar um evento novo</h3>
-        <div class="field"><label for="cName">Nome do evento</label><input class="inp" id="cName" maxlength="60" placeholder="Ex.: Feriado na chácara"></div>
-        <div class="field"><label for="cMe">Seu nome</label><input class="inp" id="cMe" maxlength="24" autocomplete="given-name" placeholder="Ex.: Jefferson"></div>
-        <p class="gateerr" id="createErr" hidden></p>
-        <button class="btn secondary block" type="submit">Criar evento</button>
-      </form>
+      <div class="card" id="orgCard"><h3>Organizador</h3><div id="orgBody"><p class="hint">Carregando…</p></div></div>
       <button class="btn text block" id="gateLocal" type="button" style="margin-top:12px">Continuar só neste aparelho</button>`;
-    const showErr = (id, m) => { const el = $(id); el.hidden = !m; el.textContent = m || ''; };
+    const showErr = (id, m) => { const el = $(id); if (!el) return; el.hidden = !m; el.textContent = m || ''; };
     const busy = (form, on) => form.querySelectorAll('button,input').forEach(x => { x.disabled = on; });
     $('#joinForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
       const c = normCode($('#gCode').value), me = $('#gName').value.trim(), fam = $('#gFam').value.trim();
@@ -2567,100 +2762,213 @@ Corte as frutas e monte a mesa com pães e frios.`,
       try { const sb = await sbReady; await ensureAuth(sb);
         const display = (fam ? `${me} (${fam})` : me).slice(0, 40);
         const r = await sb.rpc('join_event', { p_code: c, p_display_name: display }); if (r.error) throw r.error;
-        enterEvent({ eventId: r.data, code: c, me }); }
+        if (!r.data || !r.data.ok) throw new Error((r.data && r.data.error) || 'invalid_code');
+        enterEvent({ eventId: r.data.event_id, code: r.data.role === 'organizer' ? c : null, me, name: r.data.event_name }); }
       catch (e) { showErr('#joinErr', errMsg(e)); busy(f, false); } };
+    $('#gateLocal').onclick = () => { localStorage.setItem(MODE_KEY, 'local'); if (linkCode) history.replaceState(null, '', location.pathname); $('#gateDlg').close(); };
+    $('#gateDlg').oncancel = null;
+    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+    paintOrg(opts.orgMsg);
+  }
+  async function paintOrg(msg) {
+    const body = $('#orgBody'); if (!body) return;
+    let sb, u = null; try { sb = await sbReady; u = await currentUser(sb); } catch (e) {}
+    if (!u || u.is_anonymous) {
+      body.innerHTML = `<p class="hint" style="margin-bottom:12px">Quem cria o evento entra com a conta do GitHub: assim o evento não se perde se trocar de celular, e só você aprova quem entra.</p>
+        ${msg ? `<p class="gateerr" role="alert">${esc(msg)}</p>` : ''}<p class="gateerr" id="orgErr" hidden></p>
+        <button class="btn secondary block" id="ghBtn" type="button">Entrar com GitHub</button>`;
+      $('#ghBtn').onclick = async () => { $('#ghBtn').disabled = true; try { await githubLogin(sb); } catch (e) { const el = $('#orgErr'); el.hidden = false; el.textContent = errMsg(e); $('#ghBtn').disabled = false; } };
+      return;
+    }
+    myUserId = u.id;
+    const who = (u.user_metadata && (u.user_metadata.user_name || u.user_metadata.preferred_username || u.user_metadata.name)) || u.email || 'GitHub';
+    let mine = [];
+    try { const r = await sb.from('events').select('id,name,created_by,locked'); if (!r.error) mine = r.data || []; } catch (e) {}
+    body.innerHTML = `<p class="hint" style="margin-bottom:12px">Conectado como <b>${esc(who)}</b>.</p>
+      ${msg ? `<p class="gateerr" role="alert">${esc(msg)}</p>` : ''}
+      ${mine.length ? `<p class="hint">Seus eventos:</p><div class="actions" style="flex-direction:column;align-items:stretch;margin:8px 0 16px">${mine.map(e => `<button class="btn secondary block" type="button" data-open="${esc(e.id)}" data-name="${esc(e.name)}">${esc(e.name)}${e.locked ? ' (travado)' : ''}</button>`).join('')}</div>` : ''}
+      <form id="createForm" novalidate>
+        <div class="field"><label for="cName">Nome do evento novo</label><input class="inp" id="cName" maxlength="60" placeholder="Ex.: Feriado na chácara"></div>
+        <div class="field"><label for="cMe">Seu nome</label><input class="inp" id="cMe" maxlength="24" autocomplete="given-name" placeholder="Ex.: Jefferson" value="${esc((session && session.me) || '')}"></div>
+        <p class="gateerr" id="createErr" hidden></p>
+        <button class="btn primary block" type="submit">Criar evento</button>
+      </form>`;
+    body.querySelectorAll('[data-open]').forEach(b => b.onclick = () => enterEvent({ eventId: b.dataset.open, code: null, me: (session && session.me) || who, name: b.dataset.name }));
     $('#createForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
-      const name = $('#cName').value.trim(), me = $('#cMe').value.trim();
-      if (!name || !me) return showErr('#createErr', 'Preencha o nome do evento e o seu nome.');
-      busy(f, true); showErr('#createErr', '');
-      try { const sb = await sbReady; await ensureAuth(sb); let r, code;
+      const name = $('#cName').value.trim(), me = $('#cMe').value.trim(), err = m => { const el = $('#createErr'); el.hidden = !m; el.textContent = m || ''; };
+      if (!name || !me) return err('Preencha o nome do evento e o seu nome.');
+      f.querySelectorAll('button,input').forEach(x => { x.disabled = true; }); err('');
+      try { let r, code;
         for (let i = 0; i < 4; i++) { code = genEventCode(); r = await sb.rpc('create_event', { p_name: name, p_code: code, p_display_name: me }); if (!r.error || !/code_taken/.test(r.error.message)) break; }
         if (r.error) throw r.error;
         enterEvent({ eventId: r.data, code, me, name, created: true }); }
-      catch (e) { showErr('#createErr', errMsg(e)); busy(f, false); } };
-    $('#gateLocal').onclick = () => { localStorage.setItem(MODE_KEY, 'local'); if (linkCode) history.replaceState(null, '', location.pathname + location.search); $('#gateDlg').close(); };
-    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+      catch (e) { err(errMsg(e)); f.querySelectorAll('button,input').forEach(x => { x.disabled = false; }); } };
   }
   function enterEvent(s) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ eventId: s.eventId, code: s.code, me: s.me, name: s.name || null, joinedAt: Date.now() }));
+    const prev = session && session.eventId === s.eventId ? session : null;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ eventId: s.eventId, code: s.code || (prev && prev.code) || null, me: s.me, name: s.name || null, joinedAt: Date.now() }));
     localStorage.removeItem(MODE_KEY);
     if (s.created) sessionStorage.setItem('rateio-e2-created', '1');
-    location.replace(location.pathname + location.search + '#' + s.code); location.reload();
+    history.replaceState(null, '', location.pathname + (s.code ? '#' + s.code : '')); location.reload();
   }
-  async function ensureAuth(sb) {
-    const { data } = await sb.auth.getSession();
-    if (data && data.session) { myUserId = data.session.user.id; return data.session.user; }
-    const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error;
-    myUserId = r.data.user.id; return r.data.user;
-  }
-  function leaveEvent() {
-    if (!confirm('Sair do evento neste aparelho? Os dados do evento continuam no servidor para as outras famílias; você pode entrar de novo com o código.')) return;
+  function leaveEvent(ask = true) {
+    if (ask && !confirm('Sair do evento neste aparelho? Os dados do evento continuam no servidor para as outras famílias; você pode entrar de novo com o código.')) return;
     if (sync) sync.stop();
     localStorage.removeItem(SESSION_KEY); localStorage.setItem(MODE_KEY, 'local');
     location.replace(location.pathname); location.reload();
   }
+
+  // ---- aguardando aprovação / acesso removido
+  function showWaiting(m) {
+    myStatus = m.status; paintSync('waiting');
+    const revoked = m.status === 'revoked';
+    $('#gateBody').innerHTML = `<h2 id="gateTitle">${revoked ? 'Acesso removido' : 'Aguardando aprovação'}</h2>
+      <p style="margin-bottom:12px">Evento: <b>${esc(m.event_name || session.name || '—')}</b><br>Você: <b>${esc(m.display_name || session.me || '—')}</b></p>
+      <p class="hint" style="margin-bottom:16px">${revoked ? 'O organizador removeu este aparelho do evento. Se foi engano, peça para ele aprovar de novo.' : 'O organizador precisa aprovar este aparelho (no celular dele: Acertos › Dados › Membros). Esta tela atualiza sozinha.'}</p>
+      <div class="actions">${revoked ? '' : '<button class="btn primary" type="button" id="waitCheck">Verificar agora</button>'}<button class="btn secondary" type="button" id="waitLeave">Sair do evento</button></div>`;
+    $('#gateDlg').oncancel = ev => ev.preventDefault();
+    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+    if ($('#waitCheck')) $('#waitCheck').onclick = () => checkWaiting();
+    $('#waitLeave').onclick = () => leaveEvent(false);
+    clearInterval(pendingPoll); if (!revoked) pendingPoll = setInterval(checkWaiting, 8000);
+  }
+  async function checkWaiting() {
+    if (!sync) return;
+    let m; try { m = await sync.membership(); } catch (e) { return; }
+    if (m.status === 'approved') { clearInterval(pendingPoll); $('#gateDlg').oncancel = null; if ($('#gateDlg').open) $('#gateDlg').close(); myRole = m.role; myStatus = 'approved'; toast('Aprovado! Carregando o evento…'); goLive(); }
+    else if (m.status === 'none') { clearInterval(pendingPoll); localStorage.removeItem(SESSION_KEY); openGate({ msg: 'Este aparelho não está mais neste evento. Entre de novo com o código.' }); }
+    else if (m.status !== myStatus) showWaiting(m);
+  }
+  function onMembership(row) {
+    if (row.user_id === myUserId) {
+      if (row.status !== 'approved') { live = false; showWaiting({ ...row, event_name: syncInfo.name }); }
+      else if (myStatus !== 'approved') checkWaiting();
+      if (row.role) myRole = row.role;
+    }
+    if (isOrganizer()) { clearTimeout(membersTimer); membersTimer = setTimeout(loadMembers, 300); }
+  }
+  async function loadMembers() {
+    if (!isOrganizer() || !sbClient) return;
+    const r = await sbClient.from('event_members').select('user_id,display_name,role,status,joined_at').eq('event_id', session.eventId);
+    if (!r.error) { members = r.data || []; renderData(); }
+  }
+  async function goLive() {
+    try { syncInfo = await sync.load(); }
+    catch (e) {
+      if (e && (e.code === 'pending' || e.code === 'revoked')) return showWaiting(e.membership || { status: e.code });
+      if (e && e.code === 'not_member') { localStorage.removeItem(SESSION_KEY); sync = null; return openGate({ msg: 'Este aparelho não está neste evento. Entre de novo com o código.' }); }
+      paintSync(/fetch|network|Failed/i.test(String(e && e.message)) ? 'offline' : 'error', { error: e });
+    }
+    try { const m = await sync.membership(); myRole = m.role || null; myStatus = m.status; } catch (e) {}
+    if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+    if (!live) { live = true; sync.subscribe(); }
+    loadMembers(); renderData();
+  }
   // called by the module script once supabase-js is loaded
   async function attachBackend(sb) {
     sbClient = sb;
+    const qs = new URLSearchParams(location.search);
+    const backFromGithub = qs.has('org') || sessionStorage.getItem('rateio-e2-org');
+    if (qs.has('org') || qs.has('code') || qs.has('error')) {
+      const ghErr = qs.get('error_description') || qs.get('error'); history.replaceState(null, '', location.pathname + location.hash);
+      sessionStorage.removeItem('rateio-e2-org');
+      if (ghErr && /already|exists/i.test(ghErr)) { try { await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: ORG_RETURN() } }); return; } catch (e) {} }
+      if (!shared) return openGate({ orgMsg: ghErr ? 'Login com GitHub não concluído: ' + ghErr : '' });
+      if (backFromGithub) toast('Conectado com GitHub');
+    }
     if (!shared) return;
     paintSync('idle');
     try { await ensureAuth(sb); } catch (e) { paintSync(/fetch|network|Failed/i.test(String(e.message)) ? 'offline' : 'error', { error: e }); setTimeout(() => attachBackend(sb), 15000); return; }
     sync = createSync({ client: sb, eventId: session.eventId, getState: () => state,
-      setState: s => { state = normalize(s); writeLocal(); render({ skipPeople: $('#people').contains(document.activeElement) }); },
+      setState: s => { const wasLocked = state.eventLocked; state = normalize(s); writeLocal(); render({ skipPeople: $('#people').contains(document.activeElement) }); if (wasLocked !== state.eventLocked) paintSync(state.eventLocked ? 'locked' : (sync && sync.pendingCount() ? 'pending' : 'synced')); },
       onStatus: (st, info) => { paintSync(st, info); if (st !== 'saving') renderData(); },
+      onNotice: showNotices, onMembership,
       loadBase: () => { try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; } },
       saveBase: b => { try { localStorage.setItem(BASE_KEY, JSON.stringify(b)); } catch (e) {} } });
-    try { syncInfo = await sync.load(); }
-    catch (e) {
-      if (e && e.code === 'not_member') { localStorage.removeItem(SESSION_KEY); sync = null; return openGate({ code: session.code, msg: 'Este aparelho não está mais neste evento. Entre de novo com o código.' }); }
-      paintSync(/fetch|network|Failed/i.test(String(e && e.message)) ? 'offline' : 'error', { error: e });
-    }
-    if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
-    sync.subscribe(); renderData();
-    addEventListener('online', () => sync.resync());
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync.resync(); });
+    sync.setUser(myUserId);
+    await goLive();
+    addEventListener('online', () => { if (live) sync.resync(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && live) sync.resync(); });
     if (sessionStorage.getItem('rateio-e2-created')) { sessionStorage.removeItem('rateio-e2-created'); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start' }), 80); toast('Evento criado. Compartilhe o link.'); }
+    if (linkCode && session.code && linkCode !== session.code && isOrganizer()) toast('Este link tem um código antigo do evento.');
   }
 
-  // card "Dados"
-  const isCreator = () => shared && myUserId && syncInfo && syncInfo.createdBy === myUserId;
+  // ---- card "Dados" (+ painel do organizador)
   const hasLocalData = () => { try { const x = JSON.parse(localStorage.getItem(KEY)); return !!(x && Array.isArray(x.families)); } catch (e) { return false; } };
+  const ST_LABEL = { pending: 'aguardando', approved: 'aprovado', revoked: 'removido' };
+  function renderOrg() {
+    const order = { pending: 0, approved: 1, revoked: 2 };
+    const list = members.slice().sort((a, b) => order[a.status] - order[b.status] || String(a.display_name).localeCompare(String(b.display_name)));
+    const np = list.filter(m => m.status === 'pending').length;
+    return `<h3 class="subhead" style="margin-top:16px">Membros${np ? ` · <span class="chip warn">${np} aguardando</span>` : ''}</h3>
+      <ul class="memlist">${list.map(m => `<li><span class="mname"><b>${esc(m.display_name || '—')}</b><small>${m.role === 'organizer' ? 'organizador' : esc(ST_LABEL[m.status] || m.status)}${m.user_id === myUserId ? ' · você' : ''}</small></span>
+        <span class="mact">${m.user_id === myUserId || m.role === 'organizer' ? '' : m.status === 'pending' ? `<button class="btn primary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar</button><button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Recusar</button>`
+          : m.status === 'approved' ? `<button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Remover</button>` : `<button class="btn secondary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar de novo</button>`}</span></li>`).join('') || '<li class="hint">Ninguém entrou ainda.</li>'}</ul>
+      <h3 class="subhead" style="margin-top:16px">Segurança do evento</h3>
+      <label class="check" style="margin:4px 0 8px"><input type="checkbox" id="repend"> <span>Ao trocar o código, pedir nova aprovação de todos</span></label>
+      <div class="actwrap" style="margin-top:0"><div class="actions">
+        <button class="btn secondary" data-d="rotate"><span data-i="reset"></span><span>Trocar código</span></button>
+        <button class="btn secondary" data-d="lock"><span data-i="${state.eventLocked ? 'check' : 'alert'}"></span><span>${state.eventLocked ? 'Destravar evento' : 'Travar evento'}</span></button>
+      </div></div>
+      <p class="hint" style="margin-top:8px">Trocar o código invalida o link antigo. Travar deixa o evento só para leitura (fim da viagem, acerto feito).</p>`;
+  }
   function renderData() {
     const body = $('#dataBody'); if (!body) return;
-    $('#dataMeta').textContent = shared ? 'evento compartilhado' : 'só neste aparelho';
+    $('#dataMeta').textContent = shared ? (isOrganizer() ? 'você organiza' : 'evento compartilhado') : 'só neste aparelho';
     const code = shared ? session.code : null;
     let h = '';
     if (shared) {
-      h += `<div class="datalist"><span>Evento: <b>${esc(syncInfo.name || session.name || '—')}</b></span>
-        <span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>
-        <span>Você: <b>${esc(session.me || '—')}</b>${isCreator() ? ' · criou o evento' : ''}</span>
-        <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${sync && sync.pendingCount() ? ` · ${sync.pendingCount()} pendente(s)` : ''}</span>
-        <span>Sincronizam: famílias, pessoas, gastos e acertos. <b>Ficam só neste aparelho:</b> fotos, cardápio, receitas, compras e dieta/alergia.</span></div>
-        <div class="actwrap" style="margin-top:0"><div class="actions">
+      const n = sync ? sync.pendingCount() : 0;
+      h += `<div class="datalist"><span>Evento: <b>${esc(syncInfo.name || session.name || '—')}</b>${state.eventLocked ? ' · <b>travado</b>' : ''}</span>
+        ${isOrganizer() && code ? `<span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>` : ''}
+        <span>Você: <b>${esc(session.me || '—')}</b>${isOrganizer() ? ' · organizador' : myStatus === 'approved' ? ' · membro aprovado' : ''}</span>
+        <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${n ? ` · ${n} pendente(s)` : ''}</span>
+        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos e pesos. <b>Ficam só neste aparelho:</b> fotos, cardápio, receitas, compras e dieta/alergia.</span></div>`;
+      if (isOrganizer() && code) h += `<div class="actwrap" style="margin-top:0"><div class="actions">
           <button class="btn secondary" data-d="copylink"><span data-i="copy"></span><span>Copiar link</span></button>
           <button class="btn secondary" data-d="sharelink"><span data-i="share"></span><span>Enviar link</span></button>
         </div></div>
-        <p class="hint" style="margin-top:8px">Quem tiver o link ou o código entra e edita. Mande só no grupo das famílias.</p>`;
+        <p class="hint" style="margin-top:8px">Quem abrir o link fica aguardando até você aprovar aqui embaixo. Mande só no grupo das famílias.</p>`;
+      else if (isOrganizer()) h += `<p class="hint">Este aparelho não sabe o código atual. Use «Trocar código» para gerar um novo link.</p>`;
+      else h += `<p class="hint">Para chamar mais alguém, peça o link ao organizador.</p>`;
+      if (isOrganizer()) h += renderOrg();
     } else {
       h += `<p class="hint" style="margin-bottom:12px">Os dados estão salvos só neste navegador.${backendOn ? ' Crie um evento compartilhado para as famílias lançarem juntas.' : ''}</p>`;
       if (backendOn) h += `<button class="btn primary block" data-d="gate" style="margin-bottom:8px"><span data-i="users"></span><span>Criar ou entrar em evento</span></button>`;
     }
     h += `<div class="actwrap"><div class="actions">
         <button class="btn secondary" data-d="export"><span data-i="receipt"></span><span>Exportar JSON</span></button>
-        <button class="btn secondary" data-d="import" ${shared && !isCreator() ? 'disabled' : ''}><span data-i="plus"></span><span>Importar JSON</span></button>
+        <button class="btn secondary" data-d="import" ${shared && !isOrganizer() ? 'disabled' : ''}><span data-i="plus"></span><span>Importar JSON</span></button>
       </div></div>`;
-    if (shared && !isCreator()) h += `<p class="hint" style="margin-top:8px">Só quem criou o evento pode importar dados.</p>`;
-    if (shared && isCreator() && hasLocalData()) h += `<button class="btn secondary block" data-d="importlocal" style="margin-top:8px"><span data-i="arrow"></span><span>Trazer os dados deste aparelho</span></button>`;
-    if (shared) h += `<button class="btn text block" data-d="leave" style="margin-top:8px">Sair do evento neste aparelho</button>`;
+    if (shared && !isOrganizer()) h += `<p class="hint" style="margin-top:8px">Só o organizador importa dados.</p>`;
+    if (isOrganizer() && hasLocalData()) h += `<button class="btn secondary block" data-d="importlocal" style="margin-top:8px"><span data-i="arrow"></span><span>Trazer os dados deste aparelho</span></button>`;
+    if (shared) h += `<button class="btn text block" data-d="other" style="margin-top:8px">Entrar em outro evento</button><button class="btn text block" data-d="leave">Sair do evento neste aparelho</button>`;
     body.innerHTML = h; hydrate(body);
   }
+  const rpcOrToast = async (fn, args, ok) => { const r = await sbClient.rpc(fn, args); if (r.error) { toast(errMsg(r.error), 'alert'); return null; } if (ok) toast(ok); return r; };
   $('#dataBody').addEventListener('click', async e => {
+    const m = e.target.closest('[data-m]');
+    if (m && isOrganizer()) { m.disabled = true; const who = (members.find(x => x.user_id === m.dataset.u) || {}).display_name || '';
+      if (m.dataset.m === 'revoke' && !confirm(`Remover ${who} do evento? O aparelho perde o acesso na hora.`)) { m.disabled = false; return; }
+      await rpcOrToast(m.dataset.m === 'approve' ? 'approve_member' : 'revoke_member', { p_event: session.eventId, p_user: m.dataset.u }, m.dataset.m === 'approve' ? `${who} aprovado(a)` : `${who} removido(a)`);
+      return loadMembers(); }
     const b = e.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
-    if (a === 'gate') openGate();
+    if (a === 'gate' || a === 'other') openGate();
     else if (a === 'leave') leaveEvent();
     else if (a === 'copylink') { try { await navigator.clipboard.writeText(shareUrl(session.code)); toast('Link copiado'); } catch (x) { prompt('Copie o link:', shareUrl(session.code)); } }
     else if (a === 'sharelink') { const url = shareUrl(session.code), text = `Entre no evento «${syncInfo.name || session.name || ''}» no Rateatouille: ${url}\nCódigo: ${fmtCode(session.code)}`;
       if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text }); } catch (x) {} } else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+    else if (a === 'rotate' && isOrganizer()) {
+      const repend = !!($('#repend') && $('#repend').checked);
+      if (!confirm(repend ? 'Trocar o código e pedir nova aprovação de todos? O link antigo para de funcionar.' : 'Trocar o código? O link antigo para de funcionar; quem já está aprovado continua.')) return;
+      let r, code; for (let i = 0; i < 4; i++) { code = genEventCode(); r = await sbClient.rpc('rotate_code', { p_event: session.eventId, p_new_code: code, p_repend: repend }); if (!r.error || !/code_taken/.test(r.error.message)) break; }
+      if (r.error) return toast(errMsg(r.error), 'alert');
+      session.code = code; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); history.replaceState(null, '', location.pathname + '#' + code);
+      toast(`Código novo: ${fmtCode(code)}. Mande o link novo.`); loadMembers(); renderData(); }
+    else if (a === 'lock' && isOrganizer()) {
+      const to = !state.eventLocked;
+      if (to && !confirm('Travar o evento? Ninguém mais consegue alterar nada até você destravar.')) return;
+      await rpcOrToast('lock_event', { p_event: session.eventId, p_locked: to }, to ? 'Evento travado' : 'Evento destravado'); }
     else if (a === 'export') exportJson();
     else if (a === 'import') $('#importFile').click();
     else if (a === 'importlocal') { try { previewImport(JSON.parse(localStorage.getItem(KEY)), 'dados deste aparelho'); } catch (x) { toast('Não achei dados locais', 'alert'); } }
@@ -2696,8 +3004,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
       <div class="actions" style="margin-top:16px"><button class="btn secondary" data-imp="no">Cancelar</button><button class="btn primary" data-imp="yes" ${chk.ok ? '' : 'disabled'}>Importar</button></div>`;
     $('#importBody').onclick = ev => { const b = ev.target.closest('[data-imp]'); if (!b) return; $('#importDlg').close();
       if (b.dataset.imp !== 'yes' || !chk.ok) return;
-      if (shared && !isCreator()) return toast('Só quem criou o evento pode importar', 'alert');
-      if (shared) { const s2 = { ...imp, syncMode: true }; state = normalize(rowsToState(stateToRows(s2, session.eventId, syncInfo.name), s2)); }
+      if (shared && !isOrganizer()) return toast('Só o organizador importa dados', 'alert');
+      if (shared) { const s2 = { ...imp, syncMode: true }; const r2 = stateToRows(s2, session.eventId); state = normalize(rowsToState({ ...r2, confirmations: r2.confirm.map(c => ({ ...c, id: c.expense_id, voided_at: null })) }, s2, { name: syncInfo.name, locked: state.eventLocked })); }
       else state = normalize(imp);
       save(); render(); toast(`Importado: ${chk.after.expenses} gastos, ${brl(chk.after.total)}`);
     };
@@ -2720,12 +3028,11 @@ Corte as frutas e monte a mesa com pães e frios.`,
     setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
     renderData();
   }
-  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui,
+  window.App = { __edit: fn => { fn(state); save(); render(); }, getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui,
     backendOn, shared, attachBackend, openGate, sync: () => sync };
   hydrate(document); renderSeg(); renderProof(); renderQuick();
   render(); setView(ui.view, { keepScroll: true }); setSub(ui.sub);
-  if (backendOn && !shared && (linkCode || localStorage.getItem(MODE_KEY) !== 'local')) openGate({ code: linkCode,
-    msg: linkCode && session ? 'Este link é de outro evento. Entrar nele troca o evento deste aparelho.' : '' });
+  if (backendOn && !shared && !/[?&](org|code|error)=/.test(location.search) && (linkCode || localStorage.getItem(MODE_KEY) !== 'local')) openGate({ code: linkCode });
   if (backendOn) sbReady = new Promise(res => { window.__rateioSbReady = res; });
 })();
 </script>
@@ -2737,7 +3044,7 @@ if (window.App && window.App.backendOn) {
   const boot = async () => {
     try {
       const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
-      const sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'rateio-e2-auth' } });
+      const sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'rateio-e2-auth' } });
       window.__rateioSbReady && window.__rateioSbReady(sb);
       await window.App.attachBackend(sb);
     } catch (e) {
