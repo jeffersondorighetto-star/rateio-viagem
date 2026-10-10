@@ -18,7 +18,7 @@ export function createClient(url, key, opts) {
   const storage = { from: bucket => ({
     upload: async (path, blob, o = {}) => call({ kind: 'storage', args: { kind: 'upload', bucket, path, size: blob.size, contentType: o.contentType || blob.type, upsert: !!o.upsert, data: await b64(blob) } }),
     createSignedUrl: async (path, expiresIn) => { const r = await call({ kind: 'storage', args: { kind: 'sign', bucket, path, expiresIn } }); if (r.data) r.data.signedUrl = url + r.data.signedUrl; return r; },
-    remove: async paths => call({ kind: 'storage', args: { kind: 'remove', bucket, path: paths[0] } }) }) };
+    remove: async paths => { const data = []; for (const path of paths) { const r = await call({ kind: 'storage', args: { kind: 'remove', bucket, path } }); if (r.error) return r; data.push(...(r.data || [])); } return { data, error: null }; } }) };
   const rpc = (fn, args) => call({ kind: 'rpc', table: fn, args });
   const channel = () => {
     const handlers = []; let es = null;

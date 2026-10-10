@@ -5,7 +5,8 @@ const { createClient } = require('@supabase/supabase-js');
 const { execFileSync } = require('child_process');
 // lista de organizadores: o teste grava direto no banco (no Supabase real isso é feito no SQL Editor)
 const sql = q => execFileSync('psql', ['-X', '-q', '-d', process.env.REST_DB || 'rest', '-c', q], { env: { PGHOST: '/tmp', PGPORT: '54329', PGUSER: 'postgres', ...process.env } });
-const allow = (u, login, listed = true) => sql(`insert into auth.identities values ('${u.id}', 'github', '{"user_name":"${login}"}'); ${listed ? `insert into public.organizer_allowlist (github_login) values ('${login}') on conflict do nothing;` : ''}`);
+// lista por id numérico do GitHub (auth.identities.provider_id); o login não conta
+const allow = (u, login, ghId, listed = true) => sql(`insert into auth.identities (user_id, provider, identity_data, provider_id) values ('${u.id}', 'github', '{"user_name":"${login}"}', '${ghId}'); ${listed ? `insert into public.organizer_allowlist (github_id, note) values (${ghId}, '${login}') on conflict do nothing;` : ''}`);
 const html = fs.readFileSync(path.join(__dirname, '..', '..', 'index.html'), 'utf8');
 const src = html.split('// ===== LOGIC-START')[1].split('// ===== LOGIC-END')[0];
 const L = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {computeSplit,stateToRows,rowsToState,createSync,genEventCode};')();
@@ -22,10 +23,10 @@ const nets = s => Object.fromEntries(L.computeSplit(s).families.map(f => [f.id, 
 const ok = m => console.log('  ✓ ' + m);
 (async () => {
   const O = user(false), A = user(), B = user(), C = user(), G = user(false), O2 = user(false);
-  allow(O, 'org-rest'); allow(O2, 'org-rest-2'); allow(G, 'intruso-rest', false);
+  allow(O, 'org-rest', 7001); allow(O2, 'org-rest-2', 7002); allow(G, 'org-rest', 7999, false); // G: mesmo login de O, outro id
   const code = L.genEventCode();
   let r = await A.sb.rpc('create_event', { p_name: 'x', p_code: code, p_display_name: 'Ana' }); assert(r.error && /organizer_login_required/.test(r.error.message)); ok('anônimo não cria evento');
-  r = await G.sb.rpc('create_event', { p_name: 'x', p_code: L.genEventCode(), p_display_name: 'G' }); assert(r.error && /organizer_only/.test(r.error.message)); ok('GitHub fora da lista de organizadores não cria evento');
+  r = await G.sb.rpc('create_event', { p_name: 'x', p_code: L.genEventCode(), p_display_name: 'G' }); assert(r.error && /organizer_only/.test(r.error.message)); ok('mesmo login do GitHub com outro id numérico não cria evento');
   r = await G.sb.from('organizer_allowlist').select('*'); assert(r.error); ok('lista de organizadores ilegível pela API');
   r = await O.sb.rpc('create_event', { p_name: 'Teste REST', p_code: code, p_display_name: 'Org' }); assert.ifError(r.error); const ev = r.data;
   const sample = { splitMode: 'porcoes', includeUnconfirmed: true, kittyPerFamily: 300, weights: { crianca: 0.5 }, trip: { start: '2031-03-03', end: '2031-03-05', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
@@ -102,6 +103,17 @@ const ok = m => console.log('  ✓ ' + m);
   await DO.sync.load(); assert.strictEqual(DO.state.expenses.find(e => e.id === 'e1').note, 'ok'); ok('travado: edição desfeita com aviso; destravado grava');
   await DB.edit(st => { st.kittyPerFamily = 999; }); assert.strictEqual(DB.state.kittyPerFamily, 300); assert(DB.notices.some(n => n.kind === 'settings')); ok('membro: caixinha só leitura (aviso)');
   await DO.edit(st => { st.kittyPerFamily = 450; }); await DB.sync.load(); assert.strictEqual(DB.state.kittyPerFamily, 450); ok('organizador muda a caixinha');
+  // retenção: purge_event_photos só do organizador, outro evento intacto (arquivos simulados direto no banco)
+  sql(`insert into storage.objects (bucket_id, name) values ('comprovantes', '${ev}/e1.jpg'), ('comprovantes', '${ev2}/k1.jpg'); select set_config('rateio.server_write', 'on', true); update public.expenses set photo_path = '${ev}/e1.jpg' where event_id = '${ev}' and id = 'e1';`);
+  r = await B.sb.rpc('purge_event_photos', { p_event: ev }); assert(r.error && /organizer_only/.test(r.error.message)); r = await O2.sb.rpc('purge_event_photos', { p_event: ev }); assert(r.error && /organizer_only/.test(r.error.message));
+  r = await B.sb.rpc('event_photo_status', { p_event: ev }); assert(r.error);
+  r = await O.sb.rpc('purge_event_photos', { p_event: ev }); assert.ifError(r.error); assert.deepStrictEqual(r.data.paths, [`${ev}/e1.jpg`]); assert(r.data.cleared_refs >= 1);
+  r = await O.sb.from('expenses').select('id').eq('event_id', ev).not('photo_path', 'is', null); assert.strictEqual(r.data.length, 0);
+  r = await O2.sb.rpc('event_photo_status', { p_event: ev2 }); assert.strictEqual(r.data.remaining, 1);
+  sql(`set storage.allow_delete_query = 'true'; delete from storage.objects where name = '${ev}/e1.jpg';`); // o que a Storage API faz com o remove()
+  r = await O.sb.rpc('event_photo_status', { p_event: ev }); assert.strictEqual(r.data.remaining, 0);
+  sql(`set storage.allow_delete_query = 'true'; delete from storage.objects where name = '${ev2}/k1.jpg';`);
+  ok('purge_event_photos: membro e organizador de outro evento recusados; organizador recebe só as fotos do próprio evento e as referências somem');
   // rotate + revoke
   const code2 = L.genEventCode(); r = await O.sb.rpc('rotate_code', { p_event: ev, p_new_code: code2, p_repend: true }); assert.strictEqual(r.data, 2);
   await assert.rejects(DB.sync.load(), e => e.code === 'pending'); r = await C.sb.rpc('join_event', { p_code: code, p_display_name: 'Caio' }); assert.strictEqual(r.data.error, 'invalid_code');

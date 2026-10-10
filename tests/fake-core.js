@@ -15,7 +15,7 @@ const ALLOWED = {
 };
 const SETTINGS = ['events', 'event_overrides'];
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
-function createCore({ allow = null } = {}) { // allow: logins GitHub da organizer_allowlist (null = todos os não anônimos)
+function createCore({ allow = null } = {}) { // allow: ids numéricos do GitHub da organizer_allowlist (null = todos os não anônimos)
   const db = { events: [], secrets: [], members: [], families: [], people: [], recipes: [], meal_plan: [], expenses: [], settlement_marks: [], event_overrides: [], expense_confirmations: [], ops: new Set(), storage: {}, calls: [] };
   let clock = Date.parse('2031-03-01T12:00:00Z'); const now = () => new Date(clock += 1000).toISOString(); // monotonic server clock, 1 s per write
   const listeners = new Set();
@@ -76,7 +76,7 @@ function createCore({ allow = null } = {}) { // allow: logins GitHub da organize
     const user = u && u.id; if (!user) return err('JWT required', '28000');
     if (fn === 'create_event') {
       if (u.is_anonymous !== false) return err('organizer_login_required', '42501');
-      if (allow && !allow.map(x => x.toLowerCase()).includes(String(u.github || '').toLowerCase())) return err('organizer_only', '42501');
+      if (allow && !allow.map(Number).includes(Number(u.github_id))) return err('organizer_only', '42501');
       const code = String(a.p_code).toUpperCase(); if (db.secrets.some(s => s.code === code)) return err('code_taken', '23505');
       const id = crypto.randomUUID();
       db.events.push(shape('events', { id, name: a.p_name, created_by: user, locked: false, code_version: 1, version: 1, start_date: null, end_date: null,
@@ -95,6 +95,12 @@ function createCore({ allow = null } = {}) { // allow: logins GitHub da organize
     }
     if (fn === 'my_membership') { const m = mem(a.p_event, user), ev = db.events.find(e => e.id === a.p_event);
       return { data: m ? { status: m.status, role: m.role, display_name: m.display_name, ...(m.status === 'approved' ? { event_name: ev.name, locked: !!ev.locked, family_id: m.family_id || null } : {}) } : { status: 'none' }, error: null }; }
+    if (fn === 'event_photo_status' || fn === 'purge_event_photos') { if (!organizer(a.p_event, user)) return err('organizer_only', '42501');
+      const ev = db.events.find(e => e.id === a.p_event), paths = Object.keys(db.storage).filter(p => p.startsWith(a.p_event + '/')).sort();
+      if (fn === 'event_photo_status') { const end = ev.end_date, by = end ? new Date(Date.parse(end) + 30 * 864e5).toISOString().slice(0, 10) : null;
+        return { data: { remaining: paths.length, end_date: end || null, purge_by: by, due: !!end && new Date().toISOString().slice(0, 10) > end }, error: null }; }
+      let n = 0; db.expenses.filter(e => e.event_id === a.p_event && e.photo_path).forEach(e => { e.photo_path = null; e.version++; e.updated_at = now(); n++; emit('expenses', e); });
+      return { data: { paths, cleared_refs: n }, error: null }; }
     if (fn === 'set_member_family') { if (!organizer(a.p_event, user)) return err('organizer_only', '42501');
       if (a.p_family && !db.families.some(f => f.event_id === a.p_event && f.id === a.p_family && !f.deleted_at)) return err('family_not_found', '23503');
       const m = mem(a.p_event, a.p_user); if (!m || m.status === 'revoked') return err('member_not_found', 'P0002');

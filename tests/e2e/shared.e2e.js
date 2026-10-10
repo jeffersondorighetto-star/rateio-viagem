@@ -130,6 +130,9 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   assert(fs.readFileSync(exifJpg).includes('Exif'), 'arquivo de teste tem EXIF');
   await B.p.click('#tabbar [data-view="gastos"]'); await B.p.fill('#amt', '33'); await B.p.fill('#desc', 'Feira com foto');
   await B.p.click('#proofSeg [data-proof="none"]'); await B.p.setInputFiles('#photo', exifJpg); await B.p.waitForSelector('#photoPrev img');
+  assert(await B.p.isVisible('#photoCpfHint') && /Cubra CPF e nome antes de fotografar/.test(await B.p.textContent('#photoCpfHint')), 'aviso de CPF junto à foto');
+  assert(await B.p.evaluate(() => { const h = document.getElementById('photoCpfHint'), f = document.getElementById('photo'); return h.closest('.field') === f.closest('.field'); }), 'aviso no mesmo campo da foto');
+  assert(/dado de saúde/.test(await B.p.textContent('#recPrivHint')) && await B.p.evaluate(() => document.getElementById('recPrivHint').closest('.field').contains(document.getElementById('recPaste'))), 'aviso de saúde no campo de colar receita');
   await B.p.click('#submitBtn');
   await B.p.waitForFunction(() => App.getState().expenses.some(e => e.description === 'Feira com foto' && e.photoPath), null, { timeout: 8000 });
   const ph = await B.p.evaluate(() => App.getState().expenses.find(e => e.description === 'Feira com foto').photoPath);
@@ -227,6 +230,25 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await B.p.waitForFunction(() => /Acesso removido/.test((document.getElementById('gateTitle') || {}).textContent || ''), null, { timeout: 8000 });
   await B.p.screenshot({ path: path.join(OUT, '09-removido-375.png') }); await checkContrast(B.p, '#gateBody', 'acesso removido (escuro)');
   step('reaprovado volta a ver; removido recebe «Acesso removido» na hora');
+
+  // ---- retenção: depois do fim, o organizador vê «apague os comprovantes até DD/MM» e apaga com um toque
+  const evId = await A.p.evaluate(() => JSON.parse(localStorage.getItem('rateio-e2-session')).eventId);
+  be.db.storage[`${evId}/zz9.jpg`] = { size: 3, contentType: 'image/jpeg', data: 'AAAA' };
+  const evOther = be.core.rpc({ id: 'u-outro', is_anonymous: false, github_id: 1 }, 'create_event', { p_name: 'Outro', p_code: 'QRST4567', p_display_name: 'X' }).data;
+  be.db.storage[`${evOther}/k1.jpg`] = { size: 3, contentType: 'image/jpeg', data: 'AAAA' };
+  assert(await A.p.isHidden('#photoPurgeBanner'), 'sem lembrete antes do fim');
+  await A.p.click('#tabbar [data-view="planejar"]'); await A.p.fill('#tStart', '2025-02-01'); await A.p.fill('#tEnd', '2025-02-03'); await A.p.dispatchEvent('#tEnd', 'change');
+  await A.p.waitForFunction(() => !document.getElementById('photoPurgeBanner').hidden, null, { timeout: 8000 });
+  assert(/apague os comprovantes até 05\/03/.test(await A.p.textContent('#photoPurgeText')), await A.p.textContent('#photoPurgeText'));
+  await A.p.click('#tabbar [data-view="acertos"]'); assert(/até 30 dias depois do fim/.test(await A.p.textContent('#photoRule')), 'regra no painel do organizador');
+  await checkContrast(A.p, '#photoPurgeBanner', 'lembrete dos comprovantes');
+  await A.p.screenshot({ path: path.join(OUT, '10-apagar-comprovantes-375.png') });
+  await A.p.click('[data-purge]');
+  await A.p.waitForFunction(() => document.getElementById('photoPurgeBanner').hidden, null, { timeout: 8000 });
+  assert(!Object.keys(be.db.storage).some(k => k.startsWith(evId + '/')), 'nenhuma foto do evento no bucket');
+  assert(be.db.storage[`${evOther}/k1.jpg`], 'foto de outro evento intacta');
+  assert(!(await A.p.evaluate(() => App.getState().expenses.some(e => e.photoPath))), 'nenhum gasto aponta para foto');
+  step('depois do fim: lembrete «apague os comprovantes até DD/MM», um toque apaga só as fotos deste evento');
 
   assert.deepStrictEqual(errors, [], 'erros de JS: ' + errors.join(' | '));
   console.log('E2E SHARED TESTS PASSED');

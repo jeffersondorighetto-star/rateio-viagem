@@ -3,7 +3,7 @@ const fs = require('fs'), assert = require('assert');
 const { createCore } = require('./fake-core');
 const html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
 const src = html.split('// ===== LOGIC-START')[1].split('// ===== LOGIC-END')[0];
-const L = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {computeSplit,settle,stateToRows,rowsToState,computeEdits,mergeBase,createSync,importCheck,genEventCode,validCode,normCode,createPhotoQueue,shoppingList,PHOTO_URL_TTL,parseRecipe};')();
+const L = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {computeSplit,settle,stateToRows,rowsToState,computeEdits,mergeBase,createSync,importCheck,genEventCode,validCode,normCode,createPhotoQueue,shoppingList,PHOTO_URL_TTL,parseRecipe,purgeEventPhotos,photoPurgeBy};')();
 const near = (a, b, t = 0.01) => Math.abs(a - b) <= t;
 const clone = o => JSON.parse(JSON.stringify(o));
 const tick = () => new Promise(r => setTimeout(r, 5));
@@ -16,7 +16,7 @@ function client(core, user) {
     return { then: (a, b) => run().then(a, b), gte: (gc, gv) => run([gc, gv]) }; } }) });
   c.storage = { from: () => ({ upload: async (path, blob, o) => c.online ? core.storage(user, 'upload', path, { ...o, size: blob.size, data: blob.data }) : net(),
     createSignedUrl: async (path, exp) => c.online ? core.storage(user, 'sign', path, { expiresIn: exp }) : net(),
-    remove: async paths => c.online ? core.storage(user, 'remove', paths[0]) : net() }) };
+    remove: async paths => { if (!c.online) return net(); const data = []; for (const p of paths) data.push(...(core.storage(user, 'remove', p).data || [])); return { data, error: null }; } }) };
   c.rpc = async (fn, a) => { if (!c.online) return net(); const r = core.rpc(user, fn, clone(a)); if (c.dropReplies > 0 && fn === 'apply_ops') { c.dropReplies--; return net(); } return r; };
   c.channel = () => { const ch = { hs: [], on(_, f, cb) { this.hs.push({ f, cb }); return this; },
     subscribe(cb) { this.off = core.listen(user.id, (t, row) => setTimeout(() => { if (!c.online) return; this.hs.forEach(h => { if (h.f.table !== t) return; const [col, v] = h.f.filter.split('=eq.'); if (String(row[col]) === v) h.cb({ new: row }); }); }, 0)); setTimeout(() => cb && cb('SUBSCRIBED'), 0); return this; } }; return ch; };
@@ -60,8 +60,8 @@ const asRows = (st, ev) => { const r = L.stateToRows(st, ev); return { ...r, con
 const nets = s => Object.fromEntries(L.computeSplit(s).families.map(f => [f.id, f.net]));
 const sameNets = (a, b) => { const x = nets(a), y = nets(b); assert.deepStrictEqual(Object.keys(x).sort(), Object.keys(y).sort()); for (const k in x) assert(near(x[k], y[k]), `net ${k}: ${x[k]} vs ${y[k]}`); };
 const shop = s => JSON.stringify(L.shoppingList(s));
-const O = { id: 'u-org', is_anonymous: false, github: 'org-teste' }, A = { id: 'u-a', is_anonymous: true }, B = { id: 'u-b', is_anonymous: true }, X = { id: 'u-x', is_anonymous: true };
-const G = { id: 'u-g', is_anonymous: false, github: 'intruso' };
+const O = { id: 'u-org', is_anonymous: false, github: 'org-teste', github_id: 1001 }, A = { id: 'u-a', is_anonymous: true }, B = { id: 'u-b', is_anonymous: true }, X = { id: 'u-x', is_anonymous: true };
+const G = { id: 'u-g', is_anonymous: false, github: 'org-teste', github_id: 9009 }; // mesmo login, outro id
 const settle3 = async (...ds) => { for (let i = 0; i < 3; i++) { for (const d of ds) { await d.T.run(); await tick(); } } };
 
 (async () => {
@@ -92,7 +92,7 @@ const settle3 = async (...ds) => { for (let i = 0; i < 3; i++) { for (const d of
   console.log('MAPPING TESTS PASSED (no health/photo leak, recipes + plan + prices synced, shopping list identical, field patches)');
 
   // 2) allowlist + approval flow
-  const core = createCore({ allow: ['Org-Teste'] });
+  const core = createCore({ allow: [1001] });
   assert.strictEqual(core.rpc(G, 'create_event', { p_name: 'x', p_code: 'GGGG2345', p_display_name: 'g' }).error.message, 'organizer_only', 'GitHub fora da lista não cria');
   const ev = core.rpc(O, 'create_event', { p_name: 'Teste', p_code: 'ABCD2345', p_display_name: 'Org' }).data;
   assert.strictEqual(core.rpc(A, 'create_event', { p_name: 'x', p_code: 'BBBB2345', p_display_name: 'a' }).error.message, 'organizer_login_required');
@@ -245,7 +245,20 @@ const settle3 = async (...ds) => { for (let i = 0; i < 3; i++) { for (const d of
   const st = mem(); const flaky = { n: 0, upload: async (p, b, o) => { const r = await DA2.client.storage.from('comprovantes').upload(p, b, o); if (flaky.n++ === 0) throw new TypeError('Failed to fetch'); return r; } };
   const QF = L.createPhotoQueue({ storage: flaky, eventId: ev, store: st, isOrganizer: () => false, onUploaded: (id, p) => upl.push([id, p]), onError: (id, e) => errs.push([id, e]) });
   assert.strictEqual(await QF.enqueue('e3', blob(1000)), 'offline'); assert.strictEqual(await QF.process(), 'done'); assert.deepStrictEqual(upl.pop(), ['e3', `${ev}/e3.jpg`]);
-  console.log('PHOTO TESTS PASSED (offline queue, upload, 5-min signed URL, member no replace/delete, organizer replace/delete, size, outsider, lost reply)');
+  // retention: organizer purges the event's photos; other events untouched; member/outsider refused
+  const ev2 = core.rpc(O, 'create_event', { p_name: 'Outro', p_code: 'MNPQ3456', p_display_name: 'Org' }).data;
+  core.db.storage[`${ev2}/k1.jpg`] = { size: 10, contentType: 'image/jpeg', data: 'z' };
+  await QA.enqueue('e1', blob(1000)); await QA.enqueue('e4', blob(1000)); // DA2 is a member (not organizer): uploads allowed
+  await DA2.edit(st => { st.expenses.find(e => e.id === 'e1').photoPath = `${ev}/e1.jpg`; });
+  assert(core.db.storage[`${ev}/e1.jpg`] && core.db.storage[`${ev}/e4.jpg`]);
+  await assert.rejects(L.purgeEventPhotos(DA2.client, ev), e => /organizer_only/.test(e.message), 'member cannot purge');
+  await assert.rejects(L.purgeEventPhotos(client(core, X), ev), e => /organizer_only/.test(e.message), 'outsider cannot purge');
+  const pr = await L.purgeEventPhotos(DO.client, ev);
+  assert.strictEqual(pr.remaining, 0); assert(pr.found >= 2 && pr.removed === pr.found); assert(pr.clearedRefs >= 1);
+  assert(!Object.keys(core.db.storage).some(p => p.startsWith(ev + '/')), 'no photos left for the event'); assert(core.db.storage[`${ev2}/k1.jpg`], 'other event untouched');
+  await tick(); assert(!DA2.state.expenses.some(e => e.photoPath), 'photo refs cleared on every device');
+  assert.strictEqual(L.photoPurgeBy('2031-03-05'), '2031-04-04');
+  console.log('PHOTO TESTS PASSED (offline queue, upload, 5-min signed URL, member no replace/delete, organizer replace/delete, size, outsider, lost reply, 30-day purge: organizer only, other event untouched)');
 
   // 9) lock, revoke, rotate
   core.rpc(O, 'lock_event', { p_event: ev, p_locked: true }); await tick();

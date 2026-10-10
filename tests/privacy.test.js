@@ -18,4 +18,14 @@ assert(!/cron\.schedule/.test(sql), 'expurgo agendado no build');
 assert(!fs.existsSync(path.join(root, 'supabase', 'migrations', '0007_person_diet.sql')));
 // 1.1 nenhuma concessão de UPDATE/INSERT por tabela inteira às tabelas sincronizadas (só por coluna)
 assert(!/grant\s+(select,\s*)?(insert|update)[^(;]*\bon\s+public\.(families|people|expenses|settlement_marks|event_overrides|expense_confirmations|recipes|meal_plan|event_members)\b/i.test(sql), 'grant de tabela inteira');
-console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna)');
+// N1 aviso de CPF no campo da foto + regra de 30 dias; N2 lista por id numérico; N3 aviso de saúde na receita
+const ph = html.indexOf('id="photo"'), cpf = html.indexOf('Cubra CPF e nome antes de fotografar');
+assert(ph > 0 && cpf > ph && cpf - ph < 300, 'aviso de CPF junto ao campo de foto');
+const rp = html.indexOf('id="recPaste"'), rh = html.indexOf('id="recPrivHint"');
+assert(rp > 0 && rh > rp && rh - rp < 600 && /dado de saúde/.test(html.slice(rh, rh + 300)), 'aviso de saúde no campo de colar receita');
+assert(/PHOTO_RETENTION_DAYS = 30/.test(html) && /apague os comprovantes até/.test(html), 'lembrete de 30 dias');
+assert(/purge_event_photos/.test(sql) && /github_id bigint primary key/.test(sql) && /i\.provider_id = a\.github_id::text/.test(sql), 'retenção e lista por id no build');
+assert(!/user_name/.test(sql.slice(sql.indexOf('_may_organize'), sql.indexOf('_may_organize') + 600)), 'lista não usa login');
+for (const f of ['README.md', 'SETUP-CELULAR.md', 'docs/VALIDACAO.md']) assert(!/^\s*delete from storage\.objects/mi.test(fs.readFileSync(path.join(root, f), 'utf8')), f + ': delete direto em storage.objects (bloqueado no Supabase)');
+for (const f of fs.readdirSync(path.join(root, 'supabase', 'migrations'))) assert(!/delete\s+from\s+storage\.objects/i.test(fs.readFileSync(path.join(root, 'supabase', 'migrations', f), 'utf8')), f + ': delete direto em storage.objects');
+console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 30 dias, lista por id GitHub)');

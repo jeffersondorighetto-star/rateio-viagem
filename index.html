@@ -395,7 +395,8 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 .syncpill + .toptotal{margin-left:12px}
 @media(max-width:480px){.syncpill{font-size:0;gap:0;width:32px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
 .syncbanner{max-width:1120px;margin:8px auto 0;padding:0 16px}
-.syncbanner .callout{overflow-wrap:anywhere}
+.syncbanner .callout{overflow-wrap:anywhere;align-items:center}
+.warnhint b{color:var(--ink)}
 .noticebox{position:fixed;left:0;right:0;top:calc(64px + var(--sat));z-index:45;max-width:560px;margin:0 auto;padding:0 12px}
 
 .noticebox .callout{align-items:flex-start;border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);box-shadow:0 6px 24px rgba(0,0,0,.18)}.noticebox .callout>div{flex:1;min-width:0}.noticebox ul{margin:4px 0 0 18px;padding:0}.noticebox li{margin:2px 0}
@@ -429,6 +430,7 @@ dialog.gate .field{margin-bottom:12px}
   <div class="toptotal" aria-hidden="true"><small>Total</small><b class="num" id="topTotal">R$ 0,00</b></div>
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
+<div class="syncbanner" id="photoPurgeBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="photoPurgeText"></span><button class="btn primary sm" data-purge="1" style="margin-left:auto">Apagar agora</button></div></div>
 <div class="syncbanner" id="syncBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="syncBannerText"></span></div></div>
 <div class="syncbanner noticebox" id="noticeBox" hidden aria-live="polite"></div>
 
@@ -534,6 +536,7 @@ dialog.gate .field{margin-bottom:12px}
           <div class="field">
             <label for="recPaste">Cole o texto como veio (WhatsApp, site…)</label>
             <textarea class="inp" id="recPaste" style="min-height:140px;font:15px/1.5 var(--font);background:var(--surface)" placeholder="Bolo de cenoura&#10;Rende 8 porções&#10;Ingredientes:&#10;- 3 cenouras&#10;- 2 xícaras de açúcar&#10;Modo de preparo: …"></textarea>
+            <p class="hint warnhint" id="recPrivHint">Antes de colar, apague nomes e dado de saúde (ex.: “versão sem glúten para a Ana”). A receita vai para todas as famílias do evento.</p>
           </div>
           <button class="btn secondary block" id="recParse" style="margin-top:12px"><span data-i="sparkle"></span><span>Interpretar receita</span></button>
           <div id="recDraft"></div>
@@ -616,6 +619,7 @@ dialog.gate .field{margin-bottom:12px}
               <div id="photoPrev" class="hint">Opcional: foto do produto, placa ou papel.</div>
             </div>
             <input type="file" id="photo" accept="image/*" capture="environment" class="sr-only">
+            <p class="hint warnhint" id="photoCpfHint"><b>Cubra CPF e nome antes de fotografar.</b> Nota sem CPF basta.</p>
             <input class="inp sm" id="note" placeholder="Observação (ex.: feira da praça, barraca do Zé)" maxlength="80">
           </div>
           <div class="field" id="itemsField">
@@ -1852,6 +1856,17 @@ function createPhotoQueue({ storage, eventId, store, isOrganizer, onUploaded, on
   const pending = async () => (await store.all()).filter(it => String(it.path).startsWith(eventId + '/')).map(it => it.expenseId);
   return { enqueue, process, url, remove, pending };
 }
+// Retenção (governança N1): o organizador apaga os comprovantes do evento até 30 dias depois do fim.
+// 1) RPC tira as referências e lista os arquivos; 2) Storage API apaga (SQL direto em storage.objects é bloqueado no Supabase).
+const PHOTO_RETENTION_DAYS = 30;
+const photoPurgeBy = end => { if (!end) return null; const d = new Date(end + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + PHOTO_RETENTION_DAYS); return d.toISOString().slice(0, 10); };
+async function purgeEventPhotos(client, eventId) {
+  const r = await client.rpc('purge_event_photos', { p_event: eventId }); if (r.error) throw r.error;
+  const paths = (r.data && r.data.paths) || [], bucket = client.storage.from('comprovantes'); let removed = 0;
+  for (let i = 0; i < paths.length; i += 100) { const x = await bucket.remove(paths.slice(i, i + 100)); if (x.error) throw x.error; removed += (x.data || []).length; }
+  const st = await client.rpc('event_photo_status', { p_event: eventId }); if (st.error) throw st.error;
+  return { found: paths.length, removed, remaining: st.data.remaining, clearedRefs: (r.data && r.data.cleared_refs) || 0 };
+}
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
   module.exports = { genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
@@ -3013,7 +3028,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     try { const m = await sync.membership(); myRole = m.role || null; myStatus = m.status; myFamily = m.family_id || null; } catch (e) {}
     if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
     if (!live) { live = true; sync.subscribe(); }
-    loadMembers(); renderData();
+    loadMembers(); renderData(); checkPhotoPurge();
   }
   // Fila de comprovantes no IndexedDB (sobrevive a fechar o app sem internet)
   let photoQ = null;
@@ -3050,7 +3065,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     await goLive();
     if (photoQ) photoQ.process().catch(() => {});
     addEventListener('online', () => { if (live) sync.resync(); if (photoQ) photoQ.process().catch(() => {}); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && live) sync.resync(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && live) { sync.resync(); checkPhotoPurge(); } });
     if (sessionStorage.getItem('rateio-e2-created')) { sessionStorage.removeItem('rateio-e2-created'); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start' }), 80); toast('Evento criado. Compartilhe o link.'); }
     if (linkCode && session.code && linkCode !== session.code && isOrganizer()) toast('Este link tem um código antigo do evento.');
   }
@@ -3077,8 +3092,34 @@ Corte as frutas e monte a mesa com pães e frios.`,
         <button class="btn secondary" data-d="rotate"><span data-i="reset"></span><span>Trocar código</span></button>
         <button class="btn secondary" data-d="lock"><span data-i="${state.eventLocked ? 'check' : 'alert'}"></span><span>${state.eventLocked ? 'Destravar evento' : 'Travar evento'}</span></button>
       </div></div>
-      <p class="hint" style="margin-top:8px">Trocar o código invalida o link antigo. Travar deixa o evento só para leitura (fim da viagem, acerto feito).</p>`;
+      <p class="hint" style="margin-top:8px">Trocar o código invalida o link antigo. Travar deixa o evento só para leitura (fim da viagem, acerto feito).</p>
+      <h3 class="subhead" style="margin-top:16px">Comprovantes</h3>
+      <p class="hint" id="photoRule">Regra: o organizador apaga as fotos dos comprovantes até ${PHOTO_RETENTION_DAYS} dias depois do fim da viagem${state.trip.end ? ` (<b>até ${fmtDM(photoPurgeBy(state.trip.end))}</b>)` : ' (defina a data de fim)'}. Os valores e os gastos continuam; só as fotos somem.</p>
+      <button class="btn secondary block" data-d="purgephotos"><span data-i="trash"></span><span>Apagar comprovantes do evento</span></button>`;
   }
+  const fmtDM = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '';
+  // Lembrete ao organizador depois do fim: "apague os comprovantes até DD/MM" + botão de um toque
+  let purgeChecked = '';
+  async function checkPhotoPurge(force) {
+    const ban = $('#photoPurgeBanner'), end = state.trip && state.trip.end;
+    const t = new Date(), today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    if (!sbClient || !shared || !isOrganizer() || !end || today <= end) { ban.hidden = true; return; }
+    const key = end + today; if (!force && purgeChecked === key) return; purgeChecked = key;
+    const r = await sbClient.rpc('event_photo_status', { p_event: session.eventId }).catch(() => null);
+    const n = r && !r.error && r.data ? r.data.remaining : 0;
+    if (!n) { ban.hidden = true; return; }
+    const by = photoPurgeBy(end), late = today > by;
+    $('#photoPurgeText').textContent = `${late ? 'Prazo vencido: ' : 'Viagem encerrada: '}apague os comprovantes até ${fmtDM(by)} (${n} foto${n > 1 ? 's' : ''}).`;
+    ban.hidden = false;
+  }
+  async function doPhotoPurge() {
+    if (!isOrganizer()) return;
+    if (!confirm('Apagar todas as fotos de comprovantes deste evento? Os gastos e valores ficam. Não dá para desfazer.')) return;
+    try { const r = await purgeEventPhotos(sbClient, session.eventId); toast(r.remaining ? `Faltaram ${r.remaining} foto(s): tente de novo` : `Comprovantes apagados (${r.removed})`, r.remaining ? 'alert' : undefined); }
+    catch (e) { toast(errMsg(e), 'alert'); }
+    if (sync) sync.resync(); checkPhotoPurge(true);
+  }
+  document.addEventListener('click', e => { if (e.target.closest('[data-purge]')) doPhotoPurge(); });
   function renderData() {
     const body = $('#dataBody'); if (!body) return;
     $('#dataMeta').textContent = shared ? (isOrganizer() ? 'você organiza' : 'evento compartilhado') : 'só neste aparelho';
@@ -3111,6 +3152,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (isOrganizer() && hasLocalData()) h += `<button class="btn secondary block" data-d="importlocal" style="margin-top:8px"><span data-i="arrow"></span><span>Trazer os dados deste aparelho</span></button>`;
     if (shared) h += `<button class="btn text block" data-d="other" style="margin-top:8px">Entrar em outro evento</button><button class="btn text block" data-d="leave">Sair do evento neste aparelho</button>`;
     body.innerHTML = h; hydrate(body);
+    if (shared) checkPhotoPurge();
   }
   const rpcOrToast = async (fn, args, ok) => { const r = await sbClient.rpc(fn, args); if (r.error) { toast(errMsg(r.error), 'alert'); return null; } if (ok) toast(ok); return r; };
   $('#dataBody').addEventListener('change', async e => {
@@ -3135,6 +3177,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     else if (a === 'copylink') { try { await navigator.clipboard.writeText(shareUrl(session.code)); toast('Link copiado'); } catch (x) { prompt('Copie o link:', shareUrl(session.code)); } }
     else if (a === 'sharelink') { const url = shareUrl(session.code), text = `Entre no evento «${syncInfo.name || session.name || ''}» no Rateatouille: ${url}\nCódigo: ${fmtCode(session.code)}`;
       if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text }); } catch (x) {} } else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+    else if (a === 'purgephotos') doPhotoPurge();
     else if (a === 'rotate' && isOrganizer()) {
       const repend = !!($('#repend') && $('#repend').checked);
       if (!confirm(repend ? 'Trocar o código e pedir nova aprovação de todos? O link antigo para de funcionar.' : 'Trocar o código? O link antigo para de funcionar; quem já está aprovado continua.')) return;
