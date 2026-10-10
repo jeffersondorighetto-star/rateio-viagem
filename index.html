@@ -744,7 +744,7 @@ function computeSplit(state) {
   const catTotals = Object.fromEntries(Object.keys(CATEGORIES).map(k => [k, 0]));
   const warnings = [];
   // In a shared event the meal grid stays local-only, so portions use presence + type weights (same on every device).
-  const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state.syncMode ? { ...state, plan: {} } : state) : null;
+  const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state) : null;
   const wCache = {};
   let total = 0;
   for (const e of countedExpenses(state)) {
@@ -1354,20 +1354,25 @@ const validCode = s => new RegExp('^[' + CODE_ALPHABET + ']{8}$').test(s);
 const newUuid = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()
   : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
 // Tabelas com versão por linha, gravadas por apply_ops. "events" só recebe UPDATE.
-const SYNC_TABLES = ['families', 'people', 'expenses', 'settlement_marks', 'event_overrides'];
+const SYNC_TABLES = ['families', 'people', 'recipes', 'meal_plan', 'expenses', 'settlement_marks', 'event_overrides'];
+// Configurações do evento: só o organizador grava (RLS); para membros ficam só leitura.
+const SETTINGS_TABLES = ['event_overrides'];
 const SYNC_PK = { events: ['id'], families: ['event_id', 'id'], people: ['event_id', 'id'], expenses: ['event_id', 'id'],
-  settlement_marks: ['event_id', 'from_family', 'to_family'], event_overrides: ['event_id', 'kind', 'key'], expense_confirmations: ['event_id', 'id'] };
+  settlement_marks: ['event_id', 'from_family', 'to_family'], event_overrides: ['event_id', 'kind', 'key'], expense_confirmations: ['event_id', 'id'],
+  recipes: ['event_id', 'id'], meal_plan: ['event_id', 'day', 'meal'] };
 const SYNC_COLS = {
   events: ['id', 'start_date', 'end_date', 'meals', 'split_mode', 'include_unconfirmed', 'kitty_per_family'],
   families: ['event_id', 'id', 'name', 'color', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
   people: ['event_id', 'id', 'family_id', 'first_name', 'type', 'drinks', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
-  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'client_ts', 'deleted_at'],
+  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'client_ts', 'photo_path', 'deleted_at'],
+  recipes: ['event_id', 'id', 'title', 'yield', 'text', 'parsed', 'pos', 'deleted_at'],
+  meal_plan: ['event_id', 'day', 'meal', 'mode', 'recipe_ids', 'deleted_at'],
   settlement_marks: ['event_id', 'from_family', 'to_family', 'amount', 'deleted_at'],
   event_overrides: ['event_id', 'kind', 'key', 'value', 'deleted_at'],
   expense_confirmations: ['event_id', 'id', 'expense_id', 'family_id', 'confirmed_at', 'voided_at'],
 };
 const TS_COLS = new Set(['deleted_at', 'confirmed_at', 'voided_at']);
-const NUM_COLS = new Set(['amount', 'kitty_per_family', 'pos', 'client_ts']);
+const NUM_COLS = new Set(['amount', 'kitty_per_family', 'pos', 'client_ts', 'yield']);
 const MEAL_KEYS = ['cafe', 'almoco', 'lanche', 'jantar'];
 const MEMBER_TYPE_KEYS = ['adulto', 'adolescente', 'crianca', 'bebe'];
 const clip = (s, n) => s == null || s === '' ? null : String(s).slice(0, n);
@@ -1403,7 +1408,7 @@ function stateToRows(state, eventId) {
     include_unconfirmed: state.includeUnconfirmed !== false,
     kitty_per_family: Math.min(1e6, Math.max(0, Math.round((Number(state.kittyPerFamily) || 0) * 100) / 100)) };
   if (ev.start_date && ev.end_date && ev.end_date < ev.start_date) ev.end_date = null;
-  const rows = { events: pickRow('events', ev), families: [], people: [], expenses: [], settlement_marks: [], event_overrides: [], confirm: [] };
+  const rows = { events: pickRow('events', ev), families: [], people: [], recipes: [], meal_plan: [], expenses: [], settlement_marks: [], event_overrides: [], confirm: [] };
   (state.families || []).forEach((f, fi) => {
     rows.families.push(pickRow('families', { event_id: eventId, id: f.id, name: clip(f.name, 60) || 'Família', color: clip(f.color, 40), pos: fi,
       arrive: dateOrNull(f.arrive), arrive_meal: mealOrNull(f.arriveMeal), depart: dateOrNull(f.depart), depart_meal: mealOrNull(f.departMeal) }));
@@ -1418,7 +1423,8 @@ function stateToRows(state, eventId) {
       participants: Array.isArray(e.participants) ? e.participants.slice(0, 100) : null,
       proof: ['nf', 'comp', 'none'].includes(e.proof) ? e.proof : 'nf', estimated: !!e.estimated, note: clip(e.note, 300),
       items: e.items == null || e.items === '' ? null : (typeof e.items === 'string' ? e.items.slice(0, 2000) : e.items),
-      client_ts: Number.isFinite(Number(e.ts)) ? Math.round(Number(e.ts)) : null }));
+      client_ts: Number.isFinite(Number(e.ts)) ? Math.round(Number(e.ts)) : null,
+      photo_path: typeof e.photoPath === 'string' && PHOTO_PATH_RE.test(e.photoPath) ? e.photoPath : null }));
     if (e.confirmedBy) rows.confirm.push({ expense_id: e.id, family_id: e.confirmedBy });
   }
   const famIds = (state.families || []).map(f => f.id);
@@ -1428,12 +1434,27 @@ function stateToRows(state, eventId) {
   }
   for (const [k, v] of Object.entries(state.weights || {}))
     if (MEMBER_TYPE_KEYS.includes(k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 10) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'weight', key: k, value: v }));
+  for (const [k, v] of Object.entries(state.prices || {}))
+    if (OVR_KEY_RE.test(k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1e5) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'price', key: k, value: v }));
+  for (const [t, o] of Object.entries(state.planQty || {})) for (const [k, v] of Object.entries(o || {}))
+    if (OVR_KEY_RE.test(t + ':' + k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1e5) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'plan_qty', key: t + ':' + k, value: v }));
+  (state.recipes || []).forEach((r, i) => { if (!r || !ID_RE.test(String(r.id))) return;
+    const y = Number(r.yield); rows.recipes.push(pickRow('recipes', { event_id: eventId, id: r.id, title: (clip(String(r.title || '').trim(), 120) || 'Receita'),
+      yield: y > 0 && y <= 500 ? Math.round(y * 100) / 100 : 4, text: clip(r.text, 8000), pos: i,
+      parsed: { ingredients: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [] } })); });
+  for (const [d, cells] of Object.entries(state.plan || {})) { if (!dateOrNull(d)) continue;
+    for (const [m, c] of Object.entries(cells || {})) { if (!MEAL_KEYS.includes(m) || !c) continue;
+      const ids = (Array.isArray(c.recipes) ? c.recipes : (c.menu ? [c.menu] : [])).filter(x => ID_RE.test(String(x))).slice(0, 20);
+      rows.meal_plan.push(pickRow('meal_plan', { event_id: eventId, day: d, meal: m, mode: ['casa', 'fora', 'livre'].includes(c.mode) ? c.mode : 'casa', recipe_ids: ids })); } }
   return rows;
 }
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/, OVR_KEY_RE = /^[A-Za-z0-9_|:.-]{1,80}$/;
+const PHOTO_PATH_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9_-]{1,40}\.jpg$/;
 const SYNCED_KEYS = {
+  recipe: ['id', 'title', 'yield', 'text', 'ingredients', 'steps'],
   family: ['id', 'name', 'color', 'arrive', 'arriveMeal', 'depart', 'departMeal', 'members'],
   member: ['id', 'name', 'type', 'drinks', 'arrive', 'arriveMeal', 'depart', 'departMeal'],
-  expense: ['id', 'description', 'amount', 'category', 'payerId', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmedBy', 'confirmedAt', 'ts'],
+  expense: ['id', 'description', 'amount', 'category', 'payerId', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmedBy', 'confirmedAt', 'ts', 'photoPath'],
 };
 // Keep only local-only fields (diet, photo, anything unknown) of the previous object.
 const localPart = (prev, kind) => { const o = {}; if (prev) for (const k in prev) if (!SYNCED_KEYS[kind].includes(k)) o[k] = prev[k]; return o; };
@@ -1466,18 +1487,26 @@ function rowsToState(rows, prev, meta) {
     if (r.estimated) e.estimated = true; setIf(e, 'note', r.note); setIf(e, 'items', r.items); setIf(e, 'participants', r.participants);
     const c = conf[r.id]; if (c && e.proof === 'none') { e.confirmedBy = c.family_id; if (c.confirmed_at) e.confirmedAt = Date.parse(c.confirmed_at); }
     if (r.client_ts != null) e.ts = Number(r.client_ts);
+    setIf(e, 'photoPath', r.photo_path);
     return e;
   }).sort((a, b) => (b.ts || 0) - (a.ts || 0) || String(a.id).localeCompare(String(b.id)));
   const settled = {};
   for (const r of live('settlement_marks')) { const k = r.from_family + '_' + r.to_family; settled[k] = { amount: Number(r.amount), at: (prev.settled && prev.settled[k] || {}).at || Date.now() }; }
-  const weights = {}; for (const r of live('event_overrides')) if (r.kind === 'weight' && typeof r.value === 'number') weights[r.key] = r.value;
+  const weights = {}, prices = {}, planQty = {};
+  for (const r of live('event_overrides')) { if (typeof r.value !== 'number') continue;
+    if (r.kind === 'weight') weights[r.key] = r.value; else if (r.kind === 'price') prices[r.key] = r.value;
+    else if (r.kind === 'plan_qty') { const i = r.key.indexOf(':'); if (i > 0) (planQty[r.key.slice(0, i)] = planQty[r.key.slice(0, i)] || {})[r.key.slice(i + 1)] = r.value; } }
+  const pr = Object.fromEntries((prev.recipes || []).map(r => [r.id, r]));
+  const recipes = live('recipes').slice().sort(byPos).map(r => ({ ...localPart(pr[r.id], 'recipe'), id: r.id, title: r.title, yield: Number(r.yield) || 4,
+    ingredients: (r.parsed && Array.isArray(r.parsed.ingredients)) ? r.parsed.ingredients : [], steps: (r.parsed && Array.isArray(r.parsed.steps)) ? r.parsed.steps : [], text: r.text || '' }));
+  const plan = {};
+  for (const r of live('meal_plan')) { (plan[r.day] = plan[r.day] || {})[r.meal] = { mode: r.mode, recipes: Array.isArray(r.recipe_ids) ? r.recipe_ids.slice() : [] }; }
   const meals = ev.meals || (prev.trip && prev.trip.meals) || { cafe: true, almoco: true, lanche: false, jantar: true };
   return { ...prev, eventName: meta.name || prev.eventName, eventLocked: !!meta.locked, families: fams, expenses, settled,
     trip: { ...(prev.trip || {}), start: ev.start_date || '', end: ev.end_date || '', meals: { ...meals } },
     splitMode: ev.split_mode || prev.splitMode || 'pessoa', includeUnconfirmed: ev.include_unconfirmed !== false,
     kittyPerFamily: ev.kitty_per_family != null ? Number(ev.kitty_per_family) : (prev.kittyPerFamily || 0), weights,
-    // local-only (never synced for now): recipes, plan, prices, planQty
-    recipes: prev.recipes || [], plan: prev.plan || {}, prices: prev.prices || {}, planQty: prev.planQty || {}, syncMode: true };
+    recipes, plan, prices, planQty, syncMode: true };
 }
 
 // ---- Edits: what this device changed relative to the server base, field by field.
@@ -1485,9 +1514,10 @@ function rowsToState(rows, prev, meta) {
 function computeEdits(base, cur, opts = {}) {
   const now = opts.now || (() => new Date().toISOString());
   const out = { events: null, rows: {}, confirm: [] };
-  if (cur.events && base.events) { const p = {}; for (const c of SYNC_COLS.events) if (c !== 'id' && !same(base.events[c], cur.events[c])) p[c] = cur.events[c]; if (Object.keys(p).length) out.events = p; }
+  if (cur.events && base.events && opts.settings !== false) { const p = {}; for (const c of SYNC_COLS.events) if (c !== 'id' && !same(base.events[c], cur.events[c])) p[c] = cur.events[c]; if (Object.keys(p).length) out.events = p; }
   const curFams = new Set((cur.families || []).map(f => f.id));
   for (const t of SYNC_TABLES) {
+    if (opts.settings === false && SETTINGS_TABLES.includes(t)) continue;
     const b = base[t] || {}, seen = new Set(), list = [];
     for (const r of cur[t] || []) {
       const k = rowKey(t, r); seen.add(k);
@@ -1558,18 +1588,22 @@ const TABLE_LABEL = { events: 'evento', families: 'família', people: 'pessoa', 
 function createSync({ client, eventId, getState, setState, onStatus, onNotice, onMembership, loadBase, saveBase, debounceMs = 600, retryMs = 15000, timers }) {
   const T = timers || { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) };
   const emptyBase = () => { const b = { events: null, meta: {}, versions: {}, confirmations: {} }; ['events', ...SYNC_TABLES].forEach(t => { b.versions[t] = {}; if (t !== 'events') b[t] = {}; }); return b; };
-  let base = emptyBase(), timer = null, flushing = false, again = false, status = 'idle', channel = null, me = null;
+  let base = emptyBase(), timer = null, flushing = false, again = false, status = 'idle', channel = null, me = null, role = null, lastDelta = null;
   const opIds = {}, delTimes = {};
+  const canSettings = () => role === 'organizer';
+  try { const sb = loadBase && loadBase(); if (sb && sb.role) role = sb.role; } catch (e) {} // last known role (offline start)
   const set = (s, info) => { status = s; onStatus && onStatus(s, info || {}); };
   const curRows = () => stateToRows(getState(), eventId);
   const delTs = (t, k) => delTimes[t + '|' + k] || (delTimes[t + '|' + k] = new Date().toISOString());
-  const edits = () => computeEdits(base, curRows(), { delTs });
+  const edits = () => computeEdits(base, curRows(), { delTs, settings: canSettings() });
+  const seen = ts => { if (ts && (!base.cursor || Date.parse(ts) > Date.parse(base.cursor))) base.cursor = new Date(Date.parse(ts)).toISOString(); };
   const pendingCount = () => editCount(edits());
   const persist = () => { if (saveBase) try { saveBase(JSON.parse(JSON.stringify(base))); } catch (e) {} };
   const meta = () => ({ name: base.meta.name, locked: base.meta.locked });
   function rebuild(ed) { setState(rowsToState(mergeBase(base, ed || edits()), getState(), meta())); }
   function absorb(t, raw) { // server row -> base (ignores older versions)
     if (!raw) return false;
+    if ((t === 'events' ? raw.id : raw.event_id) === eventId) seen(raw.updated_at);
     if (t === 'expense_confirmations') { if (raw.event_id !== eventId) return false; base.confirmations[raw.id] = pickRow(t, raw); return true; }
     if (t === 'events') { if (raw.id !== eventId) return false; }
     else if (raw.event_id !== eventId) return false;
@@ -1587,10 +1621,13 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
   }
   async function membership() {
     const r = await client.rpc('my_membership', { p_event: eventId });
-    if (r.error) throw r.error; return r.data || { status: 'none' };
+    if (r.error) throw r.error; const m = r.data || { status: 'none' };
+    role = m.status === 'approved' ? m.role : null; base.role = role; return m;
   }
+  const memberErr = m => { const c = m.status === 'none' ? 'not_member' : m.status; const e = new Error(c); e.code = c; e.membership = m; return e; };
   async function load() {
     set('saving', { phase: 'load' });
+    const m0 = await membership(); if (m0.status !== 'approved') throw memberErr(m0);
     const evq = await client.from('events').select('*').eq('id', eventId);
     if (evq.error) throw evq.error;
     if (!evq.data || !evq.data.length) {
@@ -1598,8 +1635,8 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
     }
     // Edits made on this device since the last server ack (from the saved base); none on first load (server wins).
     const prev = loadBase ? loadBase() : null;
-    const ed = prev && prev.events && prev.versions ? computeEdits(prev, curRows(), { delTs }) : { events: null, rows: {}, confirm: [] };
-    base = emptyBase();
+    const ed = prev && prev.events && prev.versions ? computeEdits(prev, curRows(), { delTs, settings: canSettings() }) : { events: null, rows: {}, confirm: [] };
+    base = emptyBase(); base.role = role;
     absorb('events', evq.data[0]);
     for (const t of [...SYNC_TABLES, 'expense_confirmations']) {
       const q = await client.from(t).select('*').eq('event_id', eventId);
@@ -1614,7 +1651,7 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
   }
   function applyRemote(t, row) {
     if (!row) return;
-    if (t === 'event_members') { if (onMembership) onMembership(row); return; }
+    if (t === 'event_members') { if (row.user_id === me) { role = row.status === 'approved' ? row.role : null; base.role = role; persist(); if (role === 'organizer' && pendingCount()) schedule(); } if (onMembership) onMembership(row); return; }
     const ed = edits(); // local edits relative to the base BEFORE the remote change
     const k = t === 'events' || t === 'expense_confirmations' ? null : rowKey(t, pickRow(t, row));
     const old = t === 'events' ? base.events : k ? base[t][k] : null;
@@ -1632,7 +1669,23 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
     channel.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') set('offline', { pending: pendingCount() }); else if (st === 'SUBSCRIBED') resync(); });
   }
   const isNet = e => !e || /fetch|network|Failed|timeout|offline/i.test(String(e.message || e)) || e.status === 0;
-  async function resync() { try { await load(); await flush(); } catch (e) { handleErr(e); } }
+  // Reconnect: only rows changed since the newest updated_at already seen (5 s overlap); full load the first time.
+  async function delta() {
+    const m = await membership(); if (m.status !== 'approved') throw memberErr(m);
+    set('saving', { phase: 'delta' });
+    const since = new Date(Date.parse(base.cursor) - 5000).toISOString();
+    const ed = edits(), old = JSON.parse(JSON.stringify(base)); let n = 0;
+    const evq = await client.from('events').select('*').eq('id', eventId).gte('updated_at', since);
+    if (evq.error) throw evq.error; (evq.data || []).forEach(r => { n++; absorb('events', r); });
+    for (const t of [...SYNC_TABLES, 'expense_confirmations']) {
+      const q = await client.from(t).select('*').eq('event_id', eventId).gte('updated_at', since);
+      if (q.error) throw q.error; (q.data || []).forEach(r => { n++; absorb(t, r); });
+    }
+    const rb = rebaseEdits(ed, (t, k) => t === 'events' ? old.events : (old[t] || {})[k], (t, k) => t === 'events' ? base.events : base[t][k]);
+    rebuild(rb.ed); persist(); lastDelta = { since, rows: n };
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
+  }
+  async function resync() { try { if (base.events && base.cursor) await delta(); else await load(); await flush(); } catch (e) { handleErr(e); } }
   function handleErr(e) {
     if (e && ['pending', 'revoked', 'not_member'].includes(e.code)) { set('error', { error: e, pending: pendingCount() }); if (onMembership) onMembership({ user_id: me, status: e.code === 'not_member' ? 'none' : e.code, _self: true }); return; }
     set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() });
@@ -1660,6 +1713,10 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
     if (flushing) { again = true; return; }
     flushing = true;
     try {
+      if (role && role !== 'organizer') { // approved member: settings are read-only (organizer only); drop local settings edits (role unknown: hold them)
+        const all = computeEdits(base, curRows(), { delTs });
+        if (all.events || (all.rows.event_overrides || []).length) { rebuild(); onNotice && onNotice([{ kind: 'settings', text: 'Só o organizador muda as configurações do evento (datas, refeições, divisão, caixinha, pesos e preços).' }]); }
+      }
       if (base.meta.locked) { // read-only event: drop local edits
         const n = pendingCount();
         if (n) { rebuild({ events: null, rows: {}, confirm: [] }); onNotice && onNotice([{ kind: 'locked', text: 'Evento travado pelo organizador: a alteração não foi salva.' }]); }
@@ -1697,6 +1754,8 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
               continue;
             }
             // error: invalid data or permission. Data errors are dropped (server can't accept); permission => membership check
+            if (o.t === 'expense_confirmations' && /not_your_family/.test(String(res.error))) { drop[o.t + '|' + o.key] = 'all';
+              notices.push({ kind: 'family', text: 'Você só confirma gastos pela sua família. Se a sua família não aparece, peça ao organizador para ligar você a ela (Acertos › Dados › Membros).' }); continue; }
             if (/42501|row-level|not_allowed|permission/i.test(String(res.code) + ' ' + String(res.error))) { const m = await membership().catch(() => null);
               if (m && m.locked) { base.meta.locked = true; } else if (m && m.status !== 'approved' && onMembership) { onMembership({ user_id: me, status: m.status, _self: true }); }
               throw Object.assign(new Error(res.error || 'permission'), { code: '42501' }); }
@@ -1705,7 +1764,7 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
           }
         }
         // rebuild: keep my remaining edits, minus fields/rows that lost or were refused
-        const cur = getState(); const ed2 = computeEdits(snap, stateToRows(cur, eventId), { delTs });
+        const cur = getState(); const ed2 = computeEdits(snap, stateToRows(cur, eventId), { delTs, settings: canSettings() });
         const filt = { events: ed2.events, rows: {}, confirm: ed2.confirm.filter(c => drop['expense_confirmations|' + c.expense_id] !== 'all') };
         if (filt.events && drop['events|' + eventId]) { const d = drop['events|' + eventId]; if (d === 'all') filt.events = null; else { d.forEach(f => delete filt.events[f]); if (!Object.keys(filt.events).length) filt.events = null; } }
         for (const t in ed2.rows) filt.rows[t] = ed2.rows[t].map(e => { const d = drop[t + '|' + e.key]; if (!d) return e; if (d === 'all') return null;
@@ -1718,7 +1777,7 @@ function createSync({ client, eventId, getState, setState, onStatus, onNotice, o
     } catch (e) { handleErr(e); }
     finally { flushing = false; if (again) { again = false; await flush(); } }
   }
-  return { load, subscribe, schedule, flush, resync, applyRemote, pendingCount, status: () => status, membership,
+  return { load, subscribe, schedule, flush, resync, delta, applyRemote, pendingCount, status: () => status, membership, role: () => role, lastDelta: () => lastDelta,
     setUser: id => { me = id; }, info: () => ({ eventId, name: base.meta.name, createdBy: base.meta.created_by, locked: base.meta.locked }),
     base: () => base, stop: () => { if (channel && client.removeChannel) client.removeChannel(channel); } };
 }
@@ -1748,6 +1807,49 @@ function importCheck(imported) {
   const nl = computeSplit({ ...imported, syncMode: false }).families;
   let planDiff = 0; nl.forEach(f => { const g = nb.find(x => x.id === f.id); planDiff = Math.max(planDiff, g ? Math.abs(g.net - f.net) : 0); });
   return { ok: !errs.length, errs: [...new Set(errs)].slice(0, 8), before, after, maxDiff, planDiff };
+}
+// ===================== Comprovantes: fila de upload (bucket privado "comprovantes") =====================
+// store: { put(item), all(), del(path) } (IndexedDB no app; memória nos testes). storage: client.storage.from('comprovantes').
+const PHOTO_MAX_BYTES = 150 * 1024, PHOTO_URL_TTL = 300; // URL assinada: no máximo 5 min (revisão de governança 4.1)
+const photoPathFor = (eventId, expenseId) => `${eventId}/${expenseId}.jpg`;
+function createPhotoQueue({ storage, eventId, store, isOrganizer, onUploaded, onError, now = () => Date.now() }) {
+  let busy = false, again = false; const urls = {};
+  const isNet = e => !e || /fetch|network|Failed|offline/i.test(String(e.message || e)) || e.statusCode === 0;
+  async function enqueue(expenseId, blob, contentType = 'image/jpeg') {
+    if (!ID_RE.test(String(expenseId))) throw new Error('bad_expense');
+    if (!blob || blob.size > PHOTO_MAX_BYTES) { onError && onError(expenseId, 'too_big'); return false; }
+    const path = photoPathFor(eventId, expenseId);
+    await store.put({ path, expenseId, blob, contentType, at: now(), tries: 0, replace: !!isOrganizer() });
+    return process();
+  }
+  async function process() {
+    if (busy) { again = true; return; } busy = true;
+    try {
+      do { again = false;
+        for (const it of await store.all()) {
+          if (!String(it.path).startsWith(eventId + '/')) continue;
+          let r; try { r = await storage.upload(it.path, it.blob, { contentType: it.contentType, upsert: !!(it.replace && isOrganizer()), cacheControl: '3600' }); }
+          catch (e) { r = { error: e }; }
+          const e = r && r.error;
+          if (!e) { await store.del(it.path); delete urls[it.path]; onUploaded && onUploaded(it.expenseId, it.path); continue; }
+          const code = String(e.statusCode || e.status || '');
+          if (isNet(e) && !/^4/.test(code)) { it.tries = (it.tries || 0) + 1; await store.put(it); return 'offline'; } // keep; retry when online
+          if (code === '409' && it.tries > 0) { await store.del(it.path); onUploaded && onUploaded(it.expenseId, it.path); continue; } // our earlier try landed
+          await store.del(it.path); onError && onError(it.expenseId, code === '409' ? 'exists' : code === '413' ? 'too_big' : /^40[13]$/.test(code) ? 'denied' : (e.message || 'error'));
+        }
+      } while (again);
+      return 'done';
+    } finally { busy = false; }
+  }
+  async function url(path) { // signed URL (5 min); reused until 1 min before expiry
+    const c = urls[path]; if (c && c.exp > now() + 60000) return c.url;
+    const r = await storage.createSignedUrl(path, PHOTO_URL_TTL); if (r.error) throw r.error;
+    urls[path] = { url: r.data.signedUrl, exp: now() + PHOTO_URL_TTL * 1000 }; return r.data.signedUrl;
+  }
+  async function remove(path) { if (!isOrganizer()) throw Object.assign(new Error('only_organizer'), { code: '42501' });
+    const r = await storage.remove([path]); if (r.error) throw r.error; delete urls[path]; return (r.data || []).length > 0; }
+  const pending = async () => (await store.all()).filter(it => String(it.path).startsWith(eventId + '/')).map(it => it.expenseId);
+  return { enqueue, process, url, remove, pending };
 }
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
