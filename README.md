@@ -81,12 +81,14 @@ Em todos os modos, **saldo = pago − parte**. A soma dos saldos é zero. **Quem
 - O resumo do WhatsApp agrupa por tipo de comprovante e lista os itens não confirmados e os estimados.
 
 ## Dados de exemplo
+Tudo inventado: famílias, nomes e dietas são fictícios.
+
 | Família | Membros (✓ = bebe) | Observações |
 |---|---|---|
 | Família A | Carlos ✓, Ana ✓, Pedro (adolescente), Lia (criança) | |
 | Família B | Marcos ✓, Júlia, Rafa ✓ | |
-| Família C | Beto ✓, Clara ✓ (vegetariana), Davi (criança, alergia a amendoim), Nina (bebê) | |
-| Família D | Tiago ✓, Bia (alergia a camarão), Leo (criança) | chegam no jantar de 28/12 |
+| Família C | Beto ✓, Clara ✓ (vegetariana, fictício), Davi (criança, alergia a kiwi, fictício), Nina (bebê) | |
+| Família D | Tiago ✓, Bia (alergia a abacaxi, fictício), Leo (criança) | chegam no jantar de 28/12 |
 
 Viagem de 26/12/2026 a 03/01/2027 (9 dias; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. **Restaurar exemplo** (no rodapé) volta tudo ao início.
 

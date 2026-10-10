@@ -1990,8 +1990,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const fams = [
       F('Família A', [['Carlos', true], ['Ana', true], ['Pedro', false, 'adolescente'], ['Lia', false, 'crianca']]),
       F('Família B', [['Marcos', true], ['Júlia', false], ['Rafa', true]]),
-      F('Família C', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'amendoim' }], ['Nina', false, 'bebe']]),
-      F('Família D', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'camarão' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
+      F('Família C', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'kiwi (exemplo)' }], ['Nina', false, 'bebe']]),
+      F('Família D', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'abacaxi (exemplo)' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
     ];
     const p = (fi, mi) => fams[fi].members[mi].id;
     let t = Date.now();

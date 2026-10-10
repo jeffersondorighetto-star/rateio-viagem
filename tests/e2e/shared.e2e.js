@@ -63,7 +63,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await A.p.screenshot({ path: path.join(OUT, '02-import-375.png') }); await checkContrast(A.p, '#importBody', 'importar (claro)');
   await A.p.click('[data-imp="yes"]'); await A.p.waitForTimeout(600); await waitSynced(A.p);
   assert.strictEqual(be.db.expenses.length, 10); assert.strictEqual(be.db.families.length, 4); assert.strictEqual(be.db.people.length, 14);
-  assert(!JSON.stringify(be.db).match(/amendoim|camarão|"veg"|data:image/), 'nenhum dado de saúde/foto no servidor');
+  assert(!JSON.stringify(be.db).match(/amendoim|camarão|kiwi|abacaxi|"veg"|data:image/), 'nenhum dado de saúde/foto no servidor');
   step('importou 4 famílias, 14 pessoas, 10 gastos; nada de dieta/foto no servidor');
   const aNets = await nets(A.p); for (const k in localNets) assert(Math.abs(localNets[k] - aNets[k]) <= 0.01, 'saldo ' + k);
   step('saldos antes/depois da importação batem (R$ 0,01)');
@@ -90,7 +90,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await A.p.click('[data-m="approve"]'); step('organizador vê «1 aguardando» e aprova');
   await B.p.waitForFunction(() => App.getState().expenses.length === 10, null, { timeout: 12000 }); await waitSynced(B.p);
   assert.deepStrictEqual(await nets(B.p), aNets); step('B aprovado: vê os mesmos 10 gastos e saldos');
-  assert(!(await B.p.evaluate(() => JSON.stringify(App.getState()))).match(/amendoim|data:image/), 'B não recebe dieta/foto');
+  assert(!(await B.p.evaluate(() => JSON.stringify(App.getState()))).match(/amendoim|kiwi|abacaxi|data:image/), 'B não recebe dieta/foto');
   assert(await B.p.isDisabled('[data-d="import"]')); assert(await B.p.isHidden('[data-d="sharelink"]').catch(() => true)); step('B não importa nem vê o código (só o organizador)');
 
   // ---- configurações só do organizador; papéis; família do membro
