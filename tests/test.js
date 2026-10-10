@@ -3,10 +3,10 @@ const html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html')
 const src = html.split('// ===== LOGIC-START')[1].split('// ===== LOGIC-END')[0];
 const L = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {CATEGORIES,computeSplit,settle,kitty,surpriseWeights,weightedPick,summaryText,brl};')();
 const st = { kittyPerFamily: 900, families: [
-  { id:'A', name:'Família Bonifácio', members:[{id:'a1',name:'Carlos',drinks:true},{id:'a2',name:'Ana',drinks:true},{id:'a3',name:'Pedro',drinks:false},{id:'a4',name:'Lia',drinks:false}]},
-  { id:'B', name:'Família Botelho', members:[{id:'b1',name:'Marcos',drinks:true},{id:'b2',name:'Júlia',drinks:false},{id:'b3',name:'Rafa',drinks:true}]},
-  { id:'C', name:'Família Vasconcelos', members:[{id:'c1',name:'Beto',drinks:true},{id:'c2',name:'Clara',drinks:true},{id:'c3',name:'Davi',drinks:false},{id:'c4',name:'Nina',drinks:false}]},
-  { id:'D', name:'Família Sena', members:[{id:'d1',name:'Tiago',drinks:true},{id:'d2',name:'Bia',drinks:false},{id:'d3',name:'Leo',drinks:false}]}],
+  { id:'A', name:'Família A', members:[{id:'a1',name:'Carlos',drinks:true},{id:'a2',name:'Ana',drinks:true},{id:'a3',name:'Pedro',drinks:false},{id:'a4',name:'Lia',drinks:false}]},
+  { id:'B', name:'Família B', members:[{id:'b1',name:'Marcos',drinks:true},{id:'b2',name:'Júlia',drinks:false},{id:'b3',name:'Rafa',drinks:true}]},
+  { id:'C', name:'Família C', members:[{id:'c1',name:'Beto',drinks:true},{id:'c2',name:'Clara',drinks:true},{id:'c3',name:'Davi',drinks:false},{id:'c4',name:'Nina',drinks:false}]},
+  { id:'D', name:'Família D', members:[{id:'d1',name:'Tiago',drinks:true},{id:'d2',name:'Bia',drinks:false},{id:'d3',name:'Leo',drinks:false}]}],
   expenses: [[680,'groceries','a1'],[420,'gas','b1'],[540,'food','c1'],[360,'alcohol','d1'],[610,'food','b2'],[390,'gas','c2'],[180,'alcohol','a2']]
     .map(([amount,category,payerId],i)=>({id:'e'+i,amount,category,payerId})) };
 const s = L.computeSplit(st);
@@ -40,9 +40,9 @@ const L2 = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {parseQuick,pen
 const fams = st.families;
 const P = t => L2.parseQuick(t, fams);
 const cases = [
-  ['80 gasolina Botelho', { amount: 80, category: 'gas', payerId: 'b1', payerVia: 'family' }],
-  ['churrasco 350 pago por Sena', { amount: 350, category: 'food', payerId: 'd1' }],
-  ['cerveja 120 Vasconcelos', { amount: 120, category: 'alcohol', payerId: 'c1' }],
+  ['80 gasolina família B', { amount: 80, category: 'gas', payerId: 'b1', payerVia: 'family' }],
+  ['churrasco 350 pago pela família D', { amount: 350, category: 'food', payerId: 'd1' }],
+  ['cerveja 120 Família C', { amount: 120, category: 'alcohol', payerId: 'c1' }],
   ['pedágio 12,50 Tiago sem nota', { amount: 12.5, category: 'gas', payerId: 'd1', payerVia: 'person', proof: 'none' }],
   ['feira 85 júlia pix', { amount: 85, category: 'groceries', payerId: 'b2', proof: 'comp' }],
   ['~300 gasolina volta Clara', { amount: 300, category: 'gas', payerId: 'c2', estimated: true }],
@@ -51,11 +51,11 @@ const cases = [
   ['2 caipirinhas 36 reais Ana', { amount: 36, category: 'alcohol', payerId: 'a2' }],
   ['álcool no posto 150 Beto', { amount: 150, category: 'gas', payerId: 'c1' }],
   ['uns 60 de sorvete ambulante Bia', { amount: 60, category: 'food', payerId: 'd2', estimated: true }],
-  ['vinho 90 Rafa Botelho', { amount: 90, category: 'alcohol', payerId: 'b3', payerVia: 'person' }],
+  ['vinho 90 Rafa fam B', { amount: 90, category: 'alcohol', payerId: 'b3', payerVia: 'person' }],
   ['gasolina 200 Marcso', { payerId: 'b1' }], // typo tolerance
 ];
 for (const [t, exp] of cases) { const r = P(t); for (const k in exp) assert.deepStrictEqual(r[k], exp[k], `${t} -> ${k}: got ${r[k]}`); }
-assert.equal(P('churrasco 350 pago por Sena').description, 'Churrasco');
+assert.equal(P('churrasco 350 pago pela família D').description, 'Churrasco');
 assert.equal(P('pedágio 12,50 Tiago sem nota').description, 'Pedágio');
 assert.equal(P('~300 gasolina volta Clara').description, 'Gasolina volta');
 assert.equal(P('hello').amount, null); assert.equal(P('').payerId, null);

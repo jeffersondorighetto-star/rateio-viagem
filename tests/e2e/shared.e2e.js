@@ -51,7 +51,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await Promise.all([A.p.waitForNavigation(), A.p.click('#ghBtn')]); // "GitHub" e volta com ?org=1&code=
   await A.p.waitForSelector('#createForm'); assert(!/[?&]code=/.test(await A.p.evaluate(() => location.search)), 'URL limpa depois do login');
   assert(/Conectado como/.test(await A.p.textContent('#orgBody'))); step('organizador entra com GitHub (volta para o app)');
-  await A.p.fill('#cName', 'Feriado teste'); await A.p.fill('#cMe', 'Jefferson');
+  await A.p.fill('#cName', 'Feriado teste'); await A.p.fill('#cMe', 'Ana');
   await Promise.all([A.p.waitForNavigation(), A.p.click('#createForm button[type=submit]')]);
   await waitSynced(A.p);
   const code = await A.p.evaluate(() => location.hash.slice(1)); assert(/^[A-HJ-NP-Z2-9]{8}$/.test(code), code); step('evento criado, código ' + code);
@@ -76,7 +76,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   assert.strictEqual((await B.p.inputValue('#gCode')).replace('-', ''), code); step('link com #código preenche o código');
   await B.p.fill('#gCode', 'ZZZZ2345'); await B.p.fill('#gName', 'Ana'); await B.p.click('#joinForm button[type=submit]');
   await B.p.waitForFunction(() => !document.getElementById('joinErr').hidden); assert(/não confere/.test(await B.p.textContent('#joinErr'))); step('código errado é recusado');
-  await B.p.fill('#gCode', code.toLowerCase()); await B.p.fill('#gFam', 'Botelho');
+  await B.p.fill('#gCode', code.toLowerCase()); await B.p.fill('#gFam', 'B');
   await Promise.all([B.p.waitForNavigation(), B.p.click('#joinForm button[type=submit]')]);
   await B.p.waitForFunction(() => /Aguardando aprovação/.test(document.getElementById('gateTitle') && document.getElementById('gateTitle').textContent), null, { timeout: 8000 });
   assert.strictEqual(await B.p.evaluate(() => App.getState().expenses.length), 0, 'pendente não recebe gastos');
