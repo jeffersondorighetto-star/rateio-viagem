@@ -29,6 +29,8 @@ do $$ begin
   if not exists (select 1 from pg_publication where pubname='supabase_realtime') then create publication supabase_realtime; end if;
 end $$;
 -- identidades do Auth (o Supabase guarda aqui o login do GitHub em identity_data.user_name)
+-- usuários do Auth (o Supabase tem muitas colunas a mais, todas com padrão)
+create table if not exists auth.users (id uuid primary key, aud varchar(255), role varchar(255), email varchar(255), is_anonymous boolean not null default false, created_at timestamptz default now());
 create table if not exists auth.identities (user_id uuid, provider text, identity_data jsonb, provider_id text);
 alter table auth.identities add column if not exists provider_id text;
 -- igual ao Supabase: DELETE em storage.objects só pela Storage API (que liga storage.allow_delete_query na transação)

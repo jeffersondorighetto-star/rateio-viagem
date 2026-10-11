@@ -10,3 +10,6 @@ PGHOST=/tmp PGPORT=54329 PGUSER=postgres bash supabase/test/run.sh
 # PostgREST: banco "rest" com stub.sql + supabase.sql + papel authenticator; jwt-secret só de teste
 NODE_PATH=/caminho/node_modules node supabase/test/postgrest.test.js
 ```
+
+## Matriz no Supabase real (`real_rls_matrix.sql`)
+Colar inteiro no SQL Editor do projeto e tocar em **Run** (se aparecer aviso de operação destrutiva, **Run this query**: o script só apaga a própria tabela temporária de resultado). Cria 8 usuários de teste, 2 organizadores fictícios na lista, 2 eventos e fotos dentro de uma subtransação que é sempre desfeita no fim; nada fica gravado. Mostra uma tabela: 1ª linha `RESULTADO: PASS n / FAIL m`, depois as falhas. Localmente, `run.sh` roda o mesmo arquivo com um papel não superusuário e exige FAIL 0 e zero restos.
