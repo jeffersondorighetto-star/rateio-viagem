@@ -51,4 +51,7 @@ for (const f of fs.readdirSync(path.join(root, 'supabase', 'migrations'))) asser
   }
   assert.deepStrictEqual(bad, [], 'sobrenome real de família em: ' + bad.join(', '));
 }
+// config do cliente: só URL + chave PUBLICÁVEL; nunca chave secreta/service_role/JWT de serviço
+{ const m = html.match(/SUPABASE_ANON_KEY:\s*'([^']*)'/); if (m) assert(/^sb_publishable_[A-Za-z0-9_-]+$/.test(m[1]), 'chave do cliente não é publicável');
+  assert(!/sb_secret_[A-Za-z0-9_-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ/.test(html), 'segredo no index.html'); }
 console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 30 dias, lista por id GitHub, sem sobrenomes reais)');

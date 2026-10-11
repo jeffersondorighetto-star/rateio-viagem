@@ -6,7 +6,7 @@ function start(port) {
   const core = createCore(), users = {}, streams = [];
   core.listen(null, () => {}); // keeps API symmetrical
   const html = () => fs.readFileSync(path.join(__dirname, '..', '..', 'index.html'), 'utf8')
-    .replace("SUPABASE_URL: null,", `SUPABASE_URL: 'http://localhost:${port}',`).replace("SUPABASE_ANON_KEY: null,", "SUPABASE_ANON_KEY: 'sb_publishable_TEST',");
+    .replace(/SUPABASE_URL: [^,\n]+,/, `SUPABASE_URL: 'http://localhost:${port}',`).replace(/SUPABASE_ANON_KEY: [^,\n]+,/, "SUPABASE_ANON_KEY: 'sb_publishable_TEST',");
   const op = ({ user, kind, table, args }) => {
     if (kind === 'signin') { const u = { id: crypto.randomUUID(), is_anonymous: true, user_metadata: {} }; users[u.id] = u; return { user: u }; }
     if (kind === 'oauth') { const id = 'aaaaaaaa-0000-4000-8000-' + crypto.createHash('sha1').update(args.login).digest('hex').slice(0, 12);
