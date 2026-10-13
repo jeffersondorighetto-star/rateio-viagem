@@ -644,6 +644,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <button class="btn secondary" id="copyBtn"><span data-i="copy"></span><span>Copiar</span></button>
           <button class="btn secondary" id="shareBtn"><span data-i="share"></span><span>Compartilhar</span></button>
           <a class="btn secondary" id="waLink" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a>
+          <button class="btn secondary" id="exportBtn"><span data-i="copy"></span><span>Exportar JSON</span></button>
         </div></div>
       </section>
     </div>
@@ -2145,6 +2146,13 @@ Corte as frutas e monte a mesa com pães e frios.`,
     tick();
   };
   let lastText = '';
+  $('#exportBtn').onclick = () => {
+    const out = { schema: 'racha-viagem-v3', app: 'Rateatouille', exported_at: new Date().toISOString(), event: null, state: JSON.parse(JSON.stringify(state)) };
+    const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rateatouille-${new Date().toISOString().slice(0, 10)}.export.json`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Arquivo exportado (guarde só com você: pode ter fotos e dieta)');
+  };
   function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
   $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateio da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
