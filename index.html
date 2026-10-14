@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f4f6ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1d16" media="(prefers-color-scheme: dark)">
-<title>Rateio da Viagem</title>
+<title>Rateatouille</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f5d2f'/><path d='M10 16h12M16 10v12' stroke='white' stroke-width='3' stroke-linecap='round'/></svg>">
 <style>
 :root{
@@ -384,14 +384,55 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .toast{bottom:calc(92px + var(--sab))}@media(min-width:920px){.toast{bottom:calc(24px + var(--sab))}}
+/* ---- evento compartilhado ---- */
+[hidden]{display:none!important}
+.syncpill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.syncpill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--text-3);flex:none}
+.syncpill[data-s="synced"]::before{background:var(--pos)}
+.syncpill[data-s="saving"]::before,.syncpill[data-s="pending"]::before{background:var(--warn)}
+.syncpill[data-s="offline"],.syncpill[data-s="error"]{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 40%,var(--border))}
+.syncpill[data-s="offline"]::before,.syncpill[data-s="error"]::before{background:var(--neg)}
+.syncpill + .toptotal{margin-left:12px}
+@media(max-width:480px){.syncpill{font-size:0;gap:0;width:32px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
+.syncbanner{max-width:1120px;margin:8px auto 0;padding:0 16px}
+.syncbanner .callout{overflow-wrap:anywhere;align-items:center}
+.warnhint b{color:var(--ink)}
+.noticebox{position:fixed;left:0;right:0;top:calc(64px + var(--sat));z-index:45;max-width:560px;margin:0 auto;padding:0 12px}
+
+.noticebox .callout{align-items:flex-start;border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);box-shadow:0 6px 24px rgba(0,0,0,.18)}.noticebox .callout>div{flex:1;min-width:0}.noticebox ul{margin:4px 0 0 18px;padding:0}.noticebox li{margin:2px 0}
+.noticebox .btn.text{min-height:32px;padding:0 8px;flex:none;color:inherit}
+.memlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.memlist li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
+.memlist .mname{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}.memlist .mname small{color:var(--text-2);font-size:13px}
+.memlist .mact{display:flex;gap:8px;flex-wrap:wrap}
+.subhead{font-size:15px;font-weight:650;color:var(--text)}
+.chip.warn{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--text-2);cursor:pointer}.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--brand,var(--pos));flex:none}
+dialog.gate{width:min(560px,100%);max-height:100%;border:0;border-radius:var(--r-lg);padding:20px;background:var(--bg);color:var(--text);overflow:auto}
+dialog.gate::backdrop{background:rgba(0,0,0,.55)}
+dialog.gate h2{margin:0 0 4px;font-size:20px}
+dialog.gate h3{margin:0 0 12px;font-size:15px}
+dialog.gate .card+.card{margin-top:12px}
+dialog.gate .field{margin-bottom:12px}
+.gateerr{color:var(--neg);font-size:14px;margin:0 0 12px;overflow-wrap:anywhere}
+.codebig{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.12em;overflow-wrap:anywhere}
+.datalist{display:grid;gap:8px;font-size:14px;color:var(--text-2);margin:0 0 12px}
+.datalist b{color:var(--text)}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+.cmp th,.cmp td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--border)}
+.cmp td.num,.cmp th.num{text-align:right}
 </style>
 </head>
 <body data-view="inicio">
 <header class="top" id="top"><div class="in">
-  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Rateio da Viagem</span></div>
+  <div class="brand"><span class="mk"><span data-i="plus"></span></span><span class="bt">Rateatouille</span></div>
+  <button class="syncpill" id="syncPill" type="button" hidden aria-live="polite"></button>
   <div class="toptotal" aria-hidden="true"><small>Total</small><b class="num" id="topTotal">R$ 0,00</b></div>
   <button class="iconbtn" id="themeBtn" aria-label="Alternar tema claro/escuro"></button>
 </div></header>
+<div class="syncbanner" id="photoPurgeBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="photoPurgeText"></span><button class="btn primary sm" data-purge="1" style="margin-left:auto">Apagar agora</button></div></div>
+<div class="syncbanner" id="syncBanner" hidden><div class="callout" role="status"><span data-i="alert"></span><span id="syncBannerText"></span></div></div>
+<div class="syncbanner noticebox" id="noticeBox" hidden aria-live="polite"></div>
 
 <nav class="tabbar" id="tabbar" role="tablist" aria-label="Seções">
   <button role="tab" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
@@ -447,6 +488,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 
 <!-- ============ PLANEJAR ============ -->
 <section class="view" id="v-planejar" role="tabpanel" hidden>
+  <p class="callout" id="localOnlyNote" hidden style="margin:0 0 16px"><span data-i="alert"></span><span>Cardápio, receitas, compras e dieta/alergia ficam <b>só neste aparelho</b> (não vão para o evento compartilhado). No evento, a divisão «por porções» usa os dias de presença e o tipo de cada pessoa.</span></p>
   <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
     <button role="tab" data-sub="cardapio" aria-selected="true">Cardápio</button>
     <button role="tab" data-sub="receitas" aria-selected="false">Receitas</button>
@@ -494,6 +536,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <div class="field">
             <label for="recPaste">Cole o texto como veio (WhatsApp, site…)</label>
             <textarea class="inp" id="recPaste" style="min-height:140px;font:15px/1.5 var(--font);background:var(--surface)" placeholder="Bolo de cenoura&#10;Rende 8 porções&#10;Ingredientes:&#10;- 3 cenouras&#10;- 2 xícaras de açúcar&#10;Modo de preparo: …"></textarea>
+            <p class="hint warnhint" id="recPrivHint">Antes de colar, apague nomes e dado de saúde (ex.: “versão sem glúten para a Ana”). A receita vai para todas as famílias do evento.</p>
           </div>
           <button class="btn secondary block" id="recParse" style="margin-top:12px"><span data-i="sparkle"></span><span>Interpretar receita</span></button>
           <div id="recDraft"></div>
@@ -576,12 +619,14 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
               <div id="photoPrev" class="hint">Opcional: foto do produto, placa ou papel.</div>
             </div>
             <input type="file" id="photo" accept="image/*" capture="environment" class="sr-only">
+            <p class="hint warnhint" id="photoCpfHint"><b>Cubra CPF e nome antes de fotografar.</b> Nota sem CPF basta.</p>
             <input class="inp sm" id="note" placeholder="Observação (ex.: feira da praça, barraca do Zé)" maxlength="80">
           </div>
           <div class="field" id="itemsField">
             <label for="items">Itens comprados <span class="sub">(opcional — abate da lista de compras)</span></label>
             <input class="inp sm" id="items" placeholder="Ex.: picanha 2 kg, carvão, cerveja 2 fardos">
           </div>
+          <p class="hint" id="privHint">Não escreva dado de saúde (remédio, alergia, diagnóstico) nem documento (CPF, RG, cartão) na descrição, observação ou itens.</p>
           <div class="formactions">
             <button class="btn primary block" type="submit" id="submitBtn"><span data-i="plus"></span><span>Adicionar despesa</span></button>
             <button class="btn secondary" type="button" id="cancelEdit">Cancelar</button>
@@ -647,18 +692,37 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <button class="btn secondary" id="exportBtn"><span data-i="copy"></span><span>Exportar JSON</span></button>
         </div></div>
       </section>
+      <section class="card" aria-labelledby="dataTitle" id="dataCard">
+        <div class="ch"><h2 id="dataTitle">Dados</h2><span class="meta" id="dataMeta">só neste aparelho</span></div>
+        <div id="dataBody"></div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </section>
     </div>
   </div>
 </section>
 </main>
 <footer>
-  <span>Protótipo local · dados salvos apenas neste navegador · sem servidor e sem dados bancários</span>
+  <span id="footNote">Rateatouille · dados salvos apenas neste navegador · sem dados bancários</span>
   <button class="btn text" id="resetBtn"><span data-i="reset"></span>Restaurar exemplo</button>
 </footer>
 
 <dialog class="cook" id="cookDlg" aria-labelledby="cookTitle"><div class="cookin" id="cookBody"></div></dialog>
 <dialog class="photo" id="photoDlg"><form method="dialog"><button class="iconbtn" style="position:absolute;top:8px;right:8px" aria-label="Fechar"><span data-i="x"></span></button></form><img id="photoBig" alt="Foto do gasto"></dialog>
+<dialog class="gate" id="gateDlg" aria-labelledby="gateTitle"><div id="gateBody"></div></dialog>
+<dialog class="gate" id="importDlg" aria-labelledby="impTitle"><div id="importBody"></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+// ===================== CONFIGURAÇÃO DO BANCO COMPARTILHADO (Supabase) =====================
+// Cole aqui SÓ a Project URL e a chave publishable (sb_publishable_...) ou anon.
+// Essas duas são públicas por desenho: quem protege os dados é a RLS do supabase/supabase.sql.
+// NUNCA coloque aqui a chave secret (sb_secret_...), a service_role nem a senha do banco.
+// Com os dois valores em null o app funciona como antes, só neste aparelho.
+window.RATEIO_CONFIG = {
+  SUPABASE_URL: 'https://pfuexjndrdpjkwcpudxt.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_8bQ06io_cz-IcbXEGbWq2g_rosHIV9y',
+};
+// ===========================================================================================
+</script>
 <script>
 // ===== LOGIC-START (pure functions; tested in test.js) =====
 const CATEGORIES = {
@@ -685,6 +749,7 @@ function computeSplit(state) {
   const drinkerIds = people.filter(p => p.drinks).map(p => p.id);
   const catTotals = Object.fromEntries(Object.keys(CATEGORIES).map(k => [k, 0]));
   const warnings = [];
+  // In a shared event the meal grid stays local-only, so portions use presence + type weights (same on every device).
   const P = (state.splitMode === 'porcoes' && state.trip) ? portions(state) : null;
   const wCache = {};
   let total = 0;
@@ -1032,7 +1097,7 @@ function shoppingList(state, opts) {
 const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
   : (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L` : `${Math.round(q)} ml`);
 function shoppingText(state, S) {
-  const L = ['*Lista de compras — Rateio da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
+  const L = ['*Lista de compras — Rateatouille*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
     L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
@@ -1251,7 +1316,7 @@ const brl = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', c
 
 function summaryText(state, split, xfers, k) {
   const L = [];
-  L.push('*Rateio da Viagem — resumo*');
+  L.push('*Rateatouille — resumo*');
   L.push(`Total: *${brl(split.total)}*`);
   L.push(`${split.persons.length} pessoas · média ${brl(split.avg)} por pessoa`);
   if (state.splitMode && SPLIT_MODES[state.splitMode]) L.push(`Divisão: ${SPLIT_MODES[state.splitMode]}`);
@@ -1284,9 +1349,532 @@ function summaryText(state, split, xfers, k) {
   }
   return L.join('\n');
 }
+// ===================== Evento compartilhado (Supabase): mapeamento estado <-> linhas =====================
+// O servidor só guarda linhas; todo cálculo continua aqui no cliente.
+// NUNCA vão para o servidor (por enquanto): receitas, cardápio (plan), preços, quantidades, dieta/alergia (member.diet) e fotos (expense.photo).
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sem 0/O, 1/I/L
+function genEventCode(rand) {
+  const out = [];
+  const next = rand || (() => { const a = new Uint8Array(1); crypto.getRandomValues(a); return a[0]; });
+  while (out.length < 8) { const b = next(); if (b < 248) out.push(CODE_ALPHABET[b % 31]); } // 248 = 8*31: sem viés
+  return out.join('');
+}
+const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const validCode = s => new RegExp('^[' + CODE_ALPHABET + ']{8}$').test(s);
+const newUuid = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+// Tabelas com versão por linha, gravadas por apply_ops. "events" só recebe UPDATE.
+const SYNC_TABLES = ['families', 'people', 'recipes', 'meal_plan', 'expenses', 'settlement_marks', 'event_overrides'];
+// Configurações do evento: só o organizador grava (RLS); para membros ficam só leitura.
+const SETTINGS_TABLES = ['event_overrides'];
+const SYNC_PK = { events: ['id'], families: ['event_id', 'id'], people: ['event_id', 'id'], expenses: ['event_id', 'id'],
+  settlement_marks: ['event_id', 'from_family', 'to_family'], event_overrides: ['event_id', 'kind', 'key'], expense_confirmations: ['event_id', 'id'],
+  recipes: ['event_id', 'id'], meal_plan: ['event_id', 'day', 'meal'] };
+const SYNC_COLS = {
+  events: ['id', 'start_date', 'end_date', 'meals', 'split_mode', 'include_unconfirmed', 'kitty_per_family'],
+  families: ['event_id', 'id', 'name', 'color', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
+  people: ['event_id', 'id', 'family_id', 'first_name', 'type', 'drinks', 'pos', 'arrive', 'arrive_meal', 'depart', 'depart_meal', 'deleted_at'],
+  expenses: ['event_id', 'id', 'description', 'amount', 'category', 'payer_person_id', 'participants', 'proof', 'estimated', 'note', 'items', 'client_ts', 'photo_path', 'deleted_at'],
+  recipes: ['event_id', 'id', 'title', 'yield', 'text', 'parsed', 'pos', 'deleted_at'],
+  meal_plan: ['event_id', 'day', 'meal', 'mode', 'recipe_ids', 'deleted_at'],
+  settlement_marks: ['event_id', 'from_family', 'to_family', 'amount', 'deleted_at'],
+  event_overrides: ['event_id', 'kind', 'key', 'value', 'deleted_at'],
+  expense_confirmations: ['event_id', 'id', 'expense_id', 'family_id', 'confirmed_at', 'voided_at'],
+};
+const TS_COLS = new Set(['deleted_at', 'confirmed_at', 'voided_at']);
+const NUM_COLS = new Set(['amount', 'kitty_per_family', 'pos', 'client_ts', 'yield']);
+const MEAL_KEYS = ['cafe', 'almoco', 'lanche', 'jantar'];
+const MEMBER_TYPE_KEYS = ['adulto', 'adolescente', 'crianca', 'bebe'];
+const clip = (s, n) => s == null || s === '' ? null : String(s).slice(0, n);
+const dateOrNull = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) ? String(d) : null;
+const mealOrNull = m => MEAL_KEYS.includes(m) ? m : null;
+const isoOrNull = v => { if (v == null || v === '') return null; const d = new Date(typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v); return isNaN(d) ? null : d.toISOString(); };
+// Canonical form of a row: only client-owned columns, normalized types (so server echo == local row).
+function pickRow(table, r) {
+  const o = {};
+  for (const c of SYNC_COLS[table]) {
+    let v = r[c] === undefined ? null : r[c];
+    if (TS_COLS.has(c)) v = isoOrNull(v);
+    else if (NUM_COLS.has(c) && v != null) v = Number(v);
+    else if (c === 'value' && v != null && typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) v = Number(v);
+    o[c] = v;
+  }
+  return o;
+}
+const rowKey = (table, r) => SYNC_PK[table].map(c => r[c]).join('|');
+const stableStr = v => v && typeof v === 'object' ? (Array.isArray(v) ? '[' + v.map(stableStr).join(',') + ']' : '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}') : JSON.stringify(v === undefined ? null : v);
+const same = (a, b) => stableStr(a) === stableStr(b);
+// Split "<de>_<para>" using the known family ids (ids may contain "_").
+function splitSettleKey(k, famIds) {
+  for (const a of famIds) if (k.startsWith(a + '_') && famIds.includes(k.slice(a.length + 1))) return [a, k.slice(a.length + 1)];
+  const i = k.indexOf('_'); return i > 0 ? [k.slice(0, i), k.slice(i + 1)] : null;
+}
+// app state -> rows. Confirmations are not rows here: `confirm` lists the desired {expense_id, family_id}.
+function stateToRows(state, eventId) {
+  const ev = { id: eventId,
+    start_date: dateOrNull(state.trip && state.trip.start), end_date: dateOrNull(state.trip && state.trip.end),
+    meals: Object.fromEntries(MEAL_KEYS.map(m => [m, !!(state.trip && state.trip.meals && state.trip.meals[m])])),
+    split_mode: ['porcoes', 'pessoa', 'igual'].includes(state.splitMode) ? state.splitMode : 'pessoa',
+    include_unconfirmed: state.includeUnconfirmed !== false,
+    kitty_per_family: Math.min(1e6, Math.max(0, Math.round((Number(state.kittyPerFamily) || 0) * 100) / 100)) };
+  if (ev.start_date && ev.end_date && ev.end_date < ev.start_date) ev.end_date = null;
+  const rows = { events: pickRow('events', ev), families: [], people: [], recipes: [], meal_plan: [], expenses: [], settlement_marks: [], event_overrides: [], confirm: [] };
+  (state.families || []).forEach((f, fi) => {
+    rows.families.push(pickRow('families', { event_id: eventId, id: f.id, name: clip(f.name, 60) || 'Família', color: clip(f.color, 40), pos: fi,
+      arrive: dateOrNull(f.arrive), arrive_meal: mealOrNull(f.arriveMeal), depart: dateOrNull(f.depart), depart_meal: mealOrNull(f.departMeal) }));
+    (f.members || []).forEach((m, mi) => rows.people.push(pickRow('people', { event_id: eventId, id: m.id, family_id: f.id,
+      first_name: (clip(String(m.name || '').trim(), 40) || '?'), type: MEMBER_TYPE_KEYS.includes(m.type) ? m.type : 'adulto',
+      drinks: !!m.drinks, pos: mi, arrive: dateOrNull(m.arrive), arrive_meal: mealOrNull(m.arriveMeal), depart: dateOrNull(m.depart), depart_meal: mealOrNull(m.departMeal) })));
+  });
+  for (const e of state.expenses || []) {
+    const amount = Math.round((Number(e.amount) || 0) * 100) / 100; if (!(amount > 0)) continue;
+    rows.expenses.push(pickRow('expenses', { event_id: eventId, id: e.id, description: String(e.description || '').slice(0, 120), amount,
+      category: CATEGORIES[e.category] ? e.category : 'food', payer_person_id: e.payerId || null,
+      participants: Array.isArray(e.participants) ? e.participants.slice(0, 100) : null,
+      proof: ['nf', 'comp', 'none'].includes(e.proof) ? e.proof : 'nf', estimated: !!e.estimated, note: clip(e.note, 300),
+      items: e.items == null || e.items === '' ? null : (typeof e.items === 'string' ? e.items.slice(0, 2000) : e.items),
+      client_ts: Number.isFinite(Number(e.ts)) ? Math.round(Number(e.ts)) : null,
+      photo_path: typeof e.photoPath === 'string' && PHOTO_PATH_RE.test(e.photoPath) ? e.photoPath : null }));
+    if (e.confirmedBy) rows.confirm.push({ expense_id: e.id, family_id: e.confirmedBy });
+  }
+  const famIds = (state.families || []).map(f => f.id);
+  for (const [k, v] of Object.entries(state.settled || {})) {
+    const p = splitSettleKey(k, famIds); if (!p || !v) continue;
+    rows.settlement_marks.push(pickRow('settlement_marks', { event_id: eventId, from_family: p[0], to_family: p[1], amount: Math.round((Number(v.amount) || 0) * 100) / 100 }));
+  }
+  for (const [k, v] of Object.entries(state.weights || {}))
+    if (MEMBER_TYPE_KEYS.includes(k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 10) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'weight', key: k, value: v }));
+  for (const [k, v] of Object.entries(state.prices || {}))
+    if (OVR_KEY_RE.test(k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1e5) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'price', key: k, value: v }));
+  for (const [t, o] of Object.entries(state.planQty || {})) for (const [k, v] of Object.entries(o || {}))
+    if (OVR_KEY_RE.test(t + ':' + k) && typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1e5) rows.event_overrides.push(pickRow('event_overrides', { event_id: eventId, kind: 'plan_qty', key: t + ':' + k, value: v }));
+  (state.recipes || []).forEach((r, i) => { if (!r || !ID_RE.test(String(r.id))) return;
+    const y = Number(r.yield); rows.recipes.push(pickRow('recipes', { event_id: eventId, id: r.id, title: (clip(String(r.title || '').trim(), 120) || 'Receita'),
+      yield: y > 0 && y <= 500 ? Math.round(y * 100) / 100 : 4, text: clip(r.text, 8000), pos: i,
+      parsed: { ingredients: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [] } })); });
+  for (const [d, cells] of Object.entries(state.plan || {})) { if (!dateOrNull(d)) continue;
+    for (const [m, c] of Object.entries(cells || {})) { if (!MEAL_KEYS.includes(m) || !c) continue;
+      const ids = (Array.isArray(c.recipes) ? c.recipes : (c.menu ? [c.menu] : [])).filter(x => ID_RE.test(String(x))).slice(0, 20);
+      rows.meal_plan.push(pickRow('meal_plan', { event_id: eventId, day: d, meal: m, mode: ['casa', 'fora', 'livre'].includes(c.mode) ? c.mode : 'casa', recipe_ids: ids })); } }
+  return rows;
+}
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/, OVR_KEY_RE = /^[A-Za-z0-9_|:.-]{1,80}$/;
+const PHOTO_PATH_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9_-]{1,40}\.jpg$/;
+const SYNCED_KEYS = {
+  recipe: ['id', 'title', 'yield', 'text', 'ingredients', 'steps'],
+  family: ['id', 'name', 'color', 'arrive', 'arriveMeal', 'depart', 'departMeal', 'members'],
+  member: ['id', 'name', 'type', 'drinks', 'arrive', 'arriveMeal', 'depart', 'departMeal'],
+  expense: ['id', 'description', 'amount', 'category', 'payerId', 'participants', 'proof', 'estimated', 'note', 'items', 'confirmedBy', 'confirmedAt', 'ts', 'photoPath'],
+};
+// Keep only local-only fields (diet, photo, anything unknown) of the previous object.
+const localPart = (prev, kind) => { const o = {}; if (prev) for (const k in prev) if (!SYNCED_KEYS[kind].includes(k)) o[k] = prev[k]; return o; };
+const setIf = (o, k, v) => { if (v !== null && v !== undefined && v !== '') o[k] = v; };
+// rows (server shape, lists) + previous local state -> app state. Local-only parts of prev are preserved.
+// meta: {name, locked} of the event (read-only for the client).
+function rowsToState(rows, prev, meta) {
+  prev = prev || {}; meta = meta || {};
+  const live = t => (rows[t] || []).filter(r => !r.deleted_at);
+  const ev = rows.events || {};
+  const pf = Object.fromEntries((prev.families || []).map(f => [f.id, f]));
+  const pm = {}; (prev.families || []).forEach(f => (f.members || []).forEach(m => { pm[m.id] = m; }));
+  const pe = Object.fromEntries((prev.expenses || []).map(e => [e.id, e]));
+  const byPos = (a, b) => (a.pos - b.pos) || String(a.id).localeCompare(String(b.id));
+  const fams = live('families').slice().sort(byPos).map(r => {
+    const f = { ...localPart(pf[r.id], 'family'), id: r.id, name: r.name, members: [] };
+    setIf(f, 'arrive', r.arrive); setIf(f, 'arriveMeal', r.arrive_meal); setIf(f, 'depart', r.depart); setIf(f, 'departMeal', r.depart_meal);
+    return f;
+  });
+  const byFam = Object.fromEntries(fams.map(f => [f.id, f]));
+  live('people').slice().sort(byPos).forEach(r => {
+    const f = byFam[r.family_id]; if (!f) return;
+    const m = { ...localPart(pm[r.id], 'member'), id: r.id, name: r.first_name, drinks: !!r.drinks, type: MEMBER_TYPE_KEYS.includes(r.type) ? r.type : 'adulto' };
+    setIf(m, 'arrive', r.arrive); setIf(m, 'arriveMeal', r.arrive_meal); setIf(m, 'depart', r.depart); setIf(m, 'departMeal', r.depart_meal);
+    f.members.push(m);
+  });
+  const conf = {}; for (const c of rows.confirmations || []) if (!c.voided_at) conf[c.expense_id] = c;
+  const expenses = live('expenses').map(r => {
+    const e = { ...localPart(pe[r.id], 'expense'), id: r.id, amount: Number(r.amount), category: CATEGORIES[r.category] ? r.category : 'food', description: r.description || '', payerId: r.payer_person_id || null, proof: ['nf', 'comp', 'none'].includes(r.proof) ? r.proof : 'nf' };
+    if (r.estimated) e.estimated = true; setIf(e, 'note', r.note); setIf(e, 'items', r.items); setIf(e, 'participants', r.participants);
+    const c = conf[r.id]; if (c && e.proof === 'none') { e.confirmedBy = c.family_id; if (c.confirmed_at) e.confirmedAt = Date.parse(c.confirmed_at); }
+    if (r.client_ts != null) e.ts = Number(r.client_ts);
+    setIf(e, 'photoPath', r.photo_path);
+    return e;
+  }).sort((a, b) => (b.ts || 0) - (a.ts || 0) || String(a.id).localeCompare(String(b.id)));
+  const settled = {};
+  for (const r of live('settlement_marks')) { const k = r.from_family + '_' + r.to_family; settled[k] = { amount: Number(r.amount), at: (prev.settled && prev.settled[k] || {}).at || Date.now() }; }
+  const weights = {}, prices = {}, planQty = {};
+  for (const r of live('event_overrides')) { if (typeof r.value !== 'number') continue;
+    if (r.kind === 'weight') weights[r.key] = r.value; else if (r.kind === 'price') prices[r.key] = r.value;
+    else if (r.kind === 'plan_qty') { const i = r.key.indexOf(':'); if (i > 0) (planQty[r.key.slice(0, i)] = planQty[r.key.slice(0, i)] || {})[r.key.slice(i + 1)] = r.value; } }
+  const pr = Object.fromEntries((prev.recipes || []).map(r => [r.id, r]));
+  const recipes = live('recipes').slice().sort(byPos).map(r => ({ ...localPart(pr[r.id], 'recipe'), id: r.id, title: r.title, yield: Number(r.yield) || 4,
+    ingredients: (r.parsed && Array.isArray(r.parsed.ingredients)) ? r.parsed.ingredients : [], steps: (r.parsed && Array.isArray(r.parsed.steps)) ? r.parsed.steps : [], text: r.text || '' }));
+  const plan = {};
+  for (const r of live('meal_plan')) { (plan[r.day] = plan[r.day] || {})[r.meal] = { mode: r.mode, recipes: Array.isArray(r.recipe_ids) ? r.recipe_ids.slice() : [] }; }
+  const meals = ev.meals || (prev.trip && prev.trip.meals) || { cafe: true, almoco: true, lanche: false, jantar: true };
+  return { ...prev, eventName: meta.name || prev.eventName, eventLocked: !!meta.locked, families: fams, expenses, settled,
+    trip: { ...(prev.trip || {}), start: ev.start_date || '', end: ev.end_date || '', meals: { ...meals } },
+    splitMode: ev.split_mode || prev.splitMode || 'pessoa', includeUnconfirmed: ev.include_unconfirmed !== false,
+    kittyPerFamily: ev.kitty_per_family != null ? Number(ev.kitty_per_family) : (prev.kittyPerFamily || 0), weights,
+    recipes, plan, prices, planQty, syncMode: true };
+}
+
+// ---- Edits: what this device changed relative to the server base, field by field.
+// base: {events: row, versions: {table: {key: n}}, <table>: {key: row}, confirmations: {id: row}}
+function computeEdits(base, cur, opts = {}) {
+  const now = opts.now || (() => new Date().toISOString());
+  const out = { events: null, rows: {}, confirm: [] };
+  if (cur.events && base.events && opts.settings !== false) { const p = {}; for (const c of SYNC_COLS.events) if (c !== 'id' && !same(base.events[c], cur.events[c])) p[c] = cur.events[c]; if (Object.keys(p).length) out.events = p; }
+  const curFams = new Set((cur.families || []).map(f => f.id));
+  for (const t of SYNC_TABLES) {
+    if (opts.settings === false && SETTINGS_TABLES.includes(t)) continue;
+    const b = base[t] || {}, seen = new Set(), list = [];
+    for (const r of cur[t] || []) {
+      const k = rowKey(t, r); seen.add(k);
+      if (!b[k]) { list.push({ key: k, insert: true, patch: r }); continue; }
+      const p = {}; for (const c of SYNC_COLS[t]) if (!SYNC_PK[t].includes(c) && !same(b[k][c], r[c])) p[c] = r[c];
+      if (Object.keys(p).length) list.push({ key: k, patch: p });
+    }
+    for (const k in b) {
+      if (seen.has(k) || b[k].deleted_at) continue;
+      if (t === 'people' && !curFams.has(b[k].family_id)) continue; // orphan: never delete what we could not show
+      list.push({ key: k, patch: { deleted_at: (opts.delTs && opts.delTs(t, k)) || now() } });
+    }
+    if (list.length) out.rows[t] = list;
+  }
+  const active = {}; for (const c of Object.values(base.confirmations || {})) if (!c.voided_at) active[c.expense_id] = c;
+  for (const c of cur.confirm || []) if (!active[c.expense_id]) out.confirm.push(c);
+  return out;
+}
+const rowLabel = r => r ? (r.description ? ' «' + r.description + '»' : r.name ? ' «' + r.name + '»' : r.first_name ? ' «' + r.first_name + '»' : '') : '';
+const conflictNotice = (t, key, f, mine, theirs, row) => ({ kind: 'conflict', table: t, key, field: f, mine, theirs,
+  text: `Outro aparelho alterou ${FIELD_LABEL[f] || f} (${TABLE_LABEL[t] || t}${rowLabel(row)}); valeu o valor de lá${moneyPair(f, mine, theirs)} e o seu não foi salvo.` });
+const moneyPair = (f, mine, theirs) => ['amount', 'kitty_per_family'].includes(f) && isFinite(mine) && isFinite(theirs)
+  ? ` (R$ ${Number(theirs).toFixed(2).replace('.', ',')}; o seu era R$ ${Number(mine).toFixed(2).replace('.', ',')})` : '';
+// Server rows changed under my pending edits (realtime or reload): keep my fields the server did not touch;
+// same field changed on both sides -> server wins + notice. getOld/getNew(t, key) return the base row before/after.
+function rebaseEdits(ed, getOld, getNew) {
+  const notices = [], out = { events: ed.events && { ...ed.events }, rows: {}, confirm: ed.confirm };
+  const filt = (t, key, patch, insert) => {
+    const nw = getNew(t, key), old = getOld(t, key);
+    if (!nw) return patch;
+    if (nw.deleted_at && !(old && old.deleted_at) && !patch.deleted_at) { notices.push({ kind: 'conflict', table: t, key, field: 'deleted_at', text: `Outro aparelho apagou ${TABLE_LABEL[t] || t}${rowLabel(nw)}; a sua alteração não foi salva.` }); return null; }
+    const p = {};
+    for (const [f, mine] of Object.entries(patch)) {
+      if (SYNC_PK[t].includes(f)) continue;
+      if (same(nw[f], mine)) continue;
+      if (!insert && old && same(nw[f], old[f])) { p[f] = mine; continue; }
+      notices.push(conflictNotice(t, key, f, mine, nw[f], nw));
+    }
+    return Object.keys(p).length ? p : null;
+  };
+  if (out.events) out.events = filt('events', '*', out.events, false);
+  for (const t in ed.rows) out.rows[t] = ed.rows[t].map(e => { const p = filt(t, e.key, e.patch, e.insert);
+    if (!p) return null; const nw = getNew(t, e.key); return nw ? { key: e.key, patch: p } : { ...e, patch: p }; }).filter(Boolean);
+  return { ed: out, notices };
+}
+const editCount = e => (e.events ? 1 : 0) + Object.values(e.rows).reduce((s, l) => s + l.length, 0) + e.confirm.length;
+// base + edits -> row lists for rowsToState
+function mergeBase(base, edits) {
+  const m = { events: base.events ? { ...base.events, ...(edits.events || {}) } : null, confirmations: Object.values(base.confirmations || {}) };
+  for (const t of SYNC_TABLES) {
+    const o = { ...(base[t] || {}) };
+    for (const e of edits.rows[t] || []) o[e.key] = e.insert ? e.patch : { ...o[e.key], ...e.patch };
+    m[t] = Object.values(o);
+  }
+  const active = new Set(m.confirmations.filter(c => !c.voided_at).map(c => c.expense_id));
+  for (const c of edits.confirm) if (!active.has(c.expense_id)) m.confirmations.push({ ...c, id: 'pending', confirmed_at: null, voided_at: null });
+  return m;
+}
+const FIELD_LABEL = { amount: 'valor', description: 'descrição', category: 'categoria', payer_person_id: 'quem pagou', proof: 'comprovante', note: 'observação',
+  items: 'itens', estimated: 'estimado', name: 'nome', first_name: 'nome', type: 'tipo', drinks: 'bebe', arrive: 'chegada', depart: 'saída',
+  arrive_meal: 'refeição de chegada', depart_meal: 'refeição de saída', deleted_at: 'exclusão', value: 'valor', split_mode: 'modo de divisão',
+  kitty_per_family: 'caixinha', start_date: 'início', end_date: 'fim', include_unconfirmed: 'incluir sem confirmação', meals: 'refeições', family_id: 'família', pos: 'ordem' };
+const TABLE_LABEL = { events: 'evento', families: 'família', people: 'pessoa', expenses: 'gasto', settlement_marks: 'acerto', event_overrides: 'peso', expense_confirmations: 'confirmação' };
+
+// Sync engine (full design): per-row versions, field patches through apply_ops (idempotent op_id),
+// field-by-field merge on conflict (same field: server wins + notice), offline edits kept and retried.
+// client: supabase-js v2 (or a fake). Hooks: getState(), setState(s), onStatus(status, info), onNotice(list), onMembership(row).
+function createSync({ client, eventId, getState, setState, onStatus, onNotice, onMembership, loadBase, saveBase, debounceMs = 600, retryMs = 15000, timers }) {
+  const T = timers || { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) };
+  const emptyBase = () => { const b = { events: null, meta: {}, versions: {}, confirmations: {} }; ['events', ...SYNC_TABLES].forEach(t => { b.versions[t] = {}; if (t !== 'events') b[t] = {}; }); return b; };
+  let base = emptyBase(), timer = null, flushing = false, again = false, status = 'idle', channel = null, me = null, role = null, lastDelta = null;
+  const opIds = {}, delTimes = {};
+  const canSettings = () => role === 'organizer';
+  try { const sb = loadBase && loadBase(); if (sb && sb.role) role = sb.role; } catch (e) {} // last known role (offline start)
+  const set = (s, info) => { status = s; onStatus && onStatus(s, info || {}); };
+  const curRows = () => stateToRows(getState(), eventId);
+  const delTs = (t, k) => delTimes[t + '|' + k] || (delTimes[t + '|' + k] = new Date().toISOString());
+  const edits = () => computeEdits(base, curRows(), { delTs, settings: canSettings() });
+  const seen = ts => { if (ts && (!base.cursor || Date.parse(ts) > Date.parse(base.cursor))) base.cursor = new Date(Date.parse(ts)).toISOString(); };
+  const pendingCount = () => editCount(edits());
+  const persist = () => { if (saveBase) try { saveBase(JSON.parse(JSON.stringify(base))); } catch (e) {} };
+  const meta = () => ({ name: base.meta.name, locked: base.meta.locked });
+  function rebuild(ed) { setState(rowsToState(mergeBase(base, ed || edits()), getState(), meta())); }
+  function absorb(t, raw) { // server row -> base (ignores older versions)
+    if (!raw) return false;
+    if ((t === 'events' ? raw.id : raw.event_id) === eventId) seen(raw.updated_at);
+    if (t === 'expense_confirmations') { if (raw.event_id !== eventId) return false; base.confirmations[raw.id] = pickRow(t, raw); return true; }
+    if (t === 'events') { if (raw.id !== eventId) return false; }
+    else if (raw.event_id !== eventId) return false;
+    const p = pickRow(t, raw), k = rowKey(t, p), v = Number(raw.version) || 1;
+    if ((base.versions[t][k] || 0) > v) return false;
+    base.versions[t][k] = v;
+    if (t === 'events') { base.events = p; base.meta = { name: raw.name, locked: !!raw.locked, created_by: raw.created_by }; }
+    else {
+      const was = base[t][k]; base[t][k] = p;
+      // mirror of the server trigger: payer change / proof leaves "sem nota" / delete voids the confirmation
+      if (t === 'expenses' && was && (was.payer_person_id !== p.payer_person_id || p.proof !== 'none' || p.deleted_at))
+        for (const c of Object.values(base.confirmations)) if (c.expense_id === p.id && !c.voided_at) c.voided_at = new Date().toISOString();
+    }
+    return true;
+  }
+  async function membership() {
+    const r = await client.rpc('my_membership', { p_event: eventId });
+    if (r.error) throw r.error; const m = r.data || { status: 'none' };
+    role = m.status === 'approved' ? m.role : null; base.role = role; return m;
+  }
+  const memberErr = m => { const c = m.status === 'none' ? 'not_member' : m.status; const e = new Error(c); e.code = c; e.membership = m; return e; };
+  async function load() {
+    set('saving', { phase: 'load' });
+    const m0 = await membership(); if (m0.status !== 'approved') throw memberErr(m0);
+    const evq = await client.from('events').select('*').eq('id', eventId);
+    if (evq.error) throw evq.error;
+    if (!evq.data || !evq.data.length) {
+      const m = await membership(); const e = new Error(m.status === 'none' ? 'not_member' : m.status); e.code = m.status === 'none' ? 'not_member' : m.status; e.membership = m; throw e;
+    }
+    // Edits made on this device since the last server ack (from the saved base); none on first load (server wins).
+    const prev = loadBase ? loadBase() : null;
+    const ed = prev && prev.events && prev.versions ? computeEdits(prev, curRows(), { delTs, settings: canSettings() }) : { events: null, rows: {}, confirm: [] };
+    base = emptyBase(); base.role = role;
+    absorb('events', evq.data[0]);
+    for (const t of [...SYNC_TABLES, 'expense_confirmations']) {
+      const q = await client.from(t).select('*').eq('event_id', eventId);
+      if (q.error) throw q.error;
+      (q.data || []).forEach(r => absorb(t, r));
+    }
+    let rb = { ed, notices: [] };
+    if (prev && prev.events) rb = rebaseEdits(ed, (t, k) => t === 'events' ? prev.events : (prev[t] || {})[k], (t, k) => t === 'events' ? base.events : base[t][k]);
+    rebuild(rb.ed); persist(); set(pendingCount() ? 'pending' : 'synced');
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
+    return { name: base.meta.name, createdBy: base.meta.created_by, locked: base.meta.locked };
+  }
+  function applyRemote(t, row) {
+    if (!row) return;
+    if (t === 'event_members') { if (row.user_id === me) { role = row.status === 'approved' ? row.role : null; base.role = role; persist(); if (role === 'organizer' && pendingCount()) schedule(); } if (onMembership) onMembership(row); return; }
+    const ed = edits(); // local edits relative to the base BEFORE the remote change
+    const k = t === 'events' || t === 'expense_confirmations' ? null : rowKey(t, pickRow(t, row));
+    const old = t === 'events' ? base.events : k ? base[t][k] : null;
+    if (!absorb(t, row)) return;
+    const rb = editCount(ed) ? rebaseEdits(ed, (t2, k2) => t2 === 'events' ? (t === 'events' ? old : base.events) : (t2 === t && k2 === k ? old : base[t2][k2]),
+      (t2, k2) => t2 === 'events' ? base.events : base[t2][k2]) : { ed, notices: [] };
+    rebuild(rb.ed); persist();
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
+  }
+  function subscribe() {
+    channel = client.channel('evento-' + eventId);
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter: 'id=eq.' + eventId }, p => applyRemote('events', p.new));
+    for (const t of [...SYNC_TABLES, 'expense_confirmations', 'event_members'])
+      channel.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'event_id=eq.' + eventId }, p => applyRemote(t, p.new));
+    channel.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') set('offline', { pending: pendingCount() }); else if (st === 'SUBSCRIBED') resync(); });
+  }
+  const isNet = e => !e || /fetch|network|Failed|timeout|offline/i.test(String(e.message || e)) || e.status === 0;
+  // Reconnect: only rows changed since the newest updated_at already seen (5 s overlap); full load the first time.
+  async function delta() {
+    const m = await membership(); if (m.status !== 'approved') throw memberErr(m);
+    set('saving', { phase: 'delta' });
+    const since = new Date(Date.parse(base.cursor) - 5000).toISOString();
+    const ed = edits(), old = JSON.parse(JSON.stringify(base)); let n = 0;
+    const evq = await client.from('events').select('*').eq('id', eventId).gte('updated_at', since);
+    if (evq.error) throw evq.error; (evq.data || []).forEach(r => { n++; absorb('events', r); });
+    for (const t of [...SYNC_TABLES, 'expense_confirmations']) {
+      const q = await client.from(t).select('*').eq('event_id', eventId).gte('updated_at', since);
+      if (q.error) throw q.error; (q.data || []).forEach(r => { n++; absorb(t, r); });
+    }
+    const rb = rebaseEdits(ed, (t, k) => t === 'events' ? old.events : (old[t] || {})[k], (t, k) => t === 'events' ? base.events : base[t][k]);
+    rebuild(rb.ed); persist(); lastDelta = { since, rows: n };
+    if (rb.notices.length && onNotice) onNotice(rb.notices);
+  }
+  async function resync() { try { if (base.events && base.cursor) await delta(); else await load(); await flush(); } catch (e) { handleErr(e); } }
+  function handleErr(e) {
+    if (e && ['pending', 'revoked', 'not_member'].includes(e.code)) { set('error', { error: e, pending: pendingCount() }); if (onMembership) onMembership({ user_id: me, status: e.code === 'not_member' ? 'none' : e.code, _self: true }); return; }
+    set(isNet(e) ? 'offline' : 'error', { error: e, pending: pendingCount() });
+    if (timer) T.clear(timer); timer = T.set(() => { timer = null; return flush(); }, retryMs);
+  }
+  function schedule() { if (timer) T.clear(timer); set('saving'); timer = T.set(() => { timer = null; return flush(); }, debounceMs); }
+  const opId = sig => opIds[sig] || (opIds[sig] = newUuid());
+  // Build apply_ops payload from edits.
+  function buildOps(ed) {
+    const ops = [];
+    const add = (t, key, row, ver, info) => { const sig = t + '|' + key + '|' + ver + '|' + stableStr(row); ops.push({ op: { op_id: opId(sig), table: t, row, expected_version: ver }, t, key, info, sig }); };
+    if (ed.events) add('events', eventId, ed.events, base.versions.events[eventId] || 1, { patch: ed.events });
+    // order matters: families before people before expenses
+    for (const t of SYNC_TABLES) for (const e of ed.rows[t] || []) {
+      const src = e.insert ? e.patch : base[t][e.key];
+      const pk = Object.fromEntries(SYNC_PK[t].filter(c => c !== 'event_id').map(c => [c, src[c]]));
+      const row = e.insert ? Object.fromEntries(Object.entries(e.patch).filter(([c]) => c !== 'event_id')) : { ...pk, ...e.patch };
+      add(t, e.key, row, e.insert ? null : (base.versions[t][e.key] || 1), e);
+    }
+    for (const c of ed.confirm) { const sig0 = 'conf|' + c.expense_id + '|' + c.family_id; const id = opIds[sig0] || (opIds[sig0] = newUuid());
+      add('expense_confirmations', c.expense_id, { id, expense_id: c.expense_id, family_id: c.family_id }, null, { confirm: c }); }
+    return ops;
+  }
+  async function flush() {
+    if (flushing) { again = true; return; }
+    flushing = true;
+    try {
+      if (role && role !== 'organizer') { // approved member: settings are read-only (organizer only); drop local settings edits (role unknown: hold them)
+        const all = computeEdits(base, curRows(), { delTs });
+        if (all.events || (all.rows.event_overrides || []).length) { rebuild(); onNotice && onNotice([{ kind: 'settings', text: 'Só o organizador muda as configurações do evento (datas, refeições, divisão, caixinha, pesos e preços).' }]); }
+      }
+      if (base.meta.locked) { // read-only event: drop local edits
+        const n = pendingCount();
+        if (n) { rebuild({ events: null, rows: {}, confirm: [] }); onNotice && onNotice([{ kind: 'locked', text: 'Evento travado pelo organizador: a alteração não foi salva.' }]); }
+        set('locked'); return;
+      }
+      for (let round = 0; round < 3; round++) {
+        const ed = edits(); const ops = buildOps(ed);
+        if (!ops.length) break;
+        const snap = JSON.parse(JSON.stringify(base)); // base before this round: my edits are measured against it
+        const notices = [], drop = {}; let retry = false;
+        for (let i = 0; i < ops.length; i += 100) {
+          const chunk = ops.slice(i, i + 100);
+          const r = await client.rpc('apply_ops', { p_event: eventId, p_ops: chunk.map(o => o.op) });
+          if (r.error) throw r.error;
+          const byId = Object.fromEntries((r.data || []).map(x => [x.op_id, x]));
+          for (const o of chunk) {
+            const res = byId[o.op.op_id] || { status: 'error', error: 'no_result' };
+            if (res.status === 'ok' || res.status === 'dup') { absorb(o.t, res.row); delete opIds[o.sig]; continue; }
+            if (res.status === 'conflict') {
+              retry = true;
+              if (o.t === 'expense_confirmations') { notices.push({ kind: 'conflict', text: 'Outra família já confirmou este gasto; vale a confirmação dela.' }); drop[o.t + '|' + o.key] = 'all';
+                const q = await client.from('expense_confirmations').select('*').eq('event_id', eventId); (q.data || []).forEach(x => absorb('expense_confirmations', x)); continue; }
+              const S = res.row && pickRow(o.t, res.row), B = o.t === 'events' ? base.events : base[o.t][o.key];
+              const lost = [];
+              for (const [f, mine] of Object.entries(o.info.patch || {})) {
+                if (!S || SYNC_PK[o.t].includes(f) || f === 'event_id') continue;
+                const theirs = S[f], was = B ? B[f] : undefined;
+                if (same(theirs, mine)) continue;                 // same result on both sides
+                if (B && same(theirs, was)) continue;              // only I changed it: resend on new version
+                lost.push(f);                                      // both changed: server wins
+                notices.push(conflictNotice(o.t, o.key, f, mine, theirs, S));
+              }
+              if (lost.length) drop[o.t + '|' + o.key] = lost;
+              if (res.row) absorb(o.t, res.row);
+              continue;
+            }
+            // error: invalid data or permission. Data errors are dropped (server can't accept); permission => membership check
+            if (o.t === 'expense_confirmations' && /not_your_family/.test(String(res.error))) { drop[o.t + '|' + o.key] = 'all';
+              notices.push({ kind: 'family', text: 'Você só confirma gastos pela sua família. Se a sua família não aparece, peça ao organizador para ligar você a ela (Acertos › Dados › Membros).' }); continue; }
+            if (/42501|row-level|not_allowed|permission/i.test(String(res.code) + ' ' + String(res.error))) { const m = await membership().catch(() => null);
+              if (m && m.locked) { base.meta.locked = true; } else if (m && m.status !== 'approved' && onMembership) { onMembership({ user_id: me, status: m.status, _self: true }); }
+              throw Object.assign(new Error(res.error || 'permission'), { code: '42501' }); }
+            drop[o.t + '|' + o.key] = 'all';
+            notices.push({ kind: 'error', text: `O servidor recusou um(a) ${TABLE_LABEL[o.t] || o.t}: ${String(res.error).slice(0, 80)}. A alteração foi desfeita.` });
+          }
+        }
+        // rebuild: keep my remaining edits, minus fields/rows that lost or were refused
+        const cur = getState(); const ed2 = computeEdits(snap, stateToRows(cur, eventId), { delTs, settings: canSettings() });
+        const filt = { events: ed2.events, rows: {}, confirm: ed2.confirm.filter(c => drop['expense_confirmations|' + c.expense_id] !== 'all') };
+        if (filt.events && drop['events|' + eventId]) { const d = drop['events|' + eventId]; if (d === 'all') filt.events = null; else { d.forEach(f => delete filt.events[f]); if (!Object.keys(filt.events).length) filt.events = null; } }
+        for (const t in ed2.rows) filt.rows[t] = ed2.rows[t].map(e => { const d = drop[t + '|' + e.key]; if (!d) return e; if (d === 'all') return null;
+          const p = { ...e.patch }; d.forEach(f => delete p[f]); return Object.keys(p).length ? { ...e, patch: p } : null; }).filter(Boolean);
+        rebuild(filt); persist();
+        if (notices.length && onNotice) onNotice(notices);
+        if (!retry) break;
+      }
+      set(base.meta.locked ? 'locked' : pendingCount() ? 'pending' : 'synced');
+    } catch (e) { handleErr(e); }
+    finally { flushing = false; if (again) { again = false; await flush(); } }
+  }
+  return { load, subscribe, schedule, flush, resync, delta, applyRemote, pendingCount, status: () => status, membership, role: () => role, lastDelta: () => lastDelta,
+    setUser: id => { me = id; }, info: () => ({ eventId, name: base.meta.name, createdBy: base.meta.created_by, locked: base.meta.locked }),
+    base: () => base, stop: () => { if (channel && client.removeChannel) client.removeChannel(channel); } };
+}
+
+// Import validation: counts and per-family balances before/after the round trip (tolerance R$ 0,01).
+function importCheck(imported) {
+  const errs = [];
+  if (!imported || !Array.isArray(imported.families) || !Array.isArray(imported.expenses)) return { ok: false, errs: ['Arquivo sem famílias ou gastos'] };
+  const ids = new Set();
+  for (const f of imported.families) { if (!f || !f.id || !Array.isArray(f.members)) errs.push('Família inválida'); else { if (ids.has(f.id)) errs.push('Id repetido: ' + f.id); ids.add(f.id); f.members.forEach(m => { if (!m || !m.id) errs.push('Pessoa sem id'); else if (ids.has(m.id)) errs.push('Id repetido: ' + m.id); else ids.add(m.id); }); } }
+  for (const e of imported.expenses) { if (!e || !e.id) errs.push('Gasto sem id'); else if (!(Number(e.amount) > 0) || Number(e.amount) > 1e6) errs.push('Valor inválido em ' + (e.description || e.id)); }
+  const okId = id => /^[A-Za-z0-9_-]{1,40}$/.test(String(id));
+  [...ids].forEach(id => { if (!okId(id)) errs.push('Id fora do padrão: ' + id); });
+  imported.expenses.forEach(e => { if (e && e.id && !okId(e.id)) errs.push('Id fora do padrão: ' + e.id); });
+  const sum = s => Math.round(s.expenses.reduce((a, e) => a + (Number(e.amount) || 0), 0) * 100) / 100;
+  const count = s => ({ families: s.families.length, people: s.families.reduce((a, f) => a + f.members.length, 0), expenses: s.expenses.length, total: sum(s), marks: Object.keys(s.settled || {}).length });
+  const shared = { ...imported, syncMode: true };
+  const rows = stateToRows(shared, 'check');
+  const fake = { ...rows, confirmations: rows.confirm.map(c => ({ ...c, id: c.expense_id, voided_at: null })) };
+  const before = count(imported), back = rowsToState(fake, shared);
+  const after = count(back);
+  const nb = computeSplit(shared).families, na = computeSplit(back).families;
+  let maxDiff = 0; nb.forEach(f => { const g = na.find(x => x.id === f.id); maxDiff = Math.max(maxDiff, g ? Math.abs(g.net - f.net) : Infinity); });
+  if (before.families !== after.families || before.people !== after.people || before.expenses !== after.expenses) errs.push('Contagem diferente depois da conversão');
+  if (Math.abs(before.total - after.total) > 0.01) errs.push('Soma dos gastos diferente');
+  if (!(maxDiff <= 0.01)) errs.push('Saldos diferentes depois da conversão');
+  const nl = computeSplit({ ...imported, syncMode: false }).families;
+  let planDiff = 0; nl.forEach(f => { const g = nb.find(x => x.id === f.id); planDiff = Math.max(planDiff, g ? Math.abs(g.net - f.net) : 0); });
+  return { ok: !errs.length, errs: [...new Set(errs)].slice(0, 8), before, after, maxDiff, planDiff };
+}
+// ===================== Comprovantes: fila de upload (bucket privado "comprovantes") =====================
+// store: { put(item), all(), del(path) } (IndexedDB no app; memória nos testes). storage: client.storage.from('comprovantes').
+const PHOTO_MAX_BYTES = 150 * 1024, PHOTO_URL_TTL = 300; // URL assinada: no máximo 5 min (revisão de governança 4.1)
+const photoPathFor = (eventId, expenseId) => `${eventId}/${expenseId}.jpg`;
+function createPhotoQueue({ storage, eventId, store, isOrganizer, onUploaded, onError, now = () => Date.now() }) {
+  let busy = false, again = false; const urls = {};
+  const isNet = e => !e || /fetch|network|Failed|offline/i.test(String(e.message || e)) || e.statusCode === 0;
+  async function enqueue(expenseId, blob, contentType = 'image/jpeg') {
+    if (!ID_RE.test(String(expenseId))) throw new Error('bad_expense');
+    if (!blob || blob.size > PHOTO_MAX_BYTES) { onError && onError(expenseId, 'too_big'); return false; }
+    const path = photoPathFor(eventId, expenseId);
+    await store.put({ path, expenseId, blob, contentType, at: now(), tries: 0, replace: !!isOrganizer() });
+    return process();
+  }
+  async function process() {
+    if (busy) { again = true; return; } busy = true;
+    try {
+      do { again = false;
+        for (const it of await store.all()) {
+          if (!String(it.path).startsWith(eventId + '/')) continue;
+          let r; try { r = await storage.upload(it.path, it.blob, { contentType: it.contentType, upsert: !!(it.replace && isOrganizer()), cacheControl: '3600' }); }
+          catch (e) { r = { error: e }; }
+          const e = r && r.error;
+          if (!e) { await store.del(it.path); delete urls[it.path]; onUploaded && onUploaded(it.expenseId, it.path); continue; }
+          const code = String(e.statusCode || e.status || '');
+          if (isNet(e) && !/^4/.test(code)) { it.tries = (it.tries || 0) + 1; await store.put(it); return 'offline'; } // keep; retry when online
+          if (code === '409' && it.tries > 0) { await store.del(it.path); onUploaded && onUploaded(it.expenseId, it.path); continue; } // our earlier try landed
+          await store.del(it.path); onError && onError(it.expenseId, code === '409' ? 'exists' : code === '413' ? 'too_big' : /^40[13]$/.test(code) ? 'denied' : (e.message || 'error'));
+        }
+      } while (again);
+      return 'done';
+    } finally { busy = false; }
+  }
+  async function url(path) { // signed URL (5 min); reused until 1 min before expiry
+    const c = urls[path]; if (c && c.exp > now() + 60000) return c.url;
+    const r = await storage.createSignedUrl(path, PHOTO_URL_TTL); if (r.error) throw r.error;
+    urls[path] = { url: r.data.signedUrl, exp: now() + PHOTO_URL_TTL * 1000 }; return r.data.signedUrl;
+  }
+  async function remove(path) { if (!isOrganizer()) throw Object.assign(new Error('only_organizer'), { code: '42501' });
+    const r = await storage.remove([path]); if (r.error) throw r.error; delete urls[path]; return (r.data || []).length > 0; }
+  const pending = async () => (await store.all()).filter(it => String(it.path).startsWith(eventId + '/')).map(it => it.expenseId);
+  return { enqueue, process, url, remove, pending };
+}
+// Retenção (governança N1): o organizador apaga os comprovantes do evento até 30 dias depois do fim.
+// 1) RPC tira as referências e lista os arquivos; 2) Storage API apaga (SQL direto em storage.objects é bloqueado no Supabase).
+const PHOTO_RETENTION_DAYS = 30;
+const photoPurgeBy = end => { if (!end) return null; const d = new Date(end + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + PHOTO_RETENTION_DAYS); return d.toISOString().slice(0, 10); };
+async function purgeEventPhotos(client, eventId) {
+  const r = await client.rpc('purge_event_photos', { p_event: eventId }); if (r.error) throw r.error;
+  const paths = (r.data && r.data.paths) || [], bucket = client.storage.from('comprovantes'); let removed = 0;
+  for (let i = 0; i < paths.length; i += 100) { const x = await bucket.remove(paths.slice(i, i + 100)); if (x.error) throw x.error; removed += (x.data || []).length; }
+  const st = await client.rpc('event_photo_status', { p_event: eventId }); if (st.error) throw st.error;
+  return { found: paths.length, removed, remaining: st.data.remaining, clearedRefs: (r.data && r.data.cleared_refs) || 0 };
+}
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = { parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
+  module.exports = { genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
 }
 </script>
 <script>
@@ -1440,20 +2028,40 @@ Corte as frutas e monte a mesa com pães e frios.`,
     s.splitMode = s.splitMode || 'porcoes'; if (s.includeUnconfirmed === undefined) s.includeUnconfirmed = true;
     return s;
   }
+  // ---------- modo: só neste aparelho (padrão) ou evento compartilhado (Supabase) ----------
+  const CFG = window.RATEIO_CONFIG || {};
+  const SESSION_KEY = 'rateio-e2-session', MODE_KEY = 'rateio-e2-mode';
+  const backendOn = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) && !new URLSearchParams(location.search).has('offline');
+  let session = null; try { session = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) {}
+  if (!session || !session.eventId) session = null;
+  const hashCode = normCode(decodeURIComponent(location.hash.slice(1)));
+  const linkCode = validCode(hashCode) ? hashCode : null;
+  const shared = backendOn && !!session;
+  const CACHE_KEY = shared ? `rateio-evento-${session.eventId}-cache` : KEY;   // modo local continua em racha-viagem-v3
+  const BASE_KEY = shared ? `rateio-evento-${session.eventId}-base` : null;
   let state;
-  try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  if (!state || !Array.isArray(state.families)) state = example();
+  try { state = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e) {}
+  if (!state || !Array.isArray(state.families)) state = shared
+    ? { families: [], expenses: [], settled: {}, splitMode: 'pessoa', includeUnconfirmed: true, kittyPerFamily: 0, trip: { start: '', end: '', meals: { cafe: true, almoco: true, lanche: false, jantar: true } } }
+    : example();
+  if (shared) state.syncMode = true; else delete state.syncMode;
   normalize(state);
   let ui = { view: 'inicio', sub: 'cardapio', day: null, shopRange: 'all', expFilter: 'all' };
   try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY)) || {}); } catch (e) {}
   const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} };
   let storageWarned = false;
+  let sync = null;
   const save = () => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return; }
+    if (!writeLocal()) return;
+    if (shared && sync) sync.schedule(); else if (shared) paintSync('pending');
+  };
+  function writeLocal() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(state)); }
+    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return false; }
     const used = JSON.stringify(state).length;
     if (used > 3.5e6 && !storageWarned) { storageWarned = true; toast('Armazenamento quase cheio (fotos)', 'alert'); }
-  };
+    return true;
+  }
 
   // theme
   const sysDark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
@@ -1958,7 +2566,18 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#weights').addEventListener('change', e => { const k = e.target.dataset.w; if (!k) return; const v = parseMoney(e.target.value); if (v >= 0 && v <= 5) { state.weights[k] = v; save(); render(); } else toast('Peso entre 0 e 5', 'alert'); });
 
   // ---------- GASTOS ----------
-  let selCat = 'food', selProof = 'nf', editingId = null, pendingPhoto = null;
+  let selCat = 'food', selProof = 'nf', editingId = null, pendingPhoto = null, pendingBlob = null, removePhoto = false;
+  // Comprovante para o bucket privado: redesenhado no canvas (descarta EXIF/GPS), JPEG até 150 KB.
+  async function photoBlob(img) {
+    for (const max of [1280, 1024, 800, 640]) {
+      const k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      for (let q = 0.8; q >= 0.4; q -= 0.1) { const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', q)); if (b && b.size <= PHOTO_MAX_BYTES) return b; }
+    }
+    return null;
+  }
+  const curExp = () => editingId && state.expenses.find(x => x.id === editingId);
+  const photoLockedForMe = () => { const e = curExp(); return !!(shared && e && e.photoPath && !isOrganizer()); };
   function renderSeg() {
     $('#catSeg').innerHTML = Object.entries(CATEGORIES).map(([k, c]) => `<button type="button" data-cat="${k}" aria-pressed="${k === selCat}">${icon(c.icon)}<span>${esc(c.label)}</span></button>`).join('');
     $('#fuelBox').hidden = selCat !== 'gas'; $('#itemsField').hidden = selCat === 'gas';
@@ -1966,12 +2585,16 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function renderProof() {
     $('#proofSeg').innerHTML = Object.entries(PROOF).map(([k, p]) => `<button type="button" data-proof="${k}" aria-pressed="${k === selProof}">${esc(p.label)}</button>`).join('');
     $('#proofExtra').hidden = selProof === 'nf';
-    $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span><button type="button" class="btn text sm" id="rmPhoto">Remover foto</button></span>`
+    const ce = curExp(), sent = shared && ce && ce.photoPath && !removePhoto, lockedP = photoLockedForMe();
+    $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span>${lockedP ? '' : '<button type="button" class="btn text sm" id="rmPhoto">Remover foto</button>'}</span>`
+      : sent ? `<span style="display:inline-flex;gap:8px;align-items:center">Comprovante enviado ${lockedP ? '' : '<button type="button" class="btn text sm" id="rmPhoto">Apagar comprovante</button>'}</span>`
       : (selProof === 'none' ? 'Sem nota: uma foto e uma observação ajudam na confirmação.' : 'Opcional: foto do comprovante.');
+    if (lockedP) $('#photoPrev').insertAdjacentHTML('beforeend', '<div class="hint">Comprovante já enviado: só o organizador troca ou apaga.</div>');
+    const lab = $('label[for="photo"]'); if (lab) { lab.toggleAttribute('aria-disabled', lockedP); lab.style.pointerEvents = lockedP ? 'none' : ''; lab.style.opacity = lockedP ? '.5' : ''; }
   }
   $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); };
   $('#proofSeg').onclick = e => { const b = e.target.closest('[data-proof]'); if (!b) return; selProof = b.dataset.proof; renderProof(); };
-  $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { pendingPhoto = null; renderProof(); } });
+  $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { if (!pendingPhoto && curExp() && curExp().photoPath) removePhoto = true; pendingPhoto = null; pendingBlob = null; renderProof(); } });
   $('#photo').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
     try {
@@ -1979,7 +2602,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
       const max = 480, k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
       cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
       let q = 0.7, url = cv.toDataURL('image/jpeg', q); while (url.length > 60000 && q > 0.3) { q -= 0.1; url = cv.toDataURL('image/jpeg', q); }
-      pendingPhoto = url; renderProof();
+      pendingPhoto = url; pendingBlob = shared ? await photoBlob(img) : null;
+      if (shared && !pendingBlob) toast('Foto grande demais para enviar; fica só neste aparelho', 'alert');
+      renderProof();
     } catch (err) { toast('Não consegui ler a foto', 'alert'); }
     e.target.value = '';
   });
@@ -2008,12 +2633,18 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const data = { amount, category: selCat, description: $('#desc').value.trim(), payerId: $('#payer').value, proof: selProof, estimated: $('#estChk').checked,
       note: selProof === 'nf' ? '' : $('#note').value.trim(), photo: selProof === 'nf' ? null : pendingPhoto, items: selCat === 'gas' ? '' : $('#items').value.trim() };
     const ed = editingId && state.expenses.find(x => x.id === editingId);
-    if (ed) { if (ed.proof === 'none' && (data.proof !== 'none' || ed.payerId !== data.payerId)) delete ed.confirmedBy; if (ed.estimated && !data.estimated) toast('Valor real registrado'); Object.assign(ed, data); }
-    else state.expenses.unshift({ id: uid(), ...data, ts: Date.now() });
+    const blob = selProof === 'nf' ? null : pendingBlob, rm = removePhoto || (selProof === 'nf' && ed && ed.photoPath);
+    if (shared && ed && ed.photoPath && !isOrganizer() && (blob || rm)) { toast('Só o organizador troca ou apaga o comprovante', 'alert'); data.photo = ed.photo || null; }
+    let id;
+    if (ed) { id = ed.id; if (ed.proof === 'none' && (data.proof !== 'none' || ed.payerId !== data.payerId)) delete ed.confirmedBy; if (ed.estimated && !data.estimated) toast('Valor real registrado'); Object.assign(ed, data); }
+    else { id = uid(); state.expenses.unshift({ id, ...data, ts: Date.now() }); }
+    const canPhoto = shared && photoQ && (!ed || !ed.photoPath || isOrganizer());
+    if (canPhoto && rm && !blob && ed && ed.photoPath) { const path = ed.photoPath; delete ed.photoPath; photoQ.remove(path).catch(x => toast(errMsg(x), 'alert')); }
+    if (canPhoto && blob) photoQ.enqueue(id, blob, 'image/jpeg').then(r => { if (r === 'offline') toast('Foto guardada: envia quando a internet voltar'); }).catch(() => {});
     stopEdit(); save(); render(); toast(ed ? 'Despesa atualizada' : 'Despesa adicionada');
   };
   function stopEdit() {
-    editingId = null; pendingPhoto = null; selProof = 'nf';
+    editingId = null; pendingPhoto = null; pendingBlob = null; removePhoto = false; selProof = 'nf';
     ['#amt', '#desc', '#note', '#items', '#payerSearch', '#fKm', '#fKml', '#fPrice'].forEach(s => { $(s).value = ''; }); $('#estChk').checked = false;
     $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
     $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false);
@@ -2021,7 +2652,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   function startEdit(id) {
     const e = state.expenses.find(x => x.id === id); if (!e) return;
-    editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; renderSeg(); renderProof();
+    editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; pendingBlob = null; removePhoto = false; renderSeg(); renderProof();
     $('#payerSearch').value = ''; renderPayers();
     $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId; $('#estChk').checked = !!e.estimated;
     $('#note').value = e.note || ''; $('#items').value = e.items || '';
@@ -2041,7 +2672,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (!list.length) { $('#expList').innerHTML = `<div class="empty"><span class="ic">${icon('receipt')}</span><b>${n ? 'Nada neste filtro' : 'Nenhuma despesa'}</b><p>${n ? 'Tudo em dia por aqui.' : 'Use o formulário ou o lançamento rápido.'}</p></div>`; return; }
     $('#expList').innerHTML = list.map(e => {
       const c = CATEGORIES[e.category] || CATEGORIES.food, pi = personInfo(e.payerId), pr = proofOf(e), cf = e.confirmedBy && famById(e.confirmedBy);
-      const others = state.families.filter(f => !pi || f.id !== pi.f.id);
+      const others = state.families.filter(f => (!pi || f.id !== pi.f.id) && (!state.syncMode || isOrganizer() || f.id === myFamily));
       return `<div class="li exp ${e.id === editingId ? 'sel' : ''}" data-id="${e.id}" tabindex="0" role="button" aria-label="Editar ${esc(e.description || c.label)}">
         <span class="av" style="--c:${c.color}">${icon(c.icon)}</span>
         <div style="min-width:0"><div class="t1">${esc(e.description || c.label)}</div><div class="t2">${pi ? esc(pi.m.name || 'Sem nome') + ' · ' + esc(shortFam(pi.f.name)) : 'Pagador removido'} · ${esc(c.label)}</div>
@@ -2050,8 +2681,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
             ${e.estimated ? '<span class="badge warn">Estimado</span>' : ''}
             ${needsConfirm(e) ? `<span class="badge warn">Aguardando confirmação</span><button class="badge acc" data-confirm>${icon('check')}Confirmar</button>` : ''}
             ${pr === 'none' && cf ? `<span class="badge ok">${icon('check')}Confirmado por ${esc(shortFam(cf.name))}</span>` : ''}
-            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : ''}</div>
-          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('')}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
+            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : e.photoPath ? `<button class="badge" data-rphoto>${icon('camera')}Comprovante</button>` : ''}</div>
+          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('') || `<span class="t2">${myFamily ? 'A sua família pagou este gasto: outra família confirma.' : 'Peça ao organizador para ligar você à sua família (Acertos › Dados › Membros).'}</span>`}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
         <div class="amt num">${e.estimated ? '~' : ''}${brl(e.amount)}</div>
         <button class="del" data-del="${e.id}" aria-label="Excluir despesa">${icon('trash')}</button></div>`;
     }).join('');
@@ -2064,6 +2695,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (e.target.closest('[data-cfx]')) { confirming = null; renderExpenses(); return; }
     const cf = e.target.closest('[data-cf]'); if (cf) { ex.confirmedBy = cf.dataset.cf; ex.confirmedAt = Date.now(); confirming = null; save(); render(); toast(`Confirmado por ${shortFam(famById(cf.dataset.cf).name)}`); return; }
     if (e.target.closest('[data-photo]')) { $('#photoBig').src = ex.photo; $('#photoDlg').showModal(); return; }
+    if (e.target.closest('[data-rphoto]')) { if (!photoQ) return toast('Sem conexão com o servidor', 'alert');
+      photoQ.url(ex.photoPath).then(u => { $('#photoBig').src = u; $('#photoDlg').showModal(); }).catch(x => toast(/not found|404/i.test(String(x && (x.message || x.statusCode))) ? 'Comprovante ainda não chegou ao servidor' : errMsg(x), 'alert')); return; }
     if (e.target.closest('.chooser')) return;
     const b = e.target.closest('[data-del]');
     if (!b) { startEdit(id); return; }
@@ -2155,7 +2788,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   };
   function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
-  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateio da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
+  $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
   $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
 
   // ---------- MODO COZINHA ----------
@@ -2195,6 +2828,427 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#cookDlg').addEventListener('close', () => { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } });
   $('#photoDlg').addEventListener('click', e => { if (e.target === $('#photoDlg')) $('#photoDlg').close(); });
 
+  // ---------- EVENTO COMPARTILHADO: status, entrada, aprovação, organizador, dados (export/import) ----------
+  const STATUS_TXT = { idle: 'Conectando…', saving: 'Salvando…', synced: 'Sincronizado', pending: 'Pendente', offline: 'Offline', error: 'Erro', locked: 'Travado', waiting: 'Aguardando' };
+  let syncInfo = { name: session && session.name, createdBy: null }, myUserId = null, lastStatus = 'idle';
+  let myRole = null, myStatus = null, myFamily = null, members = [], membersTimer = null, pendingPoll = null, live = false;
+  const isOrganizer = () => shared && myRole === 'organizer' && myStatus === 'approved';
+  // Configurações do evento (datas, refeições, divisão, caixinha, pesos, preços/quantidades): só o organizador no modo compartilhado.
+  const canSettings = () => !shared || isOrganizer();
+  const SETTINGS_SEL = '#tStart,#tEnd,#mealToggles [data-mt],#kitty,#modeSeg [data-mode],#weights [data-w],#estEditor [data-price],#estEditor [data-staple],#estEditor [data-est],#inclChk';
+  const SETTINGS_BOX = ['#mealToggles', '#kitty', '#modeSeg', '#weights', '#estEditor'];
+  const SETTINGS_HINT = 'Só o organizador muda as configurações do evento. Você vê os valores atuais.';
+  function paintSettingsLock() {
+    const ro = !canSettings();
+    $$(SETTINGS_SEL).forEach(el => { el.disabled = ro; if (ro) el.setAttribute('aria-disabled', 'true'); else el.removeAttribute('aria-disabled'); });
+    SETTINGS_BOX.forEach(sel => { const box = $(sel); if (!box) return; const host = box.closest('.field') || box;
+      let h = host.nextElementSibling; if (!h || !h.classList.contains('orghint')) { h = document.createElement('p'); h.className = 'hint orghint'; h.textContent = SETTINGS_HINT; host.after(h); }
+      h.hidden = !ro; });
+  }
+  ['click', 'change', 'input'].forEach(type => document.addEventListener(type, e => {
+    if (canSettings() || !e.target.closest || !e.target.closest(SETTINGS_SEL)) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if (type !== 'input') { toast('Só o organizador muda isto', 'alert'); render(); }
+  }, true));
+  function paintSync(st, info = {}) {
+    lastStatus = st;
+    const pill = $('#syncPill'); if (!pill) return;
+    pill.hidden = !shared; pill.dataset.s = st; pill.textContent = STATUS_TXT[st] || st;
+    const n = info.pending != null ? info.pending : (sync ? sync.pendingCount() : 0);
+    let msg = '';
+    if (st === 'offline') msg = n ? `Sem conexão com o servidor: ${n} ${n === 1 ? 'alteração está' : 'alterações estão'} só neste aparelho e ${n === 1 ? 'será enviada' : 'serão enviadas'} quando a internet voltar. Se outro celular mudar o mesmo campo, vale o que chegou primeiro ao servidor (você recebe um aviso).` : 'Sem conexão com o servidor. Você vê a última cópia deste aparelho; o que lançar agora fica pendente até a internet voltar.';
+    else if (st === 'error') { const e = info.error || {}; const perm = e.code === '42501' || /row-level|permission|pending|revoked/i.test((e.message || '') + (e.code || ''));
+      msg = perm ? 'Este aparelho não tem permissão de gravar neste evento agora (aguardando aprovação ou acesso removido).' : `Erro ao salvar (${String(e.message || e).slice(0, 120)}). Suas alterações estão guardadas neste aparelho e serão reenviadas.`; }
+    else if (state.eventLocked) msg = 'Evento travado pelo organizador: somente leitura. O que for alterado aqui não é salvo.';
+    $('#syncBanner').hidden = !msg; $('#syncBannerText').textContent = msg;
+    pill.setAttribute('aria-label', 'Sincronização: ' + pill.textContent);
+  }
+  function showNotices(list) {
+    if (!list || !list.length) return;
+    const box = $('#noticeBox'), items = list.slice(-3).map(n => `<li>${esc(n.text)}</li>`).join('');
+    box.innerHTML = `<div class="callout" role="status"><span data-i="alert"></span><div><b>${list.length === 1 ? 'Aviso de edição simultânea' : list.length + ' avisos de edição simultânea'}</b><ul>${items}</ul></div><button class="btn text" type="button" data-nclose>OK</button></div>`;
+    hydrate(box); box.hidden = false;
+  }
+  $('#noticeBox').addEventListener('click', e => { if (e.target.closest('[data-nclose]')) $('#noticeBox').hidden = true; });
+  $('#syncPill').onclick = () => { if (sync && live) sync.resync(); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); };
+  const shareUrl = code => location.origin + location.pathname + '#' + code;
+  const fmtCode = c => c ? c.slice(0, 4) + '-' + c.slice(4) : '';
+  const errMsg = e => { const m = String((e && (e.message || e.error_description || e.error)) || e || '');
+    if (/invalid_code/.test(m)) return 'Código não confere. Confira as 8 letras e números.';
+    if (/too_many_attempts/.test(m)) return 'Muitas tentativas com código errado. Espere 10 minutos e tente de novo.';
+    if (/revoked/.test(m)) return 'O organizador removeu este aparelho do evento. Fale com ele.';
+    if (/organizer_login_required/.test(m)) return 'Para criar um evento, entre primeiro com o GitHub.';
+    if (/organizer_only/.test(m) && /organizer_allowlist/.test(String(e && e.hint))) return 'Esta conta GitHub não está na lista de quem pode criar eventos. Quem cuida do Supabase adiciona o seu usuário (guia de instalação, passo 5.6).';
+    if (/organizer_only/.test(m)) return 'Só o organizador pode fazer isso.';
+    if (/last_organizer/.test(m)) return 'O evento precisa de pelo menos um organizador. Promova outra pessoa antes.';
+    if (/cannot_demote_creator|cannot_revoke_creator/.test(m)) return 'Quem criou o evento continua organizador.';
+    if (/not_your_family/.test(m)) return 'Você só confirma pela sua família.';
+    if (/family_not_found/.test(m)) return 'Família não encontrada.';
+    if (/anonymous.*disabled|Anonymous sign-ins are disabled/i.test(m)) return 'O login anônimo está desligado no Supabase (Authentication › Sign In / Providers).';
+    if (/provider is not enabled|Unsupported provider/i.test(m)) return 'O login com GitHub não está ligado no Supabase (veja o passo 4 do guia).';
+    if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o servidor. Tente de novo com internet.';
+    if (/too_many_events/.test(m)) return 'Limite de eventos criados nesta conta.';
+    return 'Erro: ' + m.slice(0, 160); };
+
+  // ---- autenticação: membros entram anônimos; organizador entra com GitHub
+  let sbClient = null, sbReady = null;
+  const ORG_RETURN = () => location.origin + location.pathname + '?org=1';
+  async function currentUser(sb) { const { data } = await sb.auth.getSession(); return data && data.session ? data.session.user : null; }
+  async function ensureAuth(sb) {
+    const u = await currentUser(sb);
+    if (u) { myUserId = u.id; if (sync) sync.setUser(u.id); return u; }
+    const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error;
+    myUserId = r.data.user.id; if (sync) sync.setUser(myUserId); return r.data.user;
+  }
+  async function githubLogin(sb) {
+    const u = await currentUser(sb);
+    if (u && !u.is_anonymous) return u;
+    sessionStorage.setItem('rateio-e2-org', '1');
+    if (u && u.is_anonymous && sb.auth.linkIdentity) { // mantém o mesmo usuário (eventos em que já entrou continuam)
+      const r = await sb.auth.linkIdentity({ provider: 'github', options: { redirectTo: ORG_RETURN() } });
+      if (!r.error) return null;
+    }
+    const r = await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: ORG_RETURN() } });
+    if (r.error) throw r.error; return null; // redireciona para o GitHub
+  }
+
+  // ---- gate: entrar com código / organizador (GitHub: criar e abrir meus eventos)
+  function openGate(opts = {}) {
+    if (!backendOn) return;
+    const code = opts.code || linkCode || '';
+    $('#gateBody').innerHTML = `<h2 id="gateTitle">Evento compartilhado</h2>
+      <p class="hint" style="margin-bottom:16px">As famílias veem e lançam os mesmos gastos ao vivo. Quem entra com o código fica <b>aguardando</b> até o organizador aprovar.</p>
+      ${opts.msg ? `<p class="gateerr" role="alert">${esc(opts.msg)}</p>` : ''}
+      <form class="card" id="joinForm" novalidate>
+        <h3>Entrar com código</h3>
+        <div class="field"><label for="gCode">Código do evento</label><input class="inp" id="gCode" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="ABCD-2345" value="${esc(fmtCode(code))}"></div>
+        <div class="field"><label for="gName">Seu nome</label><input class="inp" id="gName" maxlength="24" autocomplete="given-name" placeholder="Ex.: Ana" value="${esc((session && session.me) || '')}"></div>
+        <div class="field"><label for="gFam">Sua família (opcional)</label><input class="inp" id="gFam" maxlength="14" placeholder="Ex.: B"></div>
+        <p class="gateerr" id="joinErr" hidden></p>
+        <button class="btn primary block" type="submit">Entrar no evento</button>
+      </form>
+      <div class="card" id="orgCard"><h3>Organizador</h3><div id="orgBody"><p class="hint">Carregando…</p></div></div>
+      <button class="btn text block" id="gateLocal" type="button" style="margin-top:12px">Continuar só neste aparelho</button>`;
+    const showErr = (id, m) => { const el = $(id); if (!el) return; el.hidden = !m; el.textContent = m || ''; };
+    const busy = (form, on) => form.querySelectorAll('button,input').forEach(x => { x.disabled = on; });
+    $('#joinForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
+      const c = normCode($('#gCode').value), me = $('#gName').value.trim(), fam = $('#gFam').value.trim();
+      if (!validCode(c)) return showErr('#joinErr', 'O código tem 8 letras e números (sem 0, O, 1, I ou L).');
+      if (!me) return showErr('#joinErr', 'Digite seu nome.');
+      busy(f, true); showErr('#joinErr', '');
+      try { const sb = await sbReady; await ensureAuth(sb);
+        const display = (fam ? `${me} (${fam})` : me).slice(0, 40);
+        const r = await sb.rpc('join_event', { p_code: c, p_display_name: display }); if (r.error) throw r.error;
+        if (!r.data || !r.data.ok) throw new Error((r.data && r.data.error) || 'invalid_code');
+        enterEvent({ eventId: r.data.event_id, code: r.data.role === 'organizer' ? c : null, me, name: r.data.event_name }); }
+      catch (e) { showErr('#joinErr', errMsg(e)); busy(f, false); } };
+    $('#gateLocal').onclick = () => { localStorage.setItem(MODE_KEY, 'local'); if (linkCode) history.replaceState(null, '', location.pathname); $('#gateDlg').close(); };
+    $('#gateDlg').oncancel = null;
+    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+    paintOrg(opts.orgMsg);
+  }
+  async function paintOrg(msg) {
+    const body = $('#orgBody'); if (!body) return;
+    let sb, u = null; try { sb = await sbReady; u = await currentUser(sb); } catch (e) {}
+    if (!u || u.is_anonymous) {
+      body.innerHTML = `<p class="hint" style="margin-bottom:12px">Quem cria o evento entra com a conta do GitHub: assim o evento não se perde se trocar de celular, e só você aprova quem entra.</p>
+        ${msg ? `<p class="gateerr" role="alert">${esc(msg)}</p>` : ''}<p class="gateerr" id="orgErr" hidden></p>
+        <button class="btn secondary block" id="ghBtn" type="button">Entrar com GitHub</button>`;
+      $('#ghBtn').onclick = async () => { $('#ghBtn').disabled = true; try { await githubLogin(sb); } catch (e) { const el = $('#orgErr'); el.hidden = false; el.textContent = errMsg(e); $('#ghBtn').disabled = false; } };
+      return;
+    }
+    myUserId = u.id;
+    const who = (u.user_metadata && (u.user_metadata.user_name || u.user_metadata.preferred_username || u.user_metadata.name)) || u.email || 'GitHub';
+    let mine = [];
+    try { const r = await sb.from('events').select('id,name,created_by,locked'); if (!r.error) mine = r.data || []; } catch (e) {}
+    body.innerHTML = `<p class="hint" style="margin-bottom:12px">Conectado como <b>${esc(who)}</b>.</p>
+      ${msg ? `<p class="gateerr" role="alert">${esc(msg)}</p>` : ''}
+      ${mine.length ? `<p class="hint">Seus eventos:</p><div class="actions" style="flex-direction:column;align-items:stretch;margin:8px 0 16px">${mine.map(e => `<button class="btn secondary block" type="button" data-open="${esc(e.id)}" data-name="${esc(e.name)}">${esc(e.name)}${e.locked ? ' (travado)' : ''}</button>`).join('')}</div>` : ''}
+      <form id="createForm" novalidate>
+        <div class="field"><label for="cName">Nome do evento novo</label><input class="inp" id="cName" maxlength="60" placeholder="Ex.: Feriado na chácara"></div>
+        <div class="field"><label for="cMe">Seu nome</label><input class="inp" id="cMe" maxlength="24" autocomplete="given-name" placeholder="Ex.: Ana" value="${esc((session && session.me) || '')}"></div>
+        <p class="gateerr" id="createErr" hidden></p>
+        <button class="btn primary block" type="submit">Criar evento</button>
+      </form>`;
+    body.querySelectorAll('[data-open]').forEach(b => b.onclick = () => enterEvent({ eventId: b.dataset.open, code: null, me: (session && session.me) || who, name: b.dataset.name }));
+    $('#createForm').onsubmit = async ev => { ev.preventDefault(); const f = ev.target;
+      const name = $('#cName').value.trim(), me = $('#cMe').value.trim(), err = m => { const el = $('#createErr'); el.hidden = !m; el.textContent = m || ''; };
+      if (!name || !me) return err('Preencha o nome do evento e o seu nome.');
+      f.querySelectorAll('button,input').forEach(x => { x.disabled = true; }); err('');
+      try { let r, code;
+        for (let i = 0; i < 4; i++) { code = genEventCode(); r = await sb.rpc('create_event', { p_name: name, p_code: code, p_display_name: me }); if (!r.error || !/code_taken/.test(r.error.message)) break; }
+        if (r.error) throw r.error;
+        enterEvent({ eventId: r.data, code, me, name, created: true }); }
+      catch (e) { err(errMsg(e)); f.querySelectorAll('button,input').forEach(x => { x.disabled = false; }); } };
+  }
+  function enterEvent(s) {
+    const prev = session && session.eventId === s.eventId ? session : null;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ eventId: s.eventId, code: s.code || (prev && prev.code) || null, me: s.me, name: s.name || null, joinedAt: Date.now() }));
+    localStorage.removeItem(MODE_KEY);
+    if (s.created) sessionStorage.setItem('rateio-e2-created', '1');
+    history.replaceState(null, '', location.pathname + (s.code ? '#' + s.code : '')); location.reload();
+  }
+  function leaveEvent(ask = true) {
+    if (ask && !confirm('Sair do evento neste aparelho? Os dados do evento continuam no servidor para as outras famílias; você pode entrar de novo com o código.')) return;
+    if (sync) sync.stop();
+    localStorage.removeItem(SESSION_KEY); localStorage.setItem(MODE_KEY, 'local');
+    location.replace(location.pathname); location.reload();
+  }
+
+  // ---- aguardando aprovação / acesso removido
+  function showWaiting(m) {
+    myStatus = m.status; paintSync('waiting');
+    const revoked = m.status === 'revoked';
+    $('#gateBody').innerHTML = `<h2 id="gateTitle">${revoked ? 'Acesso removido' : 'Aguardando aprovação'}</h2>
+      <p style="margin-bottom:12px">Você: <b>${esc(m.display_name || session.me || '—')}</b><br><span class="hint">Os dados do evento (nome, famílias, gastos) só aparecem depois da aprovação.</span></p>
+      <p class="hint" style="margin-bottom:16px">${revoked ? 'O organizador removeu este aparelho do evento. Se foi engano, peça para ele aprovar de novo.' : 'O organizador precisa aprovar este aparelho (no celular dele: Acertos › Dados › Membros). Esta tela atualiza sozinha.'}</p>
+      <div class="actions">${revoked ? '' : '<button class="btn primary" type="button" id="waitCheck">Verificar agora</button>'}<button class="btn secondary" type="button" id="waitLeave">Sair do evento</button></div>`;
+    $('#gateDlg').oncancel = ev => ev.preventDefault();
+    if (!$('#gateDlg').open) $('#gateDlg').showModal();
+    if ($('#waitCheck')) $('#waitCheck').onclick = () => checkWaiting();
+    $('#waitLeave').onclick = () => leaveEvent(false);
+    clearInterval(pendingPoll); if (!revoked) pendingPoll = setInterval(checkWaiting, 8000);
+  }
+  async function checkWaiting() {
+    if (!sync) return;
+    let m; try { m = await sync.membership(); } catch (e) { return; }
+    if (m.status === 'approved') { clearInterval(pendingPoll); $('#gateDlg').oncancel = null; if ($('#gateDlg').open) $('#gateDlg').close(); myRole = m.role; myStatus = 'approved'; toast('Aprovado! Carregando o evento…'); goLive(); }
+    else if (m.status === 'none') { clearInterval(pendingPoll); localStorage.removeItem(SESSION_KEY); openGate({ msg: 'Este aparelho não está mais neste evento. Entre de novo com o código.' }); }
+    else if (m.status !== myStatus) showWaiting(m);
+  }
+  function onMembership(row) {
+    if (row.user_id === myUserId) {
+      if (row.status !== 'approved') { live = false; showWaiting({ ...row, event_name: syncInfo.name }); }
+      else if (myStatus !== 'approved') checkWaiting();
+      if (row.role) myRole = row.role;
+      if ('family_id' in row) myFamily = row.family_id || null;
+      render();
+    }
+    if (isOrganizer()) { clearTimeout(membersTimer); membersTimer = setTimeout(loadMembers, 300); }
+  }
+  async function loadMembers() {
+    if (!isOrganizer() || !sbClient) return;
+    const r = await sbClient.from('event_members').select('user_id,display_name,role,status,joined_at,family_id').eq('event_id', session.eventId);
+    if (!r.error) { members = r.data || []; renderData(); }
+  }
+  async function goLive() {
+    try { syncInfo = await sync.load(); }
+    catch (e) {
+      if (e && (e.code === 'pending' || e.code === 'revoked')) return showWaiting(e.membership || { status: e.code });
+      if (e && e.code === 'not_member') { localStorage.removeItem(SESSION_KEY); sync = null; return openGate({ msg: 'Este aparelho não está neste evento. Entre de novo com o código.' }); }
+      paintSync(/fetch|network|Failed/i.test(String(e && e.message)) ? 'offline' : 'error', { error: e });
+    }
+    try { const m = await sync.membership(); myRole = m.role || null; myStatus = m.status; myFamily = m.family_id || null; } catch (e) {}
+    if (syncInfo && syncInfo.name && session.name !== syncInfo.name) { session.name = syncInfo.name; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+    if (!live) { live = true; sync.subscribe(); }
+    loadMembers(); renderData(); checkPhotoPurge();
+  }
+  // Fila de comprovantes no IndexedDB (sobrevive a fechar o app sem internet)
+  let photoQ = null;
+  function idbStore() {
+    const open = () => new Promise((res, rej) => { const r = indexedDB.open('rateio-fotos', 1); r.onupgradeneeded = () => r.result.createObjectStore('fila', { keyPath: 'path' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('fila', mode), st = t.objectStore('fila'); const q = fn(st); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+    return { put: it => tx('readwrite', st => st.put(it)), del: p => tx('readwrite', st => st.delete(p)), all: () => tx('readonly', st => st.getAll()).then(x => x || []) };
+  }
+  // called by the module script once supabase-js is loaded
+  async function attachBackend(sb) {
+    sbClient = sb;
+    const qs = new URLSearchParams(location.search);
+    const backFromGithub = qs.has('org') || sessionStorage.getItem('rateio-e2-org');
+    if (qs.has('org') || qs.has('code') || qs.has('error')) {
+      const ghErr = qs.get('error_description') || qs.get('error'); history.replaceState(null, '', location.pathname + location.hash);
+      sessionStorage.removeItem('rateio-e2-org');
+      if (ghErr && /already|exists/i.test(ghErr)) { try { await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: ORG_RETURN() } }); return; } catch (e) {} }
+      if (!shared) return openGate({ orgMsg: ghErr ? 'Login com GitHub não concluído: ' + ghErr : '' });
+      if (backFromGithub) toast('Conectado com GitHub');
+    }
+    if (!shared) return;
+    paintSync('idle');
+    try { await ensureAuth(sb); } catch (e) { paintSync(/fetch|network|Failed/i.test(String(e.message)) ? 'offline' : 'error', { error: e }); setTimeout(() => attachBackend(sb), 15000); return; }
+    sync = createSync({ client: sb, eventId: session.eventId, getState: () => state,
+      setState: s => { const wasLocked = state.eventLocked; state = normalize(s); writeLocal(); render({ skipPeople: $('#people').contains(document.activeElement) }); if (wasLocked !== state.eventLocked) paintSync(state.eventLocked ? 'locked' : (sync && sync.pendingCount() ? 'pending' : 'synced')); },
+      onStatus: (st, info) => { paintSync(st, info); if (st !== 'saving') renderData(); },
+      onNotice: showNotices, onMembership,
+      loadBase: () => { try { return JSON.parse(localStorage.getItem(BASE_KEY)); } catch (e) { return null; } },
+      saveBase: b => { try { localStorage.setItem(BASE_KEY, JSON.stringify(b)); } catch (e) {} } });
+    sync.setUser(myUserId);
+    if (sb.storage) photoQ = createPhotoQueue({ storage: sb.storage.from('comprovantes'), eventId: session.eventId, store: idbStore(), isOrganizer,
+      onUploaded: (id, path) => { const e = state.expenses.find(x => x.id === id); if (e && e.photoPath !== path) { e.photoPath = path; save(); render(); } toast('Comprovante enviado'); },
+      onError: (id, code) => toast(code === 'exists' ? 'Comprovante já existe: só o organizador troca' : code === 'too_big' ? 'Foto acima de 150 KB' : code === 'denied' ? 'Sem permissão para enviar comprovante' : 'Erro ao enviar comprovante', 'alert') });
+    await goLive();
+    if (photoQ) photoQ.process().catch(() => {});
+    addEventListener('online', () => { if (live) sync.resync(); if (photoQ) photoQ.process().catch(() => {}); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && live) { sync.resync(); checkPhotoPurge(); } });
+    if (sessionStorage.getItem('rateio-e2-created')) { sessionStorage.removeItem('rateio-e2-created'); setView('acertos'); setTimeout(() => $('#dataCard').scrollIntoView({ block: 'start' }), 80); toast('Evento criado. Compartilhe o link.'); }
+    if (linkCode && session.code && linkCode !== session.code && isOrganizer()) toast('Este link tem um código antigo do evento.');
+  }
+
+  // ---- card "Dados" (+ painel do organizador)
+  const hasLocalData = () => { try { const x = JSON.parse(localStorage.getItem(KEY)); return !!(x && Array.isArray(x.families)); } catch (e) { return false; } };
+  const ST_LABEL = { pending: 'aguardando', approved: 'aprovado', revoked: 'removido' };
+  function renderOrg() {
+    const order = { pending: 0, approved: 1, revoked: 2 };
+    const list = members.slice().sort((a, b) => order[a.status] - order[b.status] || String(a.display_name).localeCompare(String(b.display_name)));
+    const np = list.filter(m => m.status === 'pending').length;
+    return `<h3 class="subhead" style="margin-top:16px">Membros${np ? ` · <span class="chip warn">${np} aguardando</span>` : ''}</h3>
+      <ul class="memlist">${list.map(m => { const me = m.user_id === myUserId, creator = m.user_id === syncInfo.createdBy, org = m.role === 'organizer';
+        const famOpts = `<select class="inp sm" data-fam="${esc(m.user_id)}" aria-label="Família de ${esc(m.display_name || '—')}"><option value="">Família…</option>${state.families.map(f => `<option value="${esc(f.id)}" ${f.id === m.family_id ? 'selected' : ''}>${esc(shortFam(f.name))}</option>`).join('')}</select>`;
+        const acts = m.status === 'pending' ? `<button class="btn primary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar</button><button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Recusar</button>`
+          : m.status === 'approved' ? `${famOpts}${org ? (creator ? '' : `<button class="btn secondary sm" data-m="demote" data-u="${esc(m.user_id)}">${me ? 'Deixar de organizar' : 'Tirar de organizador'}</button>`) : `<button class="btn secondary sm" data-m="promote" data-u="${esc(m.user_id)}">Tornar organizador</button>`}${me || creator ? '' : `<button class="btn secondary sm" data-m="revoke" data-u="${esc(m.user_id)}">Remover</button>`}`
+          : `<button class="btn secondary sm" data-m="approve" data-u="${esc(m.user_id)}">Aprovar de novo</button>`;
+        return `<li><span class="mname"><b>${esc(m.display_name || '—')}</b><small>${org ? 'organizador' : esc(ST_LABEL[m.status] || m.status)}${creator ? ' · criou' : ''}${me ? ' · você' : ''}${m.status === 'approved' && !m.family_id && !org ? ' · sem família' : ''}</small></span>
+        <span class="mact">${acts}</span></li>`; }).join('') || '<li class="hint">Ninguém entrou ainda.</li>'}</ul>
+      <p class="hint" style="margin-top:4px">Ligue cada pessoa à família dela: o membro só confirma gastos “sem nota” pela própria família. Organizadores mudam configurações, aprovam e removem.</p>
+      <h3 class="subhead" style="margin-top:16px">Segurança do evento</h3>
+      <label class="check" style="margin:4px 0 8px"><input type="checkbox" id="repend"> <span>Ao trocar o código, pedir nova aprovação de todos</span></label>
+      <div class="actwrap" style="margin-top:0"><div class="actions">
+        <button class="btn secondary" data-d="rotate"><span data-i="reset"></span><span>Trocar código</span></button>
+        <button class="btn secondary" data-d="lock"><span data-i="${state.eventLocked ? 'check' : 'alert'}"></span><span>${state.eventLocked ? 'Destravar evento' : 'Travar evento'}</span></button>
+      </div></div>
+      <p class="hint" style="margin-top:8px">Trocar o código invalida o link antigo. Travar deixa o evento só para leitura (fim da viagem, acerto feito).</p>
+      <h3 class="subhead" style="margin-top:16px">Comprovantes</h3>
+      <p class="hint" id="photoRule">Regra: o organizador apaga as fotos dos comprovantes até ${PHOTO_RETENTION_DAYS} dias depois do fim da viagem${state.trip.end ? ` (<b>até ${fmtDM(photoPurgeBy(state.trip.end))}</b>)` : ' (defina a data de fim)'}. Os valores e os gastos continuam; só as fotos somem.</p>
+      <button class="btn secondary block" data-d="purgephotos"><span data-i="trash"></span><span>Apagar comprovantes do evento</span></button>`;
+  }
+  const fmtDM = iso => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '';
+  // Lembrete ao organizador depois do fim: "apague os comprovantes até DD/MM" + botão de um toque
+  let purgeChecked = '';
+  async function checkPhotoPurge(force) {
+    const ban = $('#photoPurgeBanner'), end = state.trip && state.trip.end;
+    const t = new Date(), today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    if (!sbClient || !shared || !isOrganizer() || !end || today <= end) { ban.hidden = true; return; }
+    const key = end + today; if (!force && purgeChecked === key) return; purgeChecked = key;
+    const r = await sbClient.rpc('event_photo_status', { p_event: session.eventId }).catch(() => null);
+    const n = r && !r.error && r.data ? r.data.remaining : 0;
+    if (!n) { ban.hidden = true; return; }
+    const by = photoPurgeBy(end), late = today > by;
+    $('#photoPurgeText').textContent = `${late ? 'Prazo vencido: ' : 'Viagem encerrada: '}apague os comprovantes até ${fmtDM(by)} (${n} foto${n > 1 ? 's' : ''}).`;
+    ban.hidden = false;
+  }
+  async function doPhotoPurge() {
+    if (!isOrganizer()) return;
+    if (!confirm('Apagar todas as fotos de comprovantes deste evento? Os gastos e valores ficam. Não dá para desfazer.')) return;
+    try { const r = await purgeEventPhotos(sbClient, session.eventId); toast(r.remaining ? `Faltaram ${r.remaining} foto(s): tente de novo` : `Comprovantes apagados (${r.removed})`, r.remaining ? 'alert' : undefined); }
+    catch (e) { toast(errMsg(e), 'alert'); }
+    if (sync) sync.resync(); checkPhotoPurge(true);
+  }
+  document.addEventListener('click', e => { if (e.target.closest('[data-purge]')) doPhotoPurge(); });
+  function renderData() {
+    const body = $('#dataBody'); if (!body) return;
+    $('#dataMeta').textContent = shared ? (isOrganizer() ? 'você organiza' : 'evento compartilhado') : 'só neste aparelho';
+    const code = shared ? session.code : null;
+    let h = '';
+    if (shared) {
+      const n = sync ? sync.pendingCount() : 0;
+      h += `<div class="datalist"><span>Evento: <b>${esc(syncInfo.name || session.name || '—')}</b>${state.eventLocked ? ' · <b>travado</b>' : ''}</span>
+        ${isOrganizer() && code ? `<span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>` : ''}
+        <span>Você: <b>${esc(session.me || '—')}</b>${isOrganizer() ? ' · organizador' : myStatus === 'approved' ? ' · membro aprovado' : ''}</span>
+        <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${n ? ` · ${n} pendente(s)` : ''}</span>
+        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos, configurações, receitas, cardápio e comprovantes (bucket privado). <b>Ficam só neste aparelho:</b> dieta/alergia.</span></div>`;
+      if (isOrganizer() && code) h += `<div class="actwrap" style="margin-top:0"><div class="actions">
+          <button class="btn secondary" data-d="copylink"><span data-i="copy"></span><span>Copiar link</span></button>
+          <button class="btn secondary" data-d="sharelink"><span data-i="share"></span><span>Enviar link</span></button>
+        </div></div>
+        <p class="hint" style="margin-top:8px">Quem abrir o link fica aguardando até você aprovar aqui embaixo. Mande só no grupo das famílias.</p>`;
+      else if (isOrganizer()) h += `<p class="hint">Este aparelho não sabe o código atual. Use «Trocar código» para gerar um novo link.</p>`;
+      else h += `<p class="hint">Para chamar mais alguém, peça o link ao organizador.</p>`;
+      if (isOrganizer()) h += renderOrg();
+    } else {
+      h += `<p class="hint" style="margin-bottom:12px">Os dados estão salvos só neste navegador.${backendOn ? ' Crie um evento compartilhado para as famílias lançarem juntas.' : ''}</p>`;
+      if (backendOn) h += `<button class="btn primary block" data-d="gate" style="margin-bottom:8px"><span data-i="users"></span><span>Criar ou entrar em evento</span></button>`;
+    }
+    h += `<div class="actwrap"><div class="actions">
+        <button class="btn secondary" data-d="export"><span data-i="receipt"></span><span>Exportar JSON</span></button>
+        <button class="btn secondary" data-d="import" ${shared && !isOrganizer() ? 'disabled' : ''}><span data-i="plus"></span><span>Importar JSON</span></button>
+      </div></div>`;
+    if (shared && !isOrganizer()) h += `<p class="hint" style="margin-top:8px">Só o organizador importa dados.</p>`;
+    if (isOrganizer() && hasLocalData()) h += `<button class="btn secondary block" data-d="importlocal" style="margin-top:8px"><span data-i="arrow"></span><span>Trazer os dados deste aparelho</span></button>`;
+    if (shared) h += `<button class="btn text block" data-d="other" style="margin-top:8px">Entrar em outro evento</button><button class="btn text block" data-d="leave">Sair do evento neste aparelho</button>`;
+    body.innerHTML = h; hydrate(body);
+    if (shared) checkPhotoPurge();
+  }
+  const rpcOrToast = async (fn, args, ok) => { const r = await sbClient.rpc(fn, args); if (r.error) { toast(errMsg(r.error), 'alert'); return null; } if (ok) toast(ok); return r; };
+  $('#dataBody').addEventListener('change', async e => {
+    const sel = e.target.closest('[data-fam]'); if (!sel || !isOrganizer()) return;
+    sel.disabled = true; const who = (members.find(x => x.user_id === sel.dataset.fam) || {}).display_name || '';
+    const f = famById(sel.value);
+    await rpcOrToast('set_member_family', { p_event: session.eventId, p_user: sel.dataset.fam, p_family: sel.value || null }, f ? `${who} · ${shortFam(f.name)}` : `${who} sem família`);
+    loadMembers();
+  });
+  $('#dataBody').addEventListener('click', async e => {
+    const m = e.target.closest('[data-m]');
+    if (m && isOrganizer()) { m.disabled = true; const who = (members.find(x => x.user_id === m.dataset.u) || {}).display_name || '';
+      const k = m.dataset.m;
+      if (k === 'revoke' && !confirm(`Remover ${who} do evento? O aparelho perde o acesso na hora. Depois, use «Trocar código» para o link antigo parar de valer.`)) { m.disabled = false; return; }
+      if (k === 'demote' && m.dataset.u === myUserId && !confirm('Deixar de organizar? Você passa a só ver as configurações.')) { m.disabled = false; return; }
+      if (k === 'promote' || k === 'demote') await rpcOrToast('set_member_role', { p_event: session.eventId, p_user: m.dataset.u, p_role: k === 'promote' ? 'organizer' : 'member' }, k === 'promote' ? `${who} agora organiza` : `${who} não organiza mais`);
+      else await rpcOrToast(k === 'approve' ? 'approve_member' : 'revoke_member', { p_event: session.eventId, p_user: m.dataset.u }, k === 'approve' ? `${who} aprovado(a)` : `${who} removido(a)`);
+      return loadMembers(); }
+    const b = e.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
+    if (a === 'gate' || a === 'other') openGate();
+    else if (a === 'leave') leaveEvent();
+    else if (a === 'copylink') { try { await navigator.clipboard.writeText(shareUrl(session.code)); toast('Link copiado'); } catch (x) { prompt('Copie o link:', shareUrl(session.code)); } }
+    else if (a === 'sharelink') { const url = shareUrl(session.code), text = `Entre no evento «${syncInfo.name || session.name || ''}» no Rateatouille: ${url}\nCódigo: ${fmtCode(session.code)}`;
+      if (navigator.share) { try { await navigator.share({ title: 'Rateatouille', text }); } catch (x) {} } else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+    else if (a === 'purgephotos') doPhotoPurge();
+    else if (a === 'rotate' && isOrganizer()) {
+      const repend = !!($('#repend') && $('#repend').checked);
+      if (!confirm(repend ? 'Trocar o código e pedir nova aprovação de todos? O link antigo para de funcionar.' : 'Trocar o código? O link antigo para de funcionar; quem já está aprovado continua.')) return;
+      let r, code; for (let i = 0; i < 4; i++) { code = genEventCode(); r = await sbClient.rpc('rotate_code', { p_event: session.eventId, p_new_code: code, p_repend: repend }); if (!r.error || !/code_taken/.test(r.error.message)) break; }
+      if (r.error) return toast(errMsg(r.error), 'alert');
+      session.code = code; localStorage.setItem(SESSION_KEY, JSON.stringify(session)); history.replaceState(null, '', location.pathname + '#' + code);
+      toast(`Código novo: ${fmtCode(code)}. Mande o link novo.`); loadMembers(); renderData(); }
+    else if (a === 'lock' && isOrganizer()) {
+      const to = !state.eventLocked;
+      if (to && !confirm('Travar o evento? Ninguém mais consegue alterar nada até você destravar.')) return;
+      await rpcOrToast('lock_event', { p_event: session.eventId, p_locked: to }, to ? 'Evento travado' : 'Evento destravado'); }
+    else if (a === 'export') exportJson();
+    else if (a === 'import') $('#importFile').click();
+    else if (a === 'importlocal') { try { previewImport(JSON.parse(localStorage.getItem(KEY)), 'dados deste aparelho'); } catch (x) { toast('Não achei dados locais', 'alert'); } }
+  });
+  function exportJson() {
+    const st = JSON.parse(JSON.stringify(state)); delete st.syncMode;
+    const out = { schema: 'racha-viagem-v3', app: 'Rateatouille', exported_at: new Date().toISOString(), event: shared ? (syncInfo.name || session.name || null) : null, state: st };
+    const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rateatouille-${todayISO()}.export.json`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Arquivo exportado (guarde só com você: pode ter fotos e dieta)');
+  }
+  $('#importFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (f.size > 8e6) return toast('Arquivo grande demais', 'alert');
+    let obj; try { obj = JSON.parse(await f.text()); } catch (x) { return toast('Arquivo não é um JSON válido', 'alert'); }
+    previewImport(obj && obj.state ? obj.state : obj, f.name);
+  };
+  function previewImport(raw, label) {
+    let imp; try { imp = normalize(JSON.parse(JSON.stringify(raw))); delete imp.syncMode; } catch (x) { return toast('Arquivo inválido', 'alert'); }
+    const chk = importCheck(imp);
+    const cur = { families: state.families.length, people: state.families.reduce((a, f) => a + f.members.length, 0), expenses: state.expenses.length, total: Math.round(state.expenses.reduce((a, x) => a + (Number(x.amount) || 0), 0) * 100) / 100 };
+    const row = (l, a, b, c) => `<tr><th>${l}</th><td class="num">${a}</td><td class="num">${b}</td>${c != null ? `<td class="num">${c}</td>` : ''}</tr>`;
+    const B = chk.before || {}, A = chk.after || {};
+    $('#importBody').innerHTML = `<h2 id="impTitle">Importar ${esc(label || 'arquivo')}</h2>
+      ${chk.ok ? '' : `<p class="gateerr" role="alert">Não dá para importar: ${chk.errs.map(esc).join('; ')}</p>`}
+      ${chk.before ? `<table class="cmp"><thead><tr><th></th><th class="num">Hoje</th><th class="num">Arquivo</th><th class="num">Depois</th></tr></thead><tbody>
+        ${row('Famílias', cur.families, B.families, A.families)}${row('Pessoas', cur.people, B.people, A.people)}${row('Gastos', cur.expenses, B.expenses, A.expenses)}
+        ${row('Total', brlWrap(cur.total), brlWrap(B.total), brlWrap(A.total))}</tbody></table>
+        <p class="hint">Saldos por família conferidos antes e depois da conversão: diferença máxima <b>${brlWrap(chk.maxDiff || 0)}</b> (limite R$ 0,01).</p>` : ''}
+      ${shared && chk.planDiff > 0.01 ? `<p class="callout" style="margin-top:8px"><span>No evento, a divisão «por porções» não usa o cardápio deste aparelho; alguns saldos mudam até ${esc(brlWrap(chk.planDiff))}.</span></p>` : ''}
+      <p class="callout" style="margin-top:12px"><span>${shared ? 'Isto <b>substitui</b> as famílias, pessoas, gastos e acertos do evento <b>para todos</b>. Fotos, cardápio, receitas e dieta ficam só neste aparelho e não são enviados.' : 'Isto substitui os dados deste aparelho.'}</span></p>
+      <div class="actions" style="margin-top:16px"><button class="btn secondary" data-imp="no">Cancelar</button><button class="btn primary" data-imp="yes" ${chk.ok ? '' : 'disabled'}>Importar</button></div>`;
+    $('#importBody').onclick = ev => { const b = ev.target.closest('[data-imp]'); if (!b) return; $('#importDlg').close();
+      if (b.dataset.imp !== 'yes' || !chk.ok) return;
+      if (shared && !isOrganizer()) return toast('Só o organizador importa dados', 'alert');
+      if (shared) { const s2 = { ...imp, syncMode: true }; const r2 = stateToRows(s2, session.eventId); state = normalize(rowsToState({ ...r2, confirmations: r2.confirm.map(c => ({ ...c, id: c.expense_id, voided_at: null })) }, s2, { name: syncInfo.name, locked: state.eventLocked })); }
+      else state = normalize(imp);
+      save(); render(); toast(`Importado: ${chk.after.expenses} gastos, ${brl(chk.after.total)}`);
+    };
+    $('#importDlg').showModal();
+  }
+  if (shared) {
+    $('#resetBtn').hidden = true; $('#localOnlyNote').hidden = false;
+    $('#footNote').textContent = 'Rateatouille · evento compartilhado · fotos, cardápio, receitas e dieta ficam só neste aparelho · sem dados bancários';
+    paintSync('idle');
+  }
+
   // ---------- render ----------
   function render(opts = {}) {
     C = compute();
@@ -2204,11 +3258,37 @@ Corte as frutas e monte a mesa com pães e frios.`,
     renderPayers(); renderExpenses();
     renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
     setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
+    renderData(); paintSettingsLock();
   }
-  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui };
+  window.App = { __edit: fn => { fn(state); save(); render(); }, getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui,
+    backendOn, shared, attachBackend, openGate, sync: () => sync };
   hydrate(document); renderSeg(); renderProof(); renderQuick();
   render(); setView(ui.view, { keepScroll: true }); setSub(ui.sub);
+  if (backendOn && !shared && !/[?&](org|code|error)=/.test(location.search) && (linkCode || localStorage.getItem(MODE_KEY) !== 'local')) openGate({ code: linkCode });
+  if (backendOn) sbReady = new Promise(res => { window.__rateioSbReady = res; });
 })();
+</script>
+<script type="module">
+// Carrega o supabase-js (versão fixa) só quando o banco compartilhado está configurado.
+const CFG = window.RATEIO_CONFIG || {};
+if (window.App && window.App.backendOn) {
+  let tries = 0;
+  const boot = async () => {
+    try {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
+      const sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'rateio-e2-auth' } });
+      window.__rateioSbReady && window.__rateioSbReady(sb);
+      await window.App.attachBackend(sb);
+    } catch (e) {
+      // sem internet ao abrir: segue com a cópia do aparelho e tenta de novo (sem recarregar a página)
+      console.error(e);
+      const pill = document.getElementById('syncPill');
+      if (pill && window.App.shared) { pill.hidden = false; pill.dataset.s = 'offline'; pill.textContent = 'Offline'; }
+      setTimeout(boot, Math.min(60000, 5000 * ++tries));
+    }
+  };
+  boot();
+}
 </script>
 </body>
 </html>

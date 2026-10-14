@@ -2,12 +2,16 @@
   "name": "rateio-viagem",
   "version": "1.0.0",
   "private": true,
-  "description": "Rateio da Viagem: protótipo client-side para planejar e dividir gastos de viagem entre famílias",
+  "description": "Rateatouille: planejar e dividir gastos de eventos entre famílias",
   "scripts": {
-    "test": "node tests/test.js && node tests/surnames.test.js",
+    "test": "node tests/test.js && node tests/sync.test.js && node tests/privacy.test.js",
+    "test:e2e": "node tests/e2e/shared.e2e.js",
+    "test:sql": "bash supabase/test/run.sh",
     "test:contrast": "node tests/contrast.js",
     "test:overflow": "node tests/overflow.js",
-    "shots": "node tests/shot3.js"
+    "shots": "node tests/shot3.js",
+    "build:sql": "bash supabase/build.sh",
+    "test:rest": "node supabase/test/postgrest.test.js"
   },
   "devDependencies": {
     "playwright-core": "^1.64.0"
