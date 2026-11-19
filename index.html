@@ -492,7 +492,8 @@ details.more .stack{display:grid;gap:16px;padding:4px 0 16px}
 .daystrip button[aria-pressed="true"] b{color:var(--on-accent)}
 .daystrip button i{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--warn)}
 .daystrip button i.ok{background:var(--pos)}
-.sg{border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px}
+.sg{border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px;scroll-margin-top:72px}
+.sg:focus{outline:2px solid var(--accent);outline-offset:2px}
 .sg.accepted{border-color:color-mix(in srgb,var(--pos) 45%,var(--border));background:color-mix(in srgb,var(--pos-soft) 45%,var(--surface))}
 .sg.rejected{opacity:.7}
 .sg.special{border:1.5px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -538,11 +539,11 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .notice{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:var(--r-md,12px);background:var(--surface-2);font-size:13px;line-height:1.45;color:var(--text)}
 .notice .i{flex:none;margin-top:2px}
 .notice .btn{margin-left:auto;flex:none}
-.mesa{margin-top:10px;padding:10px 12px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--border)}
+.mesa{margin-top:16px;padding:16px 0 0;border:0;border-radius:0;background:transparent;border-top:1px solid var(--border)}
 .mhead{display:flex;flex-direction:column;align-items:stretch;gap:8px}
-.mwhos{display:flex;flex-wrap:wrap;gap:8px 16px}
-.who{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px;font-weight:650;color:var(--text)}
-.mav{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--accent)}
+.mwhos{display:flex;flex-wrap:wrap;gap:8px}
+.who{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:13px;font-weight:650;color:var(--text);white-space:nowrap;flex:0 0 auto}
+.mav{width:28px;height:28px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--accent)}
 .mav svg{width:16px;height:16px}
 .mwhos .mav+.mav{margin-left:0}
 .mbal{margin:8px 0 0;font-size:14px;line-height:1.4;min-width:0}
@@ -553,8 +554,9 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .mesa:focus{outline:2px solid var(--accent);outline-offset:2px}
 .mesa [aria-expanded="true"] svg{transform:rotate(90deg)}
 .talk p{margin:6px 0;font-size:14px;line-height:1.5}
-.mseg{margin:8px 0;grid-template-columns:repeat(3,minmax(0,1fr))!important}.mseg button{min-height:44px;padding:8px 12px}
-@media(max-width:520px){.mseg{grid-template-columns:minmax(0,1fr)!important}.mseg button{justify-content:flex-start;padding:8px 16px}}
+.mseg{display:flex!important;flex-flow:row nowrap;margin:8px 0;gap:8px;grid-template-columns:none!important}
+.mseg button{flex:1 1 0;min-width:0;height:44px;min-height:44px;max-height:44px;padding:0 8px;font-size:15px;white-space:nowrap;justify-content:center}
+.sugpanel{margin-top:8px}
 .car{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
 .stc{flex:0 0 min(280px,78%);scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border-radius:var(--r);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font:inherit;min-width:0}
 .stc[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
@@ -579,7 +581,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .hoje .when{font-size:13px;font-weight:600;color:var(--text-2)}
 .hoje .dish{font-size:17px;font-weight:650;line-height:1.3;margin-top:4px}
 :root{--wine-tinto:#8B2942;--wine-branco:#6B5428;--wine-rose:#9A3E56;--wine-espumante:#2F5E45;--wine-zero:#1B5A46;--wine-cerveja:#8A4B10;--wine-gold:#7A5A12}
-[data-theme="dark"]{--wine-tinto:#F0B3BE;--wine-branco:#F0D7A4;--wine-rose:#F3B7C6;--wine-espumante:#B7DCC8;--wine-zero:#A9D8C8;--wine-cerveja:#F0C27A;--wine-gold:#F0D48A}
+[data-theme="dark"]{--wine-tinto:#F0B3BE;--wine-branco:#F0D7A4;--wine-rose:#F3B7C6;--wine-espumante:#B7DCC8;--wine-zero:#A9D8C8;--wine-cerveja:#F0C27A;--wine-gold:#E0A106}
 .etiqueta{position:relative;display:grid;grid-template-columns:6px minmax(0,1fr);background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:0;max-width:100%}
 .etiqueta .stripe{background:var(--stripe,var(--wine-tinto))}
 .etiqueta.hue-tinto{--stripe:var(--wine-tinto)}.etiqueta.hue-branco{--stripe:var(--wine-branco)}.etiqueta.hue-rose{--stripe:var(--wine-rose)}.etiqueta.hue-espumante{--stripe:var(--wine-espumante)}.etiqueta.hue-zero{--stripe:var(--wine-zero)}.etiqueta.hue-cerveja{--stripe:var(--wine-cerveja)}
@@ -587,12 +589,16 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .etq{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-height:44px;margin:0;padding:12px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
 .etq-name{font-size:17px;font-weight:600;line-height:1.3}
 .etq-meta{font-size:13px;line-height:1.4;color:var(--text-2)}
-.etq-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;min-width:0}
-.etq-val{font-size:14px;font-weight:600}
-.seal{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font:650 13px/1.2 inherit;white-space:nowrap}
-.seal.ghost{visibility:hidden;pointer-events:none}
-.etiqueta .seal.live{position:absolute;right:12px;bottom:12px}
-.labels>div{min-width:0}
+.etq-row{display:flex;flex-wrap:nowrap;gap:8px;justify-content:space-between;align-items:center;min-width:0}
+.etq-val{font-size:14px;font-weight:600;white-space:nowrap;flex:none}
+.seal{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:28px;min-height:28px;padding:0 8px;border:0;border-radius:999px;background:var(--accent-soft);color:var(--text);font:650 13px/1 inherit;white-space:nowrap;vertical-align:middle;flex:none}
+.seal.reserve{visibility:hidden;pointer-events:none}
+button.seal{appearance:none;cursor:pointer;position:relative}
+.etiqueta .seal.live{position:absolute;right:12px;bottom:12px;z-index:1;margin:0}
+.etiqueta .seal.live::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:44px;transform:translate(-50%,-50%)}
+.labels{align-items:stretch}
+.labels>div{display:flex;flex-direction:column;min-width:0}
+.labels .etiqueta{flex:1}
 dialog.sheet{width:min(560px,100%);max-height:min(85vh,720px);margin:auto auto 0;border:0;border-radius:16px 16px 0 0;padding:0;background:var(--surface);color:var(--text);overflow:auto}
 dialog.sheet::backdrop,dialog.pop::backdrop{background:rgba(0,0,0,.5)}
 @media (prefers-reduced-motion: no-preference){
@@ -601,13 +607,14 @@ dialog.sheet::backdrop,dialog.pop::backdrop{background:rgba(0,0,0,.5)}
 }
 @keyframes sheetIn{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-.sheethead{display:flex;align-items:flex-start;gap:8px;padding:16px 8px 8px 16px;position:sticky;top:0;background:var(--surface);z-index:1}
+.sheethead{display:flex;align-items:flex-start;gap:8px;padding:16px 16px 8px;position:sticky;top:0;background:var(--surface);z-index:1}
 .sheethead h2{margin:8px 0 0;font-size:17px;font-weight:600;line-height:1.3;flex:1;min-width:0}
-.sheetbody{display:grid;gap:12px;padding:8px 16px calc(16px + var(--sab))}
+.sheethead .iconbtn{width:44px;height:44px}
+.sheetbody{display:grid;gap:16px;padding:8px 16px calc(24px + var(--sab))}
 .sheetline{display:flex;gap:8px;align-items:flex-start}
-.sheetnote{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.sheetnote{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
 .sheetnote b{line-height:1.4}
-.sheet a.src,.pop a.src{color:var(--accent);font-weight:600;min-height:44px;min-width:44px;padding:8px 12px;display:inline-flex;align-items:center;text-underline-offset:3px}
+.sheet a.src,.pop a.src{color:var(--accent);font-weight:600;min-height:44px;min-width:44px;margin:0;padding:8px 8px 8px 0;display:inline-flex;align-items:center;text-underline-offset:3px}
 #wineSeg.pills.sm button{min-height:44px}
 dialog.pop{width:min(420px,calc(100vw - 32px));border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);padding:16px}
 dialog.pop h2{margin:0 0 8px;font-size:17px;font-weight:600}
@@ -673,8 +680,8 @@ svg.i{width:20px;height:20px;stroke-width:2}
 .btn.danger:hover{background:var(--neg-soft)}
 .btn:disabled,.btn.primary:disabled,.btn.secondary:disabled{opacity:1;background:var(--surface-2);color:var(--text-3);border:1px solid var(--border-strong);cursor:not-allowed;transform:none;box-shadow:none}
 .paybtn{min-height:48px;padding:0 16px;font-weight:600}
-.seal{display:inline-flex;align-items:center;gap:4px;height:24px;margin-left:8px;padding:0 8px;border-radius:999px;border:1px solid var(--text);background:var(--surface);color:var(--text);font-size:12px;font-weight:700;vertical-align:2px}
-.seal svg{width:16px;height:16px}
+.seal{height:28px;min-height:28px;margin:0;padding:0 8px;border:0;border-radius:999px;background:var(--accent-soft);color:var(--text);font-size:12px;font-weight:700;vertical-align:middle}
+.seal svg{width:16px;height:16px;flex:none}
 .modebtn,.timer,.switch,.switchrow,.ghost{min-height:44px}
 .ghost{height:44px;font-size:16px}
 .switch{height:auto}
@@ -3108,6 +3115,7 @@ if (typeof module !== 'undefined' && typeof window === 'undefined') {
     image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01', dl: 'M17 7 7 17M17 17H7V7', ur: 'M7 17 17 7M7 7h10v10', minus: 'M5 12h14',
   };
   Object.assign(P, { lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4', print: 'M6 9V3h12v6M6 18H4v-7h16v7h-2M6 14h12v7H6z',
+    info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-4M12 8h.01',
     beer: 'M6 8h10v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zM16 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M6 8a3 3 0 0 1 3-4 3 3 0 0 1 5 0 3 3 0 0 1 2 4',
     cocktail: 'M4 4h16l-8 9zM12 13v7M8 20h8', chat: 'M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z', glass: 'M8 3h8l-1 8a3 3 0 0 1-6 0zM12 14v7M8 21h8' });
   const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]}"/></svg>`;
@@ -4152,14 +4160,14 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const rows = state.families.map(f => { const a = brief[f.id], ok = a && a.done;
       return `<div class="fstat">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(f.name)}</div><div class="t2">${ok ? `<span class="okdot">${icon('check')}Respondido</span>` : 'Ainda não respondeu'}${a && a.pinHash ? ` · ${icon('lock')}PIN` : ''}</div></div><button class="btn ${ok ? 'text' : 'secondary'} sm" data-brief="${f.id}">${ok ? 'Abrir' : 'Responder'}</button></div>`; }).join('');
     $('#briefBody').innerHTML = `<div class="progress" role="progressbar" aria-label="Pré-briefing respondido" aria-valuemin="0" aria-valuemax="${tot}" aria-valuenow="${n}"><div style="width:${tot ? n / tot * 100 : 0}%"></div></div>
-      <div class="briefrow"><p>Pré-briefing <b class="num">${n} de ${tot}</b></p><button type="button" class="btn primary sm" data-brief-go>${icon('chev')}<span>Responder</span></button></div>
+      <div class="briefrow"><p><b class="num">${n} de ${tot}</b></p><button type="button" class="btn secondary sm" data-brief-go>${icon('chev')}<span>Responder</span></button></div>
       <button type="button" class="btn text sm" data-brief-more aria-expanded="${briefDetailOpen}" aria-controls="briefDetail"><span>${briefDetailOpen ? 'Ocultar famílias' : 'Ver famílias'}</span></button>
       <div id="briefDetail" ${briefDetailOpen ? '' : 'hidden'}>${rows}
         <div class="lock">${icon('lock')}<span>Cada família vê só as próprias respostas (com PIN). Ficam só neste aparelho: não entram no resumo, na exportação, no WhatsApp nem em servidor.</span></div>
         <div class="notice">${icon('alert')}<span>${AVISO_ALERGIA}</span></div>
         ${has ? `<button type="button" class="btn danger sm" data-bwipe>${icon('trash')}<span>Apagar respostas</span></button>` : ''}
       </div>
-      ${state.demo ? `<button type="button" class="btn primary block" data-breal style="margin-top:8px">${icon('sparkle')}<span>Começar viagem real</span></button>` : ''}`;
+      ${state.demo ? `<button type="button" class="btn secondary block" data-breal style="margin-top:8px">${icon('sparkle')}<span>Começar viagem real</span></button>` : ''}`;
   }
   $('#briefBody').addEventListener('click', e => {
     if (e.target.closest('[data-brief-go]')) { openBrief(); return; }
@@ -4186,6 +4194,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
     { k: 'nao', t: 'O que vocês não comem', s: 'Preferência, sem motivo. Não precisa explicar. Alergia vai no bloco abaixo.', o: Object.entries(BRIEF_VETO).map(([k, v]) => [k, v.label]), text2: 'Outros (separe por vírgula)' },
   ];
   let bFam = null, bDraft = null, bMode = 'form', bPinErr = '';
+  const PIN_LEN = 4;
+  const pinShape = v => new RegExp(`^\\d{${PIN_LEN}}$`).test(String(v || '').trim());
+  const pinLenMsg = () => `O PIN tem ${PIN_LEN} dígitos`;
   function openBrief(fid) {
     const next = fid || (state.families.find(f => !(brief[f.id] && brief[f.id].done)) || state.families[0] || {}).id; if (!next) return;
     bFam = next; bPinErr = '';
@@ -4209,8 +4220,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (bMode === 'pin') {
       $('#briefDlg').innerHTML = `<form method="dialog" class="bwrap" id="briefForm"><div class="bhead"><div style="min-width:0"><h2 id="bTitle">${esc(f.name)}</h2><p>Respostas protegidas por PIN</p></div><button type="button" class="iconbtn" data-bclose aria-label="Fechar">${icon('x')}</button></div>
         <div class="bbody"><div class="q"><h3>${icon('lock')} Digite o PIN da família</h3><p class="qs">Só quem é da família abre as respostas e as alergias.</p>
-        <input class="inp num" id="pinIn" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" aria-label="PIN de 4 dígitos" style="max-width:160px;letter-spacing:.4em;font-size:22px">
-        ${bPinErr ? `<p class="hint" role="alert" style="color:var(--neg)">${esc(bPinErr)}</p>` : ''}</div>
+        <input class="inp num" id="pinIn" inputmode="numeric" autocomplete="off" maxlength="${PIN_LEN}" pattern="[0-9]{${PIN_LEN}}" aria-label="PIN de ${PIN_LEN} dígitos" ${bPinErr ? 'aria-invalid="true" aria-describedby="pinErr"' : ''} style="max-width:160px;letter-spacing:.4em;font-size:22px">
+        ${bPinErr ? `<p class="hint" id="pinErr" role="alert" style="color:var(--neg)">${esc(bPinErr)}</p>` : ''}</div>
         <button type="button" class="btn text sm" data-bforgot>Esqueci o PIN: refazer do zero</button></div>
         <div class="bfoot"><button type="button" class="btn primary" data-bpin>${icon('check')}<span>Abrir</span></button><button type="button" class="btn secondary" data-bclose>Cancelar</button></div></form>`;
       setTimeout(() => { const p = $('#pinIn'); if (p) p.focus(); }, 30); return;
@@ -4228,7 +4239,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         <div class="mini">Intolerância</div><div class="opts">${Object.entries(INTOL).map(([k, x]) => chip('data-it', m.id, k, x.label, h.intol.includes(k))).join('')}${chip('data-veg', m.id, 'veg', 'Vegetariano', h.veg)}</div></div>`; }).join('')}
       <div class="notice">${icon('alert')}<span>${AVISO_ALERGIA} Produto pronto (linguiça, molho, pão, sorvete): confira no rótulo “ALÉRGICOS: CONTÉM” e “PODE CONTER” (contaminação cruzada).</span></div>
       ${famHealthMarked(f) ? `<button type="button" class="btn secondary sm" data-bprint style="margin-top:10px">${icon('print')}<span>Imprimir folha de alergias</span></button>` : ''}</div>`;
-    const pinQ = a && a.pinHash ? '' : `<div class="q"><h3>${icon('lock')} Crie um PIN de 4 dígitos</h3><p class="qs">Protege as respostas desta família neste aparelho.</p><input class="inp num" data-pin inputmode="numeric" autocomplete="off" maxlength="4" value="${esc(bDraft._pin || '')}" aria-label="Novo PIN de 4 dígitos" style="max-width:160px;letter-spacing:.4em;font-size:22px"></div>`;
+    const pinQ = a && a.pinHash ? '' : `<div class="q"><h3>${icon('lock')} Crie um PIN de ${PIN_LEN} dígitos</h3><p class="qs">Protege as respostas desta família neste aparelho.</p><input class="inp num" data-pin inputmode="numeric" autocomplete="off" maxlength="${PIN_LEN}" value="${esc(bDraft._pin || '')}" aria-label="Novo PIN de ${PIN_LEN} dígitos" ${bPinErr ? 'aria-invalid="true" aria-describedby="pinErr"' : ''} style="max-width:160px;letter-spacing:.4em;font-size:22px">${bPinErr ? `<p class="hint" id="pinErr" role="alert" style="color:var(--neg);margin-top:8px">${esc(bPinErr)}</p>` : ''}</div>`;
     $('#briefDlg').innerHTML = `<form method="dialog" class="bwrap" id="briefForm"><div class="bhead"><div style="min-width:0"><h2 id="bTitle">${esc(f.name)}</h2><p>Pré-briefing das refeições · família ${i} de ${state.families.length}</p></div><button type="button" class="iconbtn" data-bclose aria-label="Fechar">${icon('x')}</button></div>
       <div class="bbody">${BQ.map(q => `<div class="q" role="group" aria-labelledby="q_${q.k}"><h3 id="q_${q.k}">${q.t}</h3>${q.s ? `<p class="qs">${q.s}</p>` : ''}
         ${q.o ? `<div class="opts ${q.big ? 'big' : ''}">${q.o.map(([v, l, sm]) => { const on = q.one ? bDraft[q.k] === v : (bDraft[q.k] || []).includes(v); return `<button type="button" data-q="${q.k}" data-v="${v}" aria-pressed="${on}">${on && !q.big ? icon('check') : ''}<span>${l}</span>${sm ? `<small>${sm}</small>` : ''}</button>`; }).join('')}</div>` : ''}
@@ -4264,7 +4275,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (e.target.closest('[data-bclose]')) { $('#briefDlg').close(); return; }
     if (e.target.closest('[data-bpin]')) { const v = ($('#pinIn').value || '').trim(), f = bFam;
       if (!v) { bPinErr = 'Digite o PIN'; paintBrief(); return; }
-      if ((await pinHash(f, v)) === brief[f].pinHash) { unlocked.add(f); bMode = 'form'; loadDraft(f); paintBrief(); } else { bPinErr = 'PIN não confere.'; paintBrief(); } return; }
+      if (v.replace(/\D/g, '').length < PIN_LEN || !pinShape(v)) { bPinErr = pinLenMsg(); paintBrief(); return; }
+      if ((await pinHash(f, v)) === brief[f].pinHash) { unlocked.add(f); bMode = 'form'; bPinErr = ''; loadDraft(f); paintBrief(); } else { bPinErr = 'PIN não confere.'; paintBrief(); } return; }
     if (e.target.closest('[data-bforgot]')) { const f = famById(bFam); if (!confirm(`Refazer do zero? Apaga as respostas e as alergias/intolerâncias de ${f.name} neste aparelho.`)) return;
       delete brief[bFam]; saveBrief(); f.members.forEach(m => { delete m.diet; }); afterHealthChange(); bMode = 'form'; loadDraft(bFam); paintBrief(); render(); return; }
     if (e.target.closest('[data-bprint]')) { printAllergySheet(famById(bFam)); return; }
@@ -4282,7 +4294,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const sv = e.target.closest('[data-bsave],[data-bjust]');
     if (sv) { $$('#briefDlg [data-qt]').forEach(i => { bDraft[i.dataset.qt] = i.value.trim(); });
       const f = famById(bFam), had = brief[bFam] && brief[bFam].pinHash;
-      if (!had && !/^\d{4}$/.test(bDraft._pin || '')) { toast('Crie um PIN de 4 dígitos para proteger as respostas', 'alert'); const p = $('#briefDlg [data-pin]'); if (p) { p.scrollIntoView({ block: 'center' }); p.focus(); } return; }
+      if (!had && !pinShape(bDraft._pin)) { const raw = String(bDraft._pin || ''); bPinErr = raw.replace(/\D/g, '').length && raw.replace(/\D/g, '').length < PIN_LEN ? pinLenMsg() : (raw.trim() ? pinLenMsg() : 'Digite o PIN'); paintBrief(); const p = $('#briefDlg [data-pin]'); if (p) { p.focus({ preventScroll: true }); } return; }
       if (saveHealth(f) === 'consent') { toast('Marque a autorização do responsável para salvar alergias e intolerâncias', 'alert'); const c = $('#briefDlg .consent'); if (c) c.scrollIntoView({ block: 'center' }); return; }
       const out = { ...bDraft }; delete out._health; delete out._consent; delete out._had; delete out._pin; out.done = true; delete out.demo;
       out.pinHash = had || await pinHash(bFam, bDraft._pin); brief[bFam] = out; saveBrief(); unlocked.add(bFam); afterHealthChange();
@@ -4294,7 +4306,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (e.target.matches('[data-consent]')) { bDraft._consent.ok = e.target.checked; e.target.closest('.consent').classList.toggle('on', e.target.checked); }
     if (e.target.matches('[data-cby]')) { bDraft._consent.by = e.target.value; const y = $('#briefDlg').scrollTop; paintBrief(); $('#briefDlg').scrollTop = y; }
   });
-  $('#briefDlg').addEventListener('input', e => { if (e.target.dataset.qt) bDraft[e.target.dataset.qt] = e.target.value; if (e.target.matches('[data-pin]')) bDraft._pin = e.target.value.replace(/\D/g, '').slice(0, 4); });
+  $('#briefDlg').addEventListener('input', e => { if (e.target.dataset.qt) bDraft[e.target.dataset.qt] = e.target.value; if (e.target.matches('[data-pin]')) bDraft._pin = e.target.value.replace(/\D/g, '').slice(0, PIN_LEN); });
   $('#briefDlg').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'pinIn') { e.preventDefault(); $('#briefDlg [data-bpin]').click(); } });
   $('#briefDlg').addEventListener('close', () => { unlocked.delete(bFam); });
   function renderCount() {
@@ -4354,10 +4366,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
         ${adapt.size ? `<div class="warnline" style="margin-top:6px">${icon('alert')}<span>Adaptar: ${esc([...adapt].join(', '))}. A lista de compras já traz a versão adaptada na quantidade certa.</span></div>` : ''}
         ${mesaBlock(k, s)}
         <div class="sgacts">${s.status === 'accepted' ? `<button class="btn secondary sm" data-cookm="${k}">${icon('chef')}<span>Modo cozinha</span></button><button class="btn text sm" data-undo>Desfazer</button>`
-          : s.status === 'rejected' ? `<button class="btn secondary sm" data-acc>${icon('check')}<span>Aceitar mesmo assim</span></button><span></span>` : `<button class="btn primary sm" data-acc>${icon('check')}<span>Aceitar</span></button><button class="btn text sm" data-rej>Recusar</button>`}</div></div>`;
+          : s.status === 'rejected' ? `<button class="btn secondary sm" data-acc>${icon('check')}<span>Aceitar mesmo assim</span></button><span></span>` : `<button class="btn secondary sm" data-acc>${icon('check')}<span>Aceitar</span></button><button class="btn text sm" data-rej>Recusar</button>`}</div></div>`;
     }).join('');
     el.innerHTML = allergyNote + strip + `<div class="t2" style="color:var(--text-2);font-weight:600">${dLabel(ui.chefDay)}</div>` + blocks
-      + `<div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button class="btn primary" data-accall ${pend ? '' : 'disabled'}>${icon('check')}<span>Aceitar todas (${pend})</span></button><button class="btn secondary" data-regen>${icon('shuffle')}<span>Refazer sugestões</span></button></div></div>`;
+      + `<div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button class="btn secondary" data-accall ${pend ? '' : 'disabled'}>${icon('check')}<span>Aceitar todas (${pend})</span></button><button class="btn secondary" data-regen>${icon('shuffle')}<span>Refazer sugestões</span></button></div></div>`;
   }
   // ---------- MESA DE ESPECIALISTAS (Chef, Enólogo e Bar) ----------
   const isMinorViewer = () => ui.viewer === 'menor';
@@ -4433,8 +4445,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const bottles = opt.bottles || 0;
     const val = bottles > 0 ? `~${bottles} garrafa${bottles > 1 ? 's' : ''}` : priceShort(b);
     const label = [b.name, plain, val, seal.text].filter(Boolean).join(', ');
-    const innerSeal = seal.pop ? `<span class="seal ghost" aria-hidden="true">${esc(seal.text)}</span>` : `<span class="seal">${esc(seal.text)}</span>`;
-    const outer = seal.pop ? `<button type="button" class="seal live" data-classpop="${seal.pop}" aria-haspopup="dialog" aria-expanded="false" aria-controls="classPop">${esc(seal.text)}</button>` : '';
+    const sealBits = `${seal.pop ? icon('info') : ''}<span>${esc(seal.text)}</span>`;
+    const innerSeal = seal.pop ? `<span class="seal reserve" aria-hidden="true">${sealBits}</span>` : `<span class="seal">${sealBits}</span>`;
+    const outer = seal.pop ? `<button type="button" class="seal live" data-classpop="${seal.pop}" aria-haspopup="dialog" aria-expanded="false" aria-controls="classPop">${icon('info')}<span>${esc(seal.text)}</span></button>` : '';
     return `<div class="etiqueta hue-${wineHue(b)}${b.tier === 'icone' ? ' icone' : ''}"><span class="stripe" aria-hidden="true"></span>
       <button type="button" class="etq" data-sheet="${esc(id)}" data-meal="${esc(opt.mealKey || '')}" data-chosen="${opt.chosen ? '1' : '0'}" aria-label="${esc(label)}">
         <span class="etq-name">${esc(b.name)}</span>
@@ -4450,6 +4463,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     pop.innerHTML = `<h2 id="classPopTitle"></h2><p id="classPopText"></p><p><a class="src" id="classPopLink" target="_blank" rel="noopener noreferrer"></a></p><p class="t2" id="classPopWhen"></p><button type="button" class="btn secondary" data-pop-close>Fechar</button>`;
     document.body.append(sheet, pop);
     sheet.addEventListener('click', e => {
+      if (e.target === sheet) { const r = sheet.getBoundingClientRect(); const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; if (!inside) sheet.close(); return; }
       if (e.target.closest('[data-sheet-close]')) { sheet.close(); return; }
       const pick = e.target.closest('[data-sheet-pick]'); if (!pick) return;
       const id = pick.dataset.sheetPick, meal = pick.dataset.meal; sheet.close(); toggleBev(id, meal);
@@ -4500,7 +4514,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const c = state.plan[md][mm2] = state.plan[md][mm2] || { ...cellOf(state, md, mm2) };
     c.bev = c.bev || []; const j = c.bev.findIndex(p => p.id === id);
     if (j >= 0) c.bev.splice(j, 1); else c.bev.push({ id, forMain: mealMain(s.ids), at: Date.now() });
-    ui.mesaOpen = k; save(); render(); toast(j >= 0 ? 'Bebida retirada da refeição' : 'Bebida na refeição');
+    save(); render(); toast(j >= 0 ? 'Bebida retirada da refeição' : 'Bebida na refeição');
   }
   function bevCard(id, b, k, chosen) {
     const hit = dishIndex[id];
@@ -4532,7 +4546,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
       const sug = (state.bevSugg[k] || []);
       const fams = state.families, sf = ui.suggFam && famById(ui.suggFam) ? ui.suggFam : (fams[0] || {}).id;
       const opts = [...Object.entries(BEVERAGES).filter(([, b]) => !b.retired).map(([id, b]) => [id, b.name]), ...Object.entries(DRINKS).map(([id, d]) => [id, d.name])];
-      const layer3 = `<div class="l3"><div class="t1" style="margin-top:12px">Sugestões das famílias</div>
+      const layer3 = `<div class="l3">
         ${sug.length ? sug.map((x, i) => { const v = x.id ? bevVerdict(x.id, s.ids) : null, nm = x.id ? (BEVERAGES[x.id] || DRINKS[x.id] || {}).name : x.other, likes = Object.keys(x.likes || {}).length;
           const liked = !!(x.likes && x.likes[sf]);
           return `<div class="sgg"><div style="min-width:0"><div class="t1">${esc(nm || '')}</div><div class="t2">${esc(shortFam((famById(x.fid) || { name: '' }).name))}${v ? ` · <span class="badge ${v === 'Combina' ? 'ok' : v === 'Não combina' ? 'warn' : ''}">Enólogo: ${v}</span>` : ''}</div></div>
@@ -4545,20 +4559,25 @@ Corte as frutas e monte a mesa com pães e frios.`,
       const review = c.bevReview ? `<div class="notice" role="status">${icon('shuffle')}<span>O Chef trocou o prato e o Enólogo ajustou a bebida.</span><button type="button" class="btn text sm" data-bundo>Desfazer</button></div>` : '';
       const pend = picks.filter(p => (BEVERAGES[p.id] && bevAlcoholic(BEVERAGES[p.id]) || (DRINKS[p.id] && !DRINKS[p.id].zero)) && !p.okBy);
       const okRow = pend.length ? `<div class="notice">${icon('alert')}<span>${pend.length} ${pend.length > 1 ? 'bebidas alcoólicas aguardam' : 'bebida alcoólica aguarda'} o aceite de um adulto organizador para entrar na lista de compras.</span><button type="button" class="btn secondary sm" data-bok>Aceitar</button></div>` : '';
-      body = review + seg + layers + okRow + `<p class="fine">${AGE_LINE} Sem patrocínio, sem afiliado e sem link de compra. Notas: só a nota, o crítico e o link da fonte; sem nota conferida, “Sem nota”. Preço é faixa aproximada.</p>` + layer3;
+      body = review + seg + layers + okRow + `<p class="fine">${AGE_LINE} Sem patrocínio, sem afiliado e sem link de compra. Notas: só a nota, o crítico e o link da fonte; sem nota conferida, “Sem nota”. Preço é faixa aproximada.</p>`;
+      const sugId = 'sug-' + k.replace('|', '-'), sugOpen = ui.suggOpen === k;
+      body += `<button type="button" class="btn text sm msug" data-msug="${esc(k)}" aria-expanded="${sugOpen ? 'true' : 'false'}" aria-controls="${sugId}">${icon('chev')}<span>Sugestões das famílias (${sug.length})</span></button><div id="${sugId}" class="sugpanel" ${sugOpen ? '' : 'hidden'}>${layer3}</div>`;
     }
     const chefLine = lines[0], head = chefLine.text.includes('. ') ? chefLine.text.slice(0, chefLine.text.indexOf('. ') + 1) : chefLine.text;
     const tail = chefLine.text.slice(head.length).trim();
-    const conv = [...(tail ? [{ who: 'chef', text: tail }] : []), ...lines.slice(1)];
     const verdict = lines.filter(l => l.who === 'enologo' && !/revi a harmonização/.test(l.text)).pop();
     const verdictTxt = verdict ? (verdict.text.includes('. ') ? verdict.text.slice(0, verdict.text.indexOf('. ') + 1) : verdict.text) : '';
+    const conv = [];
+    if (tail) conv.push({ who: 'chef', text: tail });
+    for (const l of lines.slice(1)) { if (l === verdict || (verdictTxt && l.text === verdictTxt)) continue; conv.push(l); }
     const convId = 'conv-' + k.replace('|', '-');
-    return `<div class="mesa" data-mesa="${k}" tabindex="-1"><div class="mhead"><div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div></div>
+    return `<div class="mesa" data-mesa="${k}"><div class="mhead"><div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div></div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : ''}
       <p class="mbal">${esc(head)}</p>
       <button type="button" class="btn text sm mconv" data-mconv="${k}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="${convId}">${icon('chev')}<span>Ver conversa (${conv.length})</span></button>
-      <div id="${convId}" ${open ? '' : 'hidden'}><div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}:</b> ${esc(l.text)}</p>`).join('')}</div>${body}</div>
-      <p class="fine" style="margin:4px 0 0">Conteúdo automático do app, por regras e catálogo curado. Sem IA externa.</p></div>`;
+      <div id="${convId}" ${open ? '' : 'hidden'}><div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}:</b> ${esc(l.text)}</p>`).join('')}</div></div>
+      ${body}
+      <p class="fine" style="margin:8px 0 0">Conteúdo automático do app, por regras e catálogo curado. Sem IA externa.</p></div>`;
   }
   function adultAccept(cb) {
     const adults = allPeople(state).filter(p => isAdult(p)); if (!adults.length) return toast('Cadastre um adulto primeiro', 'alert');
@@ -4574,6 +4593,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   function okAlcohol(k) { adultAccept(by => { const c = cellBev(k); (c.bev || []).forEach(p => { if (!p.okBy) p.okBy = by; }); state.metrics.pairOk = (state.metrics.pairOk || 0) + 1; save(); render(); toast('Bebidas na lista de compras'); }); }
   $('#menuBody').addEventListener('click', e => {
+    const sugBtn = e.target.closest('[data-msug]');
+    if (sugBtn) { e.stopImmediatePropagation(); const k = sugBtn.dataset.msug, opening = sugBtn.getAttribute('aria-expanded') !== 'true'; ui.suggOpen = opening ? k : null; saveUi(); renderMenu(chefCtx()); return; }
     const btn = e.target.closest('[data-mconv]'); if (!btn) return;
     e.stopImmediatePropagation();
     const k = btn.dataset.mconv, opening = btn.getAttribute('aria-expanded') !== 'true';
@@ -4601,17 +4622,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (t.closest('[data-undo]')) { const [dd, mm] = k.split('|'); const c = curCell(dd, mm); c.recipes = c.recipes.filter(x => !s.ids.includes(x)); setCell(dd, mm, c); const pc = state.plan[dd][mm]; delete pc.cook; delete pc.clean; delete pc.rotaLocked; s.status = 'pending'; save(); render(); toast('Refeição voltou para sugestão'); return; }
     // Mesa
     const [md, mm2] = k.split('|');
-    if (t.closest('[data-mk]')) { ui.mesaKind = t.closest('[data-mk]').dataset.mk; ui.mesaOpen = k; saveUi(); renderMenu(chefCtx()); return; }
-    if (t.closest('[data-mst]')) { ui.mesaStyle = ui.mesaStyle || {}; ui.mesaStyle[k + (ui.mesaKind || 'wine')] = t.closest('[data-mst]').dataset.mst; ui.mesaOpen = k; saveUi(); renderMenu(chefCtx()); return; }
+    if (t.closest('[data-mk]')) { ui.mesaKind = t.closest('[data-mk]').dataset.mk; saveUi(); renderMenu(chefCtx()); return; }
+    if (t.closest('[data-mst]')) { ui.mesaStyle = ui.mesaStyle || {}; ui.mesaStyle[k + (ui.mesaKind || 'wine')] = t.closest('[data-mst]').dataset.mst; saveUi(); renderMenu(chefCtx()); return; }
     if (t.closest('[data-bpick]')) { toggleBev(t.closest('[data-bpick]').dataset.bpick, k); return; }
     if (t.closest('[data-bundo]')) { const c = cellBev(k); if (c && c.bevReview) { c.bev = c.bevReview.prev; delete c.bevReview; c.bev.forEach(p => { p.forMain = mealMain(s.ids); }); save(); render(); toast('Bebida anterior de volta'); } return; }
     if (t.closest('[data-bok]')) { okAlcohol(k); return; }
     if (t.closest('[data-like]')) { const x = (state.bevSugg[k] || [])[+t.closest('[data-like]').dataset.like]; if (!x) return; const fid = ui.suggFam || (state.families[0] || {}).id; x.likes = x.likes || {};
-      if (x.likes[fid]) delete x.likes[fid]; else { x.likes[fid] = 1; state.metrics.likes = state.metrics.likes || {}; state.metrics.likes[fid] = (state.metrics.likes[fid] || 0) + 1; } ui.mesaOpen = k; save(); renderMenu(chefCtx()); return; }
+      if (x.likes[fid]) delete x.likes[fid]; else { x.likes[fid] = 1; state.metrics.likes = state.metrics.likes || {}; state.metrics.likes[fid] = (state.metrics.likes[fid] || 0) + 1; } ui.suggOpen = k; save(); renderMenu(chefCtx()); return; }
     if (t.closest('[data-ssend]')) { const sel = box.querySelector('[data-ssel]').value, oth = box.querySelector('[data-sother]').value.trim().slice(0, 80), fid = box.querySelector('[data-sfam]').value;
       if (!sel && !oth) { toast('Escolha do catálogo ou escreva em Outro', 'alert'); return; }
       (state.bevSugg[k] = state.bevSugg[k] || []).push(sel ? { fid, id: sel, likes: {} } : { fid, other: oth, likes: {} }); state.metrics.sugg = state.metrics.sugg || {}; state.metrics.sugg[fid] = (state.metrics.sugg[fid] || 0) + 1;
-      ui.suggFam = fid; ui.mesaOpen = k; saveUi(); save(); renderMenu(chefCtx()); toast('Sugestão registrada'); return; }
+      ui.suggFam = fid; ui.suggOpen = k; saveUi(); save(); renderMenu(chefCtx()); toast('Sugestão registrada'); return; }
     const sw = t.closest('[data-swap]'); if (sw) { const j = +sw.dataset.swap, cur = s.ids[j], course = CHEF[cur].course, sc = chefScores(state, brief), pm = presentMembers(state, ...k.split('|'));
       const list = Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers && !x.vetos.length && !s.ids.includes(x.id) && !allergyHits(state, chefRecipe(x.id), pm).length).sort((a, b) => b.score - a.score);
       const seen = s.seen = s.seen || []; if (!seen.includes(cur)) seen.push(cur);
@@ -4647,13 +4668,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   function showMesa(k) {
     if (!k) return;
-    ui.chefDay = k.split('|')[0]; ui.mesaOpen = k; saveUi();
+    ui.chefDay = k.split('|')[0]; saveUi();
     if (document.body.dataset.view !== 'chef') setView('chef', { keepScroll: true });
     renderMenu(chefCtx());
-    const el = document.querySelector(`[data-mesa="${CSS.escape(k)}"]`); if (!el) return;
+    const el = document.querySelector(`.sg[data-sk="${CSS.escape(k)}"]`); if (!el) return;
     el.tabIndex = -1;
-    el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    el.focus();
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const root = document.documentElement, prevPad = root.style.scrollPaddingTop;
+    root.style.scrollPaddingTop = '0px';
+    el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    root.style.scrollPaddingTop = prevPad;
+    el.focus({ preventScroll: true });
   }
   function renderHoje() {
     const el = $('#hojeBody'); if (!el) return;
