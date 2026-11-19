@@ -38,7 +38,10 @@ const { chromium } = require('playwright-core');
         for (const el of document.querySelectorAll('input.inp')) { if (el.offsetParent === null || el.value) continue; const r = paint(el, getComputedStyle(el, '::placeholder').color); out.push({ t: 'placeholder ' + el.id, cls: 'INPUT', r: +r.toFixed(2), need: 4.5 }); }
         // non-text: chart segments / swatches vs card surface, accent button vs surface (3:1)
         for (const el of document.querySelectorAll('.legend .sw')) out.push({ t: 'swatch ' + el.parentElement.textContent.trim().split(' ')[0], cls: 'non-text', r: +paint(el.parentElement, getComputedStyle(el).backgroundColor).toFixed(2), need: 3 });
-        const pb = document.querySelector('.btn.primary'); out.push({ t: 'primary btn bg vs card', cls: 'non-text', r: +paint(pb.parentElement, getComputedStyle(pb).backgroundColor).toFixed(2), need: 3 });
+        const pb = [...document.querySelectorAll('.btn.primary')].find(b => !b.disabled);
+        if (pb) out.push({ t: 'primary btn bg vs card', cls: 'non-text', r: +paint(pb.parentElement, getComputedStyle(pb).backgroundColor).toFixed(2), need: 3 });
+        const dis = document.querySelector('.btn:disabled');
+        if (dis) out.push({ t: 'disabled border vs card', cls: 'non-text', r: +paint(dis.parentElement, getComputedStyle(dis).borderTopColor).toFixed(2), need: 3 });
         const sw = document.querySelector('.switch input:checked'); out.push({ t: 'switch on vs card', cls: 'non-text', r: +paint(sw.parentElement, getComputedStyle(sw).backgroundColor).toFixed(2), need: 3 });
         return out;
       });
