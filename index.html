@@ -631,6 +631,23 @@ dialog.pop{width:min(420px,calc(100vw - 32px));border:1px solid var(--border);bo
 dialog.pop h2{margin:0 0 8px;font-size:17px;font-weight:600}
 dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .fine{font-size:12px;color:var(--text-2);line-height:1.45}
+/* Adega que vem de casa */
+.homecellar{display:grid;gap:12px;margin:0 0 16px}
+.hchead{display:grid;gap:8px}
+.hchead .btn{justify-self:start}
+.hcitem{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:start;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);min-width:0}
+.hcitem .ph{width:56px;height:72px;border-radius:8px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;color:var(--text-3)}
+.hcitem .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.hcitem .t2{overflow-wrap:anywhere}
+.hcwhen{display:grid;gap:10px;margin-top:8px}
+.hcslot{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--border)}
+.hcslot .ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.hcslot select{min-height:44px}
+.hcslot .btn.text,.hcitem .actions .btn{min-height:44px}
+.hctag{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--text-2)}
+.hojehome{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2)}
+.hojehome p{margin:0 0 4px}.hojehome p:last-child{margin:0}
+#hcPhotoPrev img{width:56px;height:72px;object-fit:cover;border-radius:8px;display:block}
 
 @media(min-width:700px){dialog.brief{height:auto;max-height:92vh;margin:4vh auto;border-radius:20px;border:1px solid var(--border)}}
 .bwrap{display:flex;flex-direction:column;min-height:100%}
@@ -941,6 +958,7 @@ dialog.gate .field{margin-bottom:12px}
     <div class="col">
       <section class="card" aria-labelledby="menuTitle"><div class="ch"><h2 id="menuTitle">Cardápio sugerido</h2><span class="meta" id="menuMeta"></span></div><div id="menuBody"></div></section>
       <section class="card" id="wineCard" aria-labelledby="wineTitle"><div class="ch"><h2 id="wineTitle">Adega da viagem</h2><span class="meta" id="wineMeta"></span></div>
+        <div id="homeCellar" class="homecellar"></div>
         <div class="pills sm" id="wineSeg" role="group" aria-label="Faixa de preço" style="margin-bottom:12px"></div><div id="wineList"></div>
         <div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button class="btn secondary" id="wineCopy"><span data-i="copy"></span><span>Copiar adega</span></button><a class="btn secondary" id="wineWa" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a></div></div></section>
       <section class="card" aria-labelledby="rotaTitle"><div class="ch"><h2 id="rotaTitle">Escala da cozinha</h2><span class="meta">quem cozinha e quem limpa</span></div><div id="rotaBody"></div></section>
@@ -2168,17 +2186,19 @@ function mealCounts(state) {
 }
 // Adega: garrafas por refeição (jantar ≈ 2 taças por pessoa que bebe no principal, 0,6 na entrada e na sobremesa; almoço na praia, metade).
 function wineList(state, plan, tier) {
-  const P = portions(state), byWine = {};
+  const P = portions(state), byWine = {}, cp = (state.cellar || []).length ? cellarPlan(state) : null;
   for (const [key, s] of Object.entries(plan)) {
+    let home = cp && cp.slots[key] ? cp.slots[key].n : 0;
     const [d, meal] = key.split('|'), days = P.days, idx = days.indexOf(d) * 4 + MEAL_ORDER.indexOf(meal);
     let drinkers = 0; for (const f of state.families) for (const m of f.members) { const [a, b] = presenceRange(state, m, f, days); if (isDrinker(m) && idx >= a && idx <= b) drinkers++; }
     if (!drinkers) continue;
     s.ids.forEach((id, j) => { const c = CHEF[id]; if (!c) return; const sts = PAIRINGS.wine[pairKey(c)] || []; if (!sts.length) return;
       const labs = styleLabels(sts[(days.indexOf(d) + j) % sts.length]), lab = labs.find(x => x.b.tier === tier) || labs[0]; if (!lab) return;
       const w = lab.id, glasses = (c.course === 'principal' ? 2 : 0.6) * (meal === 'jantar' ? 1 : 0.5), x = byWine[w] = byWine[w] || { id: w, bottles: 0, dishes: new Set() };
-      x.bottles += drinkers * glasses / 5; x.dishes.add(c.title); });
+      let q = drinkers * glasses / 5; if (home > 0) { const t = Math.min(q, home); q -= t; home -= t; }
+      x.bottles += q; x.dishes.add(c.title); });
   }
-  return Object.values(byWine).map(x => ({ ...x, bottles: Math.max(1, Math.ceil(x.bottles - 0.15)), dishes: [...x.dishes] })).sort((a, b) => b.bottles - a.bottles);
+  return Object.values(byWine).filter(x => x.bottles > 1e-9).map(x => ({ ...x, bottles: Math.max(1, Math.ceil(x.bottles - 0.15)), dishes: [...x.dishes] })).sort((a, b) => b.bottles - a.bottles);
 }
 // ===================== Evento compartilhado (Supabase): mapeamento estado <-> linhas =====================
 // O servidor só guarda linhas; todo cálculo continua aqui no cliente.
@@ -3046,16 +3066,18 @@ function mesaTalk(state, key, ids, bev) {
 }
 // Lista de compras das bebidas aceitas. Álcool só com aceite de adulto organizador (okBy) e só para adultos que bebem.
 function bevNeeds(state, P, only) {
-  const out = [], days = P.days;
+  const out = [], days = P.days, cp = (state.cellar || []).length ? cellarPlan(state) : null;
   for (const d of days) for (const meal of P.meals) {
     if (only && !only.has(d)) continue;
     const c = cellOf(state, d, meal); if (!c.bev || !c.bev.length || c.mode === 'livre') continue;
+    let home = cp && cp.slots[d + '|' + meal] ? cp.slots[d + '|' + meal].n : 0; // garrafas que vêm de casa nesta refeição: compra menos vinho
     const ms = presentMembers(state, d, meal), drinkers = ms.filter(isDrinker).length, everyone = ms.filter(m => typeOf(m) !== 'bebe').length;
     for (const pk of c.bev) {
       const b = BEVERAGES[pk.id], dr = DRINKS[pk.id];
       if (b) { if (b.fromCellar) continue; const alc = bevAlcoholic(b); if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
         const per = b.kind === 'beer' || b.style === 'st_zero_cerveja' ? (meal === 'jantar' ? 1.5 : 2) : (b.serves ? 1 / b.serves : (meal === 'jantar' ? 2 : 1) / 5);
-        out.push(['bv_' + pk.id, n * per]); }
+        let q = n * per; if (home > 0 && b.kind === 'wine' && alc) { const t = Math.min(q, home); q -= t; home -= t; }
+        if (q > 1e-9) out.push(['bv_' + pk.id, q]); }
       else if (dr) { const alc = !dr.zero; if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
         const jars = n * 1.5 / dr.jar; for (const [k, q] of dr.ing) out.push([k, q * jars]); }
     }
@@ -3075,22 +3097,110 @@ for (const [id, b] of Object.entries(BEVERAGES)) if (b.kind === 'wine' && !b.ret
 for (const [id, w] of Object.entries(WINES)) { const b = BEVERAGES[id]; if (!b) continue; const r = bestRating(b);
   w.award = r ? ratingTxt(r) : ''; w.src = r ? (r.via || r.critic) : ''; w.url = r ? r.url : ''; w.price = priceTxt(b).split(' · ')[0]; w.tier = b.tier; w.retired = b.retired || null; w.premium = !!b.premium; w.style = b.style; }
 // Texto da Adega para o WhatsApp (sempre com a frase dos 18 anos).
-function adegaText(tier, rows) {
+function adegaText(tier, rows, home) {
+  const H = (home || []).length ? ['', '*Da nossa adega* (vem de casa, custo zero, fora do rateio)'].concat(home.map(h => `- ${h.label} — ${h.n} garrafa${h.n > 1 ? 's' : ''} · trazida por ${h.famName}${h.when ? ` · ${h.when}` : ''}`)) : [];
   return ['*Adega da viagem — Rateatouille*', `${WINE_TIER_LABEL[tier] || ''} · preços em faixa`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `- ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; }))
-    .concat(['', AGE_LINE]).join('\n');
+    .concat(H, ['', SULFITE_LINE, AGE_LINE]).join('\n');
+}
+// Garrafas de casa para o texto: rótulo, família e os dias em que saem.
+function cellarHomeRows(state, cp) {
+  cp = cp || cellarPlan(state); const when = {};
+  for (const [k, a] of Object.entries(cp.slots).sort()) { const [d, meal] = k.split('|'); (when[a.id] = when[a.id] || []).push(`${d.slice(8, 10)}/${d.slice(5, 7)} ${MEALS[meal].toLowerCase()}`); }
+  return (state.cellar || []).map(it => { const x = cellarInfo(state, it); return { id: x.id, label: cellarLabel(x), famName: x.famName, n: x.bottles, when: (when[x.id] || []).join(', ') }; }).filter(h => h.n > 0);
+}
+// ===================== Adega que vem de casa =====================
+// Garrafas que as famílias trazem. Ficam SÓ neste aparelho (state.cellar e a foto no IndexedDB): não vão ao servidor,
+// não entram na lista de compras nem no rateio (custo zero, ninguém paga). Ganham dia no cardápio pela harmonização do prato.
+const GLASS_ML = 150, BOTTLE_ML = 750, GLASSES_PER_BOTTLE = BOTTLE_ML / GLASS_ML; // 5 taças de 150 ml
+const SULFITE_LINE = 'Vinho contém sulfitos: quem tem sensibilidade confere o rótulo antes de servir.';
+const CELLAR_MAX = 60; // itens na lista (cada item pode ter várias garrafas)
+const MEAL_HOUR = { almoco: 13, jantar: 20 };
+const normLabel = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\b(19|20)\d\d\b/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+// Reaproveita a ficha do catálogo (ou da lista do Jefferson): todas as palavras digitadas precisam estar no nome do rótulo,
+// e ganha o rótulo com maior parte do nome coberta (ex.: «Riscal Reserva» = Marqués de Riscal Reserva, não o Gran Reserva).
+function matchCellarLabel(name) {
+  const typed = [...new Set(normLabel(name).split(' ').filter(w => w.length >= 3))]; if (!typed.length || typed.join('').length < 5) return null;
+  let best = null;
+  for (const [id, b] of Object.entries(BEVERAGES)) { if (b.kind !== 'wine') continue;
+    const bw = normLabel(b.name).split(' ').filter(w => w.length >= 3); if (!bw.length) continue;
+    if (!typed.every(w => bw.includes(w))) continue;
+    const cover = typed.length / bw.length, score = cover + (b.retired ? 0 : 0.01);
+    if (cover >= 0.5 && (!best || score > best.score)) best = { id, score }; }
+  return best ? best.id : null;
+}
+const cellarYear = state => Number(String((state.trip && state.trip.start) || '').slice(0, 4)) || new Date().getFullYear();
+// Ficha da garrafa trazida: estilo, faixa, serviço e nota vêm do rótulo do catálogo quando há coincidência.
+function cellarInfo(state, item) {
+  const mid = item.matchId && BEVERAGES[item.matchId] ? item.matchId : matchCellarLabel(item.name), m = mid ? BEVERAGES[mid] : null;
+  const style = item.style || (m && m.style) || '', fam = (state.families || []).find(f => f.id === item.famId);
+  const old = item.vintage && cellarYear(state) - Number(item.vintage) >= 10;
+  const svcSrc = m || { style }, sv = (m && m.service) || WINE_SERVICE[style] || null;
+  return { id: item.id, name: item.name, vintage: item.vintage || null, style, styleName: (BEV_STYLES[style] || {}).name || '', famName: fam ? fam.name : 'uma família',
+    bottles: Math.max(0, Math.floor(Number(item.bottles) || 0)), note: item.note || '', matchId: mid, rating: m ? bestRating(m) : null,
+    service: serviceTxt(svcSrc), temp: sv ? sv.temp : '', decant: sv ? sv.decant : '', special: !!((m && m.tier === 'icone') || old), old: !!old };
+}
+const cellarLabel = x => `${x.name}${x.vintage ? ' ' + x.vintage : ''}`;
+// Refeições de destaque: datas especiais (ceia, Natal, virada) e o churrasco (almoço ou jantar).
+const isHighlight = (key, ids) => { const [d, meal] = key.split('|'); return !!SPECIAL[d.slice(5) + '|' + meal] || mealMain(ids) === 'c_churrasco'; };
+// Refeições com prato do Chef aceito (almoço e jantar), com quem bebe presente.
+function cellarSlots(state) {
+  const out = []; const days = tripDays(state.trip || {});
+  for (const d of days) for (const meal of ['almoco', 'jantar']) {
+    const c = state.plan && state.plan[d] && state.plan[d][meal]; if (!c || c.mode !== 'casa') continue;
+    const ids = cellRecipes(c).filter(id => CHEF[id]); if (!ids.length) continue;
+    const drinkers = presentMembers(state, d, meal).filter(isDrinker).length; if (!drinkers) continue;
+    const key = d + '|' + meal, cap = Math.max(1, Math.ceil(drinkers * (meal === 'jantar' ? 2 : 1) / GLASSES_PER_BOTTLE - 0.15));
+    out.push({ key, day: d, meal, ids, drinkers, cap, styles: pairStyles(ids, 'wine'), highlight: isHighlight(key, ids) });
+  }
+  return out;
+}
+// Agenda: cada garrafa trazida ganha refeição pelo estilo do prato (1º estilo sugerido vale mais). Especiais (ícone ou safra
+// com 10+ anos) vão primeiro e para as noites de destaque. Troca (cellarSet[key] = id) e recusa (cellarSet[key] = '' para a
+// refeição, cellarNo = ['key|id'] para aquela garrafa naquela refeição) são do adulto e sempre valem.
+function cellarPlan(state) {
+  const items = (state.cellar || []).map(it => cellarInfo(state, it)).filter(x => x.bottles > 0 && x.style);
+  const left = Object.fromEntries(items.map(x => [x.id, x.bottles])), byId = Object.fromEntries(items.map(x => [x.id, x]));
+  const set = state.cellarSet || {}, no = new Set(state.cellarNo || []), out = {}, slots = cellarSlots(state);
+  for (const s of slots) { const f = set[s.key]; if (f && byId[f] && left[f] > 0) { const n = Math.min(left[f], s.cap); left[f] -= n; out[s.key] = { id: f, n, rank: s.styles.indexOf(byId[f].style), manual: true, highlight: s.highlight }; } }
+  const order = items.slice().sort((a, b) => (b.special - a.special) || (b.bottles - a.bottles) || String(a.id).localeCompare(String(b.id)));
+  for (const x of order) {
+    while (left[x.id] > 0) {
+      let best = null;
+      slots.forEach((s, i) => { if (out[s.key] || set[s.key] === '' || no.has(s.key + '|' + x.id)) return; const r = s.styles.indexOf(x.style); if (r < 0) return;
+        const sc = r * 10 + (x.special ? (s.highlight ? 0 : 6) : (s.highlight ? 4 : 0)) + i / 1000; if (!best || sc < best.sc) best = { s, sc, r }; });
+      if (!best) break;
+      const n = Math.min(left[x.id], best.s.cap); left[x.id] -= n; out[best.s.key] = { id: x.id, n, rank: best.r, manual: false, highlight: best.s.highlight };
+    }
+  }
+  const unplaced = items.filter(x => left[x.id] > 0).map(x => ({ id: x.id, n: left[x.id] }));
+  return { slots: out, unplaced, items: byId };
+}
+const leadMin = decant => { if (!decant || /^(em geral )?sem decantar/.test(decant)) return 0; const m = String(decant).match(/(\d+)\s*(h|min)/); return m ? Number(m[1]) * (m[2] === 'h' ? 60 : 1) : 30; };
+const hhmm = min => { const h = Math.floor(((min % 1440) + 1440) % 1440 / 60), m = ((min % 60) + 60) % 60; return `${h}h${m ? String(m).padStart(2, '0') : ''}`; };
+// Linha do «Hoje à mesa» para uma refeição, ou null.
+function cellarToday(state, key, cp) {
+  cp = cp || cellarPlan(state); const a = cp.slots[key]; if (!a) return null; const x = cp.items[a.id], meal = key.split('|')[1];
+  const slot = cellarSlots(state).find(s => s.key === key), drinkers = slot ? slot.drinkers : 0, t0 = (MEAL_HOUR[meal] || 20) * 60;
+  const tNum = Number((x.temp.match(/\d+/) || [16])[0]), cold = tNum <= 12, lm = leadMin(x.decant);
+  const prep = cold ? `Gelar: às ${hhmm(t0 - 120)} na geladeira (ou 30 min antes em balde com gelo e água) para servir a ${x.temp}.`
+    : `Abrir para respirar: às ${hhmm(t0 - Math.max(lm, 30))} (${x.decant}); servir a ${x.temp}${tNum >= 16 ? ', com 15 min de geladeira antes no calor' : ''}.`;
+  const glasses = a.n * GLASSES_PER_BOTTLE, per = drinkers ? Math.round(glasses / drinkers * 2) / 2 : 0;
+  return { title: `Hoje sai da adega de ${x.famName}: ${cellarLabel(x)}`, prep, n: a.n,
+    yield: `${a.n} garrafa${a.n > 1 ? 's' : ''} = ${glasses} taças de ${GLASS_ML} ml${per ? `, ~${per.toLocaleString('pt-BR')} por adulto que bebe` : ''}.`, item: x, manual: a.manual };
 }
 // Exportação: nunca leva dieta, alergia, intolerância nem fotos (ficam só no aparelho).
 function safeExportState(st) {
   const o = JSON.parse(JSON.stringify(st)); delete o.syncMode;
   (o.families || []).forEach(f => (f.members || []).forEach(m => { delete m.diet; }));
   (o.expenses || []).forEach(e => { delete e.photo; });
+  (o.cellar || []).forEach(c => { delete c.photo; });
   return o;
 }
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
   module.exports = {  genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF ,  CHEF, WINES, chefRecipe, chefScores, chefPlan, groupPrefs, mealCounts, wineList, famAffinity, safeExportState,
     ALLERGENS, ALLERGEN_SRC, ITEM_ALLERGENS, INTOL, healthOf, ingAllergens, recipeAllergens, allergyHits, presentMembers, cellBlocked, enforceAllergies, groupHealth, intolShares, isDrinker,
-    CATALOG_VERSION, BEVERAGES, BEV_STYLES, DRINKS, PAIRINGS, pairStyles, styleLabels, bestRating, validRating, bevVerdict, mesaTalk, bevNeeds, bevAlcoholic, eventMetrics, ITEMS, SPECIAL, BRIEF_VETO, HEALTH_RETENTION_DAYS };
+    CATALOG_VERSION, BEVERAGES, BEV_STYLES, DRINKS, PAIRINGS, pairStyles, styleLabels, bestRating, validRating, bevVerdict, mesaTalk, bevNeeds, bevAlcoholic, eventMetrics, matchCellarLabel, cellarInfo, cellarPlan, cellarSlots, cellarToday, cellarHomeRows, adegaText, SULFITE_LINE, AGE_LINE, GLASSES_PER_BOTTLE, ITEMS, SPECIAL, BRIEF_VETO, HEALTH_RETENTION_DAYS };
 }
 </script>
 <script>
@@ -4666,7 +4776,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#wineSeg').innerHTML = Object.entries(WINE_TIERS).map(([k, l]) => `<button type="button" data-wt="${k}" aria-pressed="${k === tier}">${l}</button>`).join('');
     const rows = list.length ? list : Object.entries(WINES).filter(([, w]) => w.tier === tier && !w.retired && w.premium).map(([id]) => ({ id, bottles: 0, dishes: [] }));
     $('#wineMeta').textContent = list.length ? `~${list.reduce((s, x) => s + x.bottles, 0)} garrafas na viagem` : 'catálogo';
-    C.wineText = adegaText(tier, rows);
+    const cp = cellarPlan(state); renderHomeCellar(cp);
+    C.wineText = adegaText(tier, rows, cellarHomeRows(state, cp));
     $('#wineWa').href = 'https://wa.me/?text=' + encodeURIComponent(C.wineText);
     $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${esc((WINE_TIERS[tier] || '').toLowerCase())}:</p>`) + rows.map(x => etiquetaCard(x.id, { bottles: x.bottles, dishes: x.dishes })).join('')
       + `<p class="fine">Garrafas estimadas em ~2 taças por pessoa que bebe no prato principal e meia taça na entrada e na sobremesa. Prêmios e notas conferidos em fontes públicas em nov/2026 e valem para a safra indicada. Preços são faixas aproximadas: confira na loja. Beba com moderação; venda proibida para menores de 18 anos.</p>`;
@@ -4687,6 +4798,117 @@ Corte as frutas e monte a mesa com pães e frios.`,
     for (const s of upcomingSlots(99)) { const k = s.day + '|' + s.meal; if (state.chef && state.chef.sugg && state.chef.sugg[k]) return k; }
     return keys[0];
   }
+
+  // ---------- ADEGA QUE VEM DE CASA (só neste aparelho; foto no IndexedDB; custo zero) ----------
+  const HC_DB = 'rateatouille-adega', hcPhotos = {};
+  const hcDb = () => new Promise((res, rej) => { const r = indexedDB.open(HC_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('rotulos'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const hcTx = (mode, fn) => hcDb().then(db => new Promise((res, rej) => { const t = db.transaction('rotulos', mode), st = t.objectStore('rotulos'), r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }));
+  const hcPut = (id, url) => hcTx('readwrite', st => st.put(url, id));
+  const hcGet = id => hcTx('readonly', st => st.get(id));
+  const hcDel = id => hcTx('readwrite', st => st.delete(id));
+  // Foto do rótulo: redesenhada no canvas (sai EXIF/GPS), lado máx. 800 px, JPEG até ~120 KB. Sem leitura automática por IA.
+  async function hcCompress(file) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+    for (const max of [800, 640, 480]) { const k = Math.min(1, max / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      for (let q = 0.75; q >= 0.4; q -= 0.1) { const url = cv.toDataURL('image/jpeg', q); if (url.length <= 160000) { URL.revokeObjectURL(img.src); return url; } } }
+    URL.revokeObjectURL(img.src); return null;
+  }
+  const hcWineStyles = () => Object.entries(BEV_STYLES).filter(([, v]) => v.kind === 'wine' && !v.zero);
+  function hcSlotRow(k, a, x, items) {
+    const [d, meal] = k.split('|'), c = state.plan[d] && state.plan[d][meal], main = c ? mealMain(cellRecipes(c)) : null, dish = main && CHEF[main] ? CHEF[main].title : MEALS[meal];
+    const others = items.filter(o => o.id !== x.id);
+    return `<div class="hcslot"><div class="t2"><b>${esc(dLabel(d))} · ${esc(MEALS[meal])}</b> · ${esc(dish)} · ${a.n} garrafa${a.n > 1 ? 's' : ''}${a.highlight ? ' · noite de destaque' : ''}${a.manual ? ' · escolha de um adulto' : ''}</div>
+      <div class="ctl"><select class="inp sm" data-hc-swap="${esc(k)}" aria-label="Trocar a garrafa de casa de ${esc(dLabel(d))}, ${esc(MEALS[meal])}"><option value="${esc(x.id)}" selected>Trocar por…</option>${others.map(o => `<option value="${esc(o.id)}">${esc(cellarLabel(o))}</option>`).join('')}<option value="">Nenhuma garrafa de casa nesta refeição</option></select>
+      <button type="button" class="btn text sm" data-hc-no="${esc(k + '|' + x.id)}">Recusar</button></div></div>`;
+  }
+  function renderHomeCellar(cp) {
+    const box = $('#homeCellar'); if (!box) return;
+    const list = (state.cellar || []).map(it => cellarInfo(state, it)), total = list.reduce((s, x) => s + x.bottles, 0), by = {};
+    for (const [k, a] of Object.entries(cp.slots).sort()) (by[a.id] = by[a.id] || []).push([k, a]);
+    const touched = Object.keys(state.cellarSet || {}).length || (state.cellarNo || []).length;
+    box.innerHTML = `<div class="hchead"><div><div class="t1">Da nossa adega</div><div class="t2">${list.length ? `${total} garrafa${total > 1 ? 's' : ''} de casa · custo zero: fora do rateio e da lista de compras` : 'Garrafas que vêm de casa: custo zero, fora do rateio e da lista de compras. Ganham dia no cardápio pelo prato.'}</div></div>
+      <button type="button" class="btn secondary" data-hc-add>${icon('camera')}<span>Levar da nossa adega</span></button></div>`
+      + list.map(x => { const un = cp.unplaced.find(u => u.id === x.id), sl = by[x.id] || [];
+        return `<div class="hcitem"><div class="ph" data-hc-ph="${esc(x.id)}" aria-hidden="true">${hcPhotos[x.id] ? `<img src="${hcPhotos[x.id]}" alt="">` : icon('wine')}</div><div style="min-width:0">
+          <div class="t1">${esc(cellarLabel(x))}</div>
+          <div class="t2">${esc(x.styleName || 'Estilo a definir')} · ${x.bottles} garrafa${x.bottles > 1 ? 's' : ''} · trazida por ${esc(x.famName)}</div>
+          ${x.rating ? `<div class="t2">${esc(ratingTxt(x.rating))} · ficha do catálogo</div>` : (x.matchId ? '<div class="t2">Ficha do catálogo: Sem nota</div>' : '')}
+          ${x.service ? `<div class="t2">Serviço: ${esc(x.service)}</div>` : ''}${x.note ? `<div class="t2">Obs.: ${esc(x.note)}</div>` : ''}
+          ${x.special ? `<span class="hctag">${x.old ? 'Safra antiga' : 'Ícone'} · vai para noite de destaque</span>` : ''}
+          <div class="hcwhen">${sl.map(([k, a]) => hcSlotRow(k, a, x, list)).join('')}${un ? `<p class="hint" style="margin:0">${un.n} garrafa${un.n > 1 ? 's' : ''} ainda sem refeição: aceite no Chef pratos que combinem com ${esc((x.styleName || 'o estilo').toLowerCase())}.</p>` : ''}</div>
+          <div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:8px"><button type="button" class="btn text sm" data-hc-edit="${esc(x.id)}">${icon('edit')}<span>Editar</span></button><button type="button" class="btn text sm" data-hc-del="${esc(x.id)}">${icon('trash')}<span>Tirar da lista</span></button></div>
+        </div></div>`; }).join('')
+      + (touched ? `<button type="button" class="btn text sm" data-hc-reset style="justify-self:start;min-height:44px">Refazer sugestões das garrafas de casa</button>` : '');
+    for (const x of list) if (!(x.id in hcPhotos) && (state.cellar.find(i => i.id === x.id) || {}).photo) { hcPhotos[x.id] = null;
+      hcGet(x.id).then(url => { if (!url) return; hcPhotos[x.id] = url; const ph = box.querySelector(`[data-hc-ph="${CSS.escape(x.id)}"]`); if (ph) ph.innerHTML = `<img src="${url}" alt="">`; }).catch(() => {}); }
+  }
+  let hcEditing = null, hcPhoto = undefined;
+  function ensureCellarUi() {
+    if ($('#cellarDlg')) return;
+    const dlg = document.createElement('dialog'); dlg.id = 'cellarDlg'; dlg.className = 'sheet'; dlg.setAttribute('aria-labelledby', 'cellarDlgTitle');
+    dlg.innerHTML = `<div class="sheetin"><div class="sheethead"><h2 id="cellarDlgTitle">Levar da nossa adega</h2><button type="button" class="iconbtn" data-hc-close aria-label="Fechar">${icon('x')}</button></div>
+      <form class="sheetbody" id="cellarForm" novalidate>
+        <div class="field"><span class="flabel" id="hcPhotoLbl">Foto do rótulo</span><div class="row2" style="grid-template-columns:auto minmax(0,1fr);align-items:center">
+          <label class="btn secondary sm" for="hcPhoto" style="cursor:pointer">${icon('camera')}<span>Fotografar ou anexar</span></label><div id="hcPhotoPrev" class="hint">Opcional. Fica só neste aparelho.</div></div>
+          <input type="file" id="hcPhoto" accept="image/*" capture="environment" class="sr-only" aria-labelledby="hcPhotoLbl"></div>
+        <div class="field"><label for="hcName">Produtor e rótulo</label><input class="inp" id="hcName" maxlength="80" list="hcList" autocomplete="off" placeholder="Ex.: Marqués de Riscal Reserva" aria-describedby="hcMatch">
+          <datalist id="hcList">${Object.values(BEVERAGES).filter(b => b.kind === 'wine' && !b.retired).map(b => `<option value="${esc(b.name)}">`).join('')}</datalist><p class="hint" id="hcMatch" aria-live="polite" style="margin:6px 0 0"></p></div>
+        <div class="row2"><div class="field"><label for="hcVintage">Safra</label><input class="inp" id="hcVintage" inputmode="numeric" maxlength="4" placeholder="Ex.: 2019"></div>
+          <div class="field"><label for="hcBottles">Garrafas</label><input class="inp" id="hcBottles" type="number" inputmode="numeric" min="1" max="24" value="1"></div></div>
+        <div class="field"><label for="hcStyle">Estilo</label><select class="inp" id="hcStyle"><option value="">Escolha o estilo</option>${hcWineStyles().map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="hcFam">Quem trouxe</label><select class="inp" id="hcFam"></select></div>
+        <div class="field"><label for="hcNote">Observação</label><input class="inp" id="hcNote" maxlength="120" placeholder="Ex.: abrir com o churrasco"></div>
+        <p class="hint" id="hcErr" role="alert" style="margin:0"></p>
+        <p class="fine" style="margin:0">Custo zero: a garrafa sai da lista de compras e não entra no rateio. A foto e a ficha ficam só neste aparelho (não vão para o evento compartilhado nem para o servidor). A foto não é lida por IA: você digita o rótulo.</p>
+        <div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button type="button" class="btn secondary" data-hc-close>Cancelar</button><button type="submit" class="btn primary">Salvar</button></div>
+      </form></div>`;
+    document.body.append(dlg);
+    const styleSel = dlg.querySelector('#hcStyle'); let styleTouched = false;
+    const showMatch = () => { const id = matchCellarLabel(dlg.querySelector('#hcName').value), b = id && BEVERAGES[id], el = dlg.querySelector('#hcMatch');
+      if (!b) { el.textContent = dlg.querySelector('#hcName').value.trim().length > 3 ? 'Sem ficha no catálogo: escolha o estilo abaixo.' : ''; return; }
+      const r = bestRating(b); const sv = b.service || WINE_SERVICE[b.style]; el.textContent = `Ficha do catálogo: ${b.name}${r ? ` · ${ratingTxt(r)}` : ' · Sem nota'}${sv ? ` · servir a ${sv.temp}` : ''}. Estilo, nota e serviço vêm da ficha.`;
+      if (!styleTouched) styleSel.value = b.style; };
+    dlg.querySelector('#hcName').addEventListener('input', showMatch);
+    styleSel.addEventListener('change', () => { styleTouched = true; });
+    dlg.addEventListener('click', e => { if (e.target.closest('[data-hc-close]')) dlg.close(); });
+    dlg.querySelector('#hcPhoto').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return;
+      try { hcPhoto = await hcCompress(f); dlg.querySelector('#hcPhotoPrev').innerHTML = hcPhoto ? `<img src="${hcPhoto}" alt="Foto do rótulo">` : 'Foto grande demais; tente de novo.'; }
+      catch (err) { toast('Não consegui ler a foto', 'alert'); } e.target.value = ''; });
+    dlg.querySelector('#cellarForm').addEventListener('submit', async e => { e.preventDefault();
+      const v = id => dlg.querySelector(id).value.trim(), name = v('#hcName'), style = v('#hcStyle'), famId = v('#hcFam'), vin = v('#hcVintage'), n = Math.floor(Number(v('#hcBottles')));
+      const err = !name ? 'Escreva o produtor e o rótulo.' : !style ? 'Escolha o estilo.' : !famId ? 'Escolha quem trouxe.' : (vin && !/^(19|20)\d\d$/.test(vin)) ? 'Safra com 4 dígitos (ex.: 2019).' : !(n >= 1 && n <= 24) ? 'De 1 a 24 garrafas.' : '';
+      dlg.querySelector('#hcErr').textContent = err; if (err) return;
+      state.cellar = state.cellar || []; if (!hcEditing && state.cellar.length >= CELLAR_MAX) { toast('Adega de casa cheia (60 rótulos)', 'alert'); return; }
+      const id = hcEditing || 'hc_' + uid(), old = state.cellar.find(x => x.id === id) || {};
+      const item = { ...old, id, name, vintage: vin ? Number(vin) : null, style, famId, bottles: n, note: v('#hcNote'), matchId: matchCellarLabel(name), photo: hcPhoto === undefined ? !!old.photo : !!hcPhoto, at: old.at || Date.now() };
+      try { if (hcPhoto) { await hcPut(id, hcPhoto); hcPhotos[id] = hcPhoto; } else if (hcPhoto === null && old.photo) { await hcDel(id); delete hcPhotos[id]; } }
+      catch (err2) { item.photo = false; toast('A foto não coube no aparelho; a garrafa foi salva sem foto', 'alert'); }
+      const i = state.cellar.findIndex(x => x.id === id); if (i >= 0) state.cellar[i] = item; else state.cellar.push(item);
+      save(); dlg.close(); render(); toast(hcEditing ? 'Garrafa atualizada' : 'Garrafa na adega de casa: custo zero, fora do rateio'); });
+  }
+  function openCellarForm(id) {
+    ensureCellarUi(); const dlg = $('#cellarDlg'), it = id ? (state.cellar || []).find(x => x.id === id) : null; hcEditing = it ? it.id : null; hcPhoto = undefined;
+    dlg.querySelector('#cellarDlgTitle').textContent = it ? 'Editar garrafa de casa' : 'Levar da nossa adega';
+    dlg.querySelector('#hcFam').innerHTML = `<option value="">Escolha a família</option>` + state.families.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('');
+    dlg.querySelector('#hcName').value = it ? it.name : ''; dlg.querySelector('#hcVintage').value = it && it.vintage ? it.vintage : ''; dlg.querySelector('#hcBottles').value = it ? it.bottles : 1;
+    dlg.querySelector('#hcStyle').value = it ? it.style : ''; dlg.querySelector('#hcFam').value = it ? it.famId : ''; dlg.querySelector('#hcNote').value = it ? it.note || '' : '';
+    dlg.querySelector('#hcErr').textContent = ''; dlg.querySelector('#hcPhotoPrev').innerHTML = it && hcPhotos[it.id] ? `<img src="${hcPhotos[it.id]}" alt="Foto do rótulo">` : 'Opcional. Fica só neste aparelho.';
+    dlg.querySelector('#hcName').dispatchEvent(new Event('input')); dlg.showModal();
+  }
+  $('#homeCellar').addEventListener('click', e => {
+    if (isMinorViewer()) return;
+    if (e.target.closest('[data-hc-add]')) { openCellarForm(null); return; }
+    const ed = e.target.closest('[data-hc-edit]'); if (ed) { openCellarForm(ed.dataset.hcEdit); return; }
+    const del = e.target.closest('[data-hc-del]'); if (del) { const id = del.dataset.hcDel, it = (state.cellar || []).find(x => x.id === id); if (!it || !confirm(`Tirar “${it.name}” da adega de casa?`)) return;
+      state.cellar = state.cellar.filter(x => x.id !== id); for (const k of Object.keys(state.cellarSet || {})) if (state.cellarSet[k] === id) delete state.cellarSet[k];
+      state.cellarNo = (state.cellarNo || []).filter(x => !x.endsWith('|' + id)); hcDel(id).catch(() => {}); delete hcPhotos[id]; save(); render(); toast('Garrafa tirada da lista'); return; }
+    const no = e.target.closest('[data-hc-no]'); if (no) { state.cellarNo = (state.cellarNo || []).concat(no.dataset.hcNo); const k = no.dataset.hcNo.split('|').slice(0, 2).join('|');
+      if (state.cellarSet && state.cellarSet[k]) delete state.cellarSet[k]; save(); render(); toast('Recusada nesta refeição: o app procura outro dia'); return; }
+    if (e.target.closest('[data-hc-reset]')) { state.cellarSet = {}; state.cellarNo = []; save(); render(); toast('Sugestões refeitas'); }
+  });
+  $('#homeCellar').addEventListener('change', e => { const sel = e.target.closest('[data-hc-swap]'); if (!sel || isMinorViewer()) return;
+    state.cellarSet = state.cellarSet || {}; state.cellarSet[sel.dataset.hcSwap] = sel.value; save(); render(); toast(sel.value ? 'Garrafa trocada nesta refeição' : 'Sem garrafa de casa nesta refeição'); });
   function showAdega() {
     const el = $('#wineCard'); if (!el || el.hidden) return;
     if (document.body.dataset.view !== 'chef') setView('chef', { keepScroll: true });
@@ -4723,10 +4945,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const main = mealMain(s.ids), title = main && CHEF[main] ? CHEF[main].title : MEALS[meal];
     const nAdega = Object.values(BEVERAGES).filter(b => b.kind === 'wine' && b.premium && !b.retired).length;
     const lead = talk[0] ? chefVisible(talk[0].text, title) : '';
+    const hc = minor ? null : cellarToday(state, k);
     $('#hojeMeta').textContent = MEALS[meal];
     el.innerHTML = `<div class="hoje"><div><div class="when">${esc(dLabel(d))} · ${esc(MEALS[meal])}</div><div class="dish">${esc(title)}</div></div>
       <div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : (lead ? `<p class="mbal">${esc(lead)}</p>` : '')}
+      ${hc ? `<div class="hojehome">${icon('wine')}<div style="min-width:0"><p class="t1"><b>${esc(hc.title)}</b></p><p class="t2">${esc(hc.prep)}</p><p class="t2">${esc(hc.yield)}</p><p class="fine">${esc(SULFITE_LINE)} ${esc(AGE_LINE)}</p></div></div>` : ''}
       <div class="hojeacts"><button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button>${minor ? '' : `<button type="button" class="btn secondary" data-ver-adega>${icon('wine')}<span>Adega (${nAdega} rótulo${nAdega === 1 ? '' : 's'})</span></button>`}</div></div>`;
   }
   $('#hojeBody').addEventListener('click', e => {
