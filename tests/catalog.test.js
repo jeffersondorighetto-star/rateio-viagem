@@ -1,6 +1,6 @@
 // Catálogo de bebidas: IDs fixos (nunca apagados), nota só com fonte independente + link + data, álcool sempre com ABV, preço em faixa com mês.
 const assert = require('assert'), frozen = require('./catalog-ids.json');
-const L = require('./load-logic')(['BEVERAGES', 'DRINKS', 'BEV_STYLES', 'CATALOG_VERSION', 'validRating', 'bestRating', 'bevAlcoholic', 'styleLabels', 'PAIRINGS', 'WINES', 'CHEF', 'pairStyles', 'bevVerdict', 'priceTxt', 'WINE_TIER_LABEL', 'WINE_SERVICE', 'windowTxt', 'serviceTxt', 'adegaText', 'AGE_LINE', 'jeffersonWineErrors', 'addJeffersonWines', 'JEFFERSON_WINES', 'shoppingText', 'mesaTalk']);
+const L = require('./load-logic')(['BEVERAGES', 'DRINKS', 'BEV_STYLES', 'CATALOG_VERSION', 'validRating', 'bestRating', 'bevAlcoholic', 'styleLabels', 'PAIRINGS', 'WINES', 'CHEF', 'pairStyles', 'bevVerdict', 'priceTxt', 'WINE_TIER_LABEL', 'WINE_SERVICE', 'windowTxt', 'serviceTxt', 'adegaText', 'AGE_LINE', 'jeffersonWineErrors', 'addJeffersonWines', 'JEFFERSON_WINES', 'shoppingText', 'mesaTalk', 'styleWhy', 'dishesShort', 'pairKey']);
 // 1) IDs congelados: nenhum some (aposentar = retired, nunca apagar)
 for (const id of frozen.beverages) assert(L.BEVERAGES[id], 'ID de bebida apagado: ' + id + ' (use retired)');
 for (const id of frozen.drinks) assert(L.DRINKS[id], 'ID de drink apagado: ' + id);
@@ -95,4 +95,19 @@ assert(L.mesaTalk({}, '2026-12-20|jantar', ['c_churrasco'], null).some(l => l.wh
   assert(offenders('10–12 °C · Silex e Te Koko ganham com 20 min de decanter', 'soalheiro', 'st_branco_fresco').length >= 2, 'detector pega Silex/Te Koko');
   assert(offenders('Garrus pode ir ao decanter por 20 min', null, 'st_rose').length && offenders('Brunello e Tignanello jovens', null, 'st_sangiovese').length);
   const so = L.serviceTxt(L.BEVERAGES.soalheiro); assert(/10–12 °C/.test(so) && /Monção e Melgaço/.test(so) && !/Silex|Koko/.test(so), 'serviço próprio do Soalheiro'); }
-console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, serviço sem nome de outro rótulo, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);
+// 13) Textos da mesa: sem parênteses dentro de parênteses; a fala do Drinks segue o prato
+{ const nested = t => { let d = 0; for (const ch of t) { if (ch === '(') { d++; if (d > 1) return true; } else if (ch === ')') d = Math.max(0, d - 1); } return false; };
+  for (const id of Object.keys(L.CHEF)) for (const meal of ['almoco', 'jantar']) for (const ln of L.mesaTalk({}, '2026-12-20|' + meal, [id], null)) { assert(!nested(ln.text), `parêntese aninhado (${id}): ${ln.text}`); assert(!/\)\s*\(/.test(ln.text), `parênteses colados (${id}): ${ln.text}`); }
+  for (const id of Object.keys(L.CHEF)) { const pk = L.pairKey(L.CHEF[id]), bar = L.mesaTalk({}, '2026-12-20|jantar', [id], null).find(l => l.who === 'bar'); if (!bar) continue;
+    if (pk !== 'churrasco') assert(!/churrasco/i.test(bar.text), `Drinks fala de churrasco em ${id} (${pk}): ${bar.text}`);
+    if (!['mar', 'mar_leve', 'leve'].includes(pk)) assert(!/frutos do mar/i.test(bar.text), `Drinks fala de frutos do mar em ${id} (${pk}): ${bar.text}`); }
+  const sugo = L.mesaTalk({}, '2026-12-20|jantar', ['c_sugo'], null).find(l => l.who === 'bar').text;
+  assert(sugo.startsWith('Na cerveja, lager escura (schwarzbier, dunkel): malte tostado acompanha molho de tomate e queijo gratinado.'), sugo);
+  assert.equal(L.styleWhy('st_dark_lager', 'churrasco'), 'malte tostado combina com a crosta do churrasco');
+  // camada 1 da mesa: cada motivo de cerveja segue o tipo de prato
+  for (const [pk, sts] of Object.entries(L.PAIRINGS.beer)) for (const st of sts) { const w = L.styleWhy(st, pk);
+    if (pk !== 'churrasco') assert(!/churrasco/.test(w), `${st}/${pk}: ${w}`); if (!['mar', 'mar_leve', 'leve'].includes(pk)) assert(!/frutos do mar/.test(w), `${st}/${pk}: ${w}`); } }
+// 14) Folha do vinho: «Com:» mostra até 3 pratos e «+N»
+{ const six = ['A', 'B', 'C', 'D', 'E', 'F']; assert.deepStrictEqual(L.dishesShort(six), { text: 'A, B, C', rest: 3, all: 'A, B, C, D, E e F.' });
+  assert.deepStrictEqual(L.dishesShort(['A', 'B', 'C']), { text: 'A, B e C.', rest: 0, all: 'A, B e C.' }); assert.equal(L.dishesShort(['A']).text, 'A.'); }
+console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, serviço sem nome de outro rótulo, fala do Drinks segue o prato, sem parêntese aninhado, «Com:» até 3, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);
