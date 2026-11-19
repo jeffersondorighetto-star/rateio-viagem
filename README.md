@@ -1,6 +1,6 @@
 # Rateio da Viagem · protótipo
 
-Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: cardápio por dia, receitas que geram a lista de compras, gastos com e sem nota e o acerto final. É **um único arquivo** (`index.html`) com HTML, CSS e JS embutidos: sem servidor, sem banco de dados, sem CDN e sem dados bancários. Tudo roda no navegador e fica salvo no próprio aparelho.
+Protótipo clicável para **planejar e dividir** uma viagem de N famílias (o exemplo tem 5): cardápio por dia, receitas que geram a lista de compras, gastos com e sem nota e o acerto final. É **um único arquivo** (`index.html`) com HTML, CSS e JS embutidos: sem servidor, sem banco de dados, sem CDN e sem dados bancários. Tudo roda no navegador e fica salvo no próprio aparelho.
 
 ## Como abrir
 - Online: https://jeffersondorighetto-star.github.io/rateio-viagem/
@@ -12,8 +12,9 @@ Protótipo clicável para **planejar e dividir** uma viagem de 4 famílias: card
 |---|---|
 | **Início** | Total ao vivo, cartão **Pendente** (sem nota sem confirmação e valores estimados), **Lançamento rápido**, **Próximas refeições** (quem cozinha, alertas de dieta, botão Modo cozinha) e gráfico por categoria. |
 | **Planejar** | **Cardápio** (grade dias × refeições + detalhe do dia), **Receitas** (colar e interpretar), **Compras** (lista, custo por prato, prévia por família, planejado × real, preços) e **Pessoas** (tipo, bebe, dieta, chegada/saída, peso da porção). |
+| **Chef** | **Pré-briefing** por família (gostos, entradas, proteínas, frutos do mar, nível de sofisticação, vinho, crianças, o que não comem, sem perguntar o motivo), **contagem de refeições** em casa × restaurante com porções e custo, **pratos mais indicados para o grupo** com nota de afinidade, **cardápio sugerido** (jantares em etapas: entrada, principal e sobremesa; ceia de Natal, almoço de Natal e réveillon) com aceitar, rejeitar, trocar e desfazer, **adega** com harmonização em médio e alto custo e **escala** de quem cozinha e quem limpa. |
 | **Gastos** | Formulário completo (comprovante, foto, estimado, calculadora de combustível, itens comprados) e lista com filtros Todas / Pendentes / Sem nota. |
-| **Acertos** | Escolha da divisão (com diferença contra “tudo igual”), **Quem paga quem**, saldos por família e pessoa, caixinha, modo surpresa e resumo para WhatsApp. |
+| **Acertos** | Escolha da divisão (com diferença contra “tudo igual”), **Quem paga quem**, saldos por família e pessoa, caixinha (**simulação**: o acerto que vale é Quem paga quem), modo surpresa e resumo para WhatsApp. |
 
 ## Regras de divisão (`computeSplit` + `splitWeights`)
 Três modos, escolhidos em **Acertos → Como dividir**:
@@ -40,6 +41,14 @@ Em todos os modos, **saldo = pago − parte**. A soma dos saldos é zero. **Quem
 - **Dieta por pessoa** (vegetariano, sem lactose, sem glúten, alergias em texto livre): cada refeição com receita em conflito ganha um ponto âmbar na grade e um alerta dizendo quem, o motivo e o ingrediente (`dietConflicts`, `mealConflicts`).
 - **Custo por porção** de cada receita na biblioteca.
 
+## Chef, pré-briefing e adega
+- **Banco de receitas embutido** (`CHEF`, 26 receitas de praia e verão, sem API nem IA externa): 9 entradas e petiscos, 13 principais e 4 sobremesas, cada uma com quantidade por porção, passo a passo com tempos, dificuldade, nível (Descontraído, Caprichado, Gourmet), nota para crianças, dica de sobras e vinhos.
+- **Pré-briefing** (`famAffinity`, `chefScores`): as respostas de cada família geram uma afinidade de 0 a 100 por prato, ponderada pelas porções de cada família. O que alguém não come vira veto. As respostas ficam **só neste aparelho** (chave `rateatouille-briefing-v1`): não entram no estado, no backup, no resumo nem em servidor, e o ranking mostra só quantas famílias vetam, sem dizer quais.
+- **Cardápio** (`chefPlan`): churrasco no almoço de fim de semana, prato de aproveitamento no dia seguinte, jantares em etapas quando o grupo pede, sem repetir prato em 3–4 dias e cardápios especiais no Natal e no réveillon. Aceitar leva a receita para a grade e a lista de compras.
+- **Lista de compras**: nova seção **Peixaria**; peixe e frutos do mar levam o aviso **comprar no dia**, com os dias de uso.
+- **Adega** (`WINES`, `wineList`): só rótulos reais, cada prêmio com a fonte pública ao lado. Os preços são faixas aproximadas em reais. As garrafas são estimadas para a viagem toda (jantar ≈ 2 taças por pessoa que bebe no principal; almoço, metade).
+- **Modo cozinha**: letra A−/A+, timer em cada passo com tempo, harmonização e aproveitamento de sobras.
+
 ## Gastos sem nota
 - **Lançamento rápido** (`parseQuick`): uma linha, por exemplo `80 gasolina família B sem nota`, `churrasco 350 pago pela família D` ou `~200 gasolina Marcso` (aceita erro de digitação). Mostra uma prévia (valor, categoria, quem pagou, comprovante, estimado) antes de lançar. Tem botão de ditado por voz (pt-BR) quando o navegador suporta.
 - **Comprovante**: Nota fiscal / Comprovante (Pix, cartão) / Sem nota. Dá para anexar uma **foto**, comprimida para um JPEG pequeno (~60 KB) salvo no aparelho, com aviso se o armazenamento estiver enchendo, e uma observação.
@@ -55,9 +64,10 @@ Tudo inventado: famílias, nomes e dietas são fictícios.
 | Família A | Carlos ✓, Ana ✓, Pedro (adolescente), Lia (criança) | |
 | Família B | Marcos ✓, Júlia, Rafa ✓ | |
 | Família C | Beto ✓, Clara ✓ (vegetariana, fictício), Davi (criança, alergia a kiwi, fictício), Nina (bebê) | |
-| Família D | Tiago ✓, Bia (alergia a abacaxi, fictício), Leo (criança) | chegam no jantar de 28/12 |
+| Família D | Tiago ✓, Bia (alergia a abacaxi, fictício), Leo (criança) | chegam no jantar de 23/12 |
+| Família E | Rui ✓, Sofia ✓, Tom (criança) | |
 
-Viagem de 26/12/2026 a 03/01/2027 (9 dias; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. **Restaurar exemplo** (no rodapé) volta tudo ao início.
+Viagem de 20/12/2026 a 02/01/2027 (14 dias, datas de exemplo; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. O exemplo já vem com respostas fictícias de pré-briefing e o cardápio do Chef aceito (marcado como exemplo; somem quando uma família responde). **Restaurar exemplo** (no rodapé) volta tudo ao início.
 
 ## Armazenamento
 Tudo fica só no `localStorage` do navegador. Nada vai para servidor nenhum. Cada aparelho tem a própria cópia; para alinhar entre as famílias, use os textos para WhatsApp. (Para editar juntos em tempo real no futuro, dá para plugar um backend usando a ponte `window.App`.)
@@ -67,6 +77,7 @@ Tudo fica só no `localStorage` do navegador. Nada vai para servidor nenhum. Cad
 | `racha-viagem-v3` | dados da viagem (famílias, gastos, cardápio, receitas, preços) |
 | `racha-viagem-v3-ui` | aba, sub-aba e filtros abertos |
 | `racha-viagem-v1-theme` | tema claro/escuro |
+| `rateatouille-briefing-v1` | respostas do pré-briefing (só neste aparelho, fora do backup) |
 
 > As chaves mantêm o prefixo antigo `racha-viagem` (nome anterior do protótipo) **de propósito**, para não perder dados já salvos nos aparelhos. O nome oficial agora é **Rateio da Viagem**. Para renomear as chaves, troque `KEY`, `UI_KEY` e `THEME_KEY` no script de UI. Os dados antigos não são migrados.
 

@@ -11,7 +11,7 @@
 <style>
 :root{
   /* Verde-exército suave (light) */
-  --bg:#f4f6ee; --surface:#ffffff; --surface-2:#eef1e5; --border:#dde2cf; --border-strong:#bec6a9;
+  --bg:#f4f6ee; --surface:#ffffff; --surface-2:#eef1e5; --border:#dde2cf; --border-strong:#7d8a6f;
   --text:#1c2015; --text-2:#454d3a; --text-3:#596150;
   --accent:#4f5d2f; --accent-hover:#424e27; --accent-soft:#e8ecdd; --on-accent:#ffffff;
   --pos:#1d6b62; --pos-soft:#e2efec; --neg:#a3432c; --neg-soft:#f6e8e2; --warn:#74560f; --warn-soft:#f5eedb;
@@ -25,7 +25,7 @@
 }
 [data-theme="dark"]{
   /* olive-charcoal (dark) */
-  --bg:#1a1d16; --surface:#23271e; --surface-2:#2b3025; --border:#353b2d; --border-strong:#4a5240;
+  --bg:#1a1d16; --surface:#23271e; --surface-2:#2b3025; --border:#353b2d; --border-strong:#757e63;
   --text:#eef0e6; --text-2:#c6ccb7; --text-3:#a8af98;
   --accent:#a9b88a; --accent-hover:#bac79e; --accent-soft:#30382a; --on-accent:#1a1d16;
   --pos:#7cc7b9; --pos-soft:#1d302c; --neg:#e9a08b; --neg-soft:#3a2620; --warn:#dcc07a; --warn-soft:#332c1a;
@@ -384,6 +384,174 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 .toast{bottom:calc(92px + var(--sab))}@media(min-width:920px){.toast{bottom:calc(24px + var(--sab))}}
+/* ===== v4: Chef, adega, pré-briefing, acabamento ===== */
+:root{--fam-5:#3f6f5a;--fam-6:#7a5c6e;--hero-a:#4f5d2f;--hero-b:#34401d;--on-hero:#ffffff;--on-hero-2:#e4ead2}
+[data-theme="dark"]{--fam-5:#8fc0a8;--fam-6:#c9a3b8;--hero-a:#b3c293;--hero-b:#8e9e6c;--on-hero:#141810;--on-hero-2:#26301a}
+svg.i{stroke-width:2}
+.toptotal small,.mx .dh{font-size:12px}
+.iconbtn,.del,.xf .chk{width:44px;height:44px}
+.btn.sm,.btn.text,.subnav button,.inp.sm,.pills button{min-height:44px}
+.inp.sm{height:44px;font-size:16px}.inp[type=date]{font-size:16px}
+.pills.sm button{min-height:40px;position:relative}
+.pills.sm button::after,.sugg button::after,button.badge::after{content:"";position:absolute;inset:-4px 0}
+.sugg button{position:relative;height:36px}button.badge{position:relative}
+.thumb{width:44px;height:44px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.exp{grid-template-columns:auto minmax(0,1fr) auto 44px;column-gap:12px}
+.exp .del{margin-left:4px;border:1px solid var(--border)}
+.mx .c{height:44px;min-width:44px;font-size:13px}.mx .dh{min-height:44px;min-width:44px}
+.tabbar{grid-template-columns:repeat(5,minmax(0,1fr))}
+.tabbar button{font-size:11.5px;padding:0 2px}
+@media(min-width:920px){.tabbar{max-width:680px}}
+@media(max-width:359px){.tabbar button{font-size:11px}.tabbar button svg{width:20px;height:20px}}
+.toast{max-width:calc(100vw - 32px)}
+.toast.act{pointer-events:auto;padding:6px 6px 6px 16px}
+.toast .tbtn{min-height:40px;padding:0 14px;border-radius:10px;border:0;background:color-mix(in srgb,var(--bg) 18%,transparent);color:var(--bg);font-weight:700;margin-left:8px;position:relative}
+.toast .tbtn::after{content:"";position:absolute;inset:-4px}
+.bal .v{display:inline-flex;align-items:center;gap:4px}.bal .v svg{width:16px;height:16px}
+/* Acertos: frase */
+.xf2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 0;border-top:1px solid var(--border)}
+.xf2:first-child{border-top:0;padding-top:0}
+.xf2 .say{font-size:15px;line-height:1.45;color:var(--text-2)}
+.xf2 .say b{color:var(--text);font-weight:650}
+.xf2 .say .val{font-size:17px;font-weight:650;color:var(--text);white-space:nowrap}
+.xf2 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.xf2 .row .t2{flex:1 1 160px}
+.paybtn{min-height:44px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border-strong);background:var(--surface);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;color:var(--text)}
+.paybtn[aria-pressed="true"]{background:var(--pos-soft);border-color:transparent;color:var(--pos)}
+.xf2.done .val{text-decoration:line-through;color:var(--text-3)}
+.sim{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--warn-soft);color:var(--warn)}
+details.more{border:1px dashed var(--border-strong);border-radius:var(--r);padding:0 12px}
+details.more>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--text-2)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary svg{transition:transform .2s var(--ease)}details.more[open]>summary svg{transform:rotate(90deg)}
+details.more .stack{display:grid;gap:16px;padding:4px 0 16px}
+.qhint{font-size:13px;color:var(--text-3);margin:8px 0 0}
+/* Hero (Início) */
+.hero{position:relative;overflow:hidden;border:0;color:var(--on-hero);background-color:var(--hero-b);background-image:linear-gradient(140deg,var(--hero-a),var(--hero-b));padding:20px 20px 18px;order:-3}
+@media(min-width:520px){.hero{padding:28px}}
+.hero .waves{position:absolute;right:0;bottom:0;width:min(280px,100%);height:120px;opacity:.16;pointer-events:none;color:var(--on-hero)}
+.hero .sunc{position:absolute;right:28px;top:22px;width:64px;height:64px;border-radius:50%;background:var(--on-hero);opacity:.13;pointer-events:none}
+.hero .kick{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+.hero h1{margin:6px 0 4px;font-size:clamp(24px,7vw,34px);line-height:1.1;letter-spacing:-.025em;font-weight:700;overflow-wrap:anywhere;position:relative}
+.hero .cd{font-size:15px;font-weight:550;position:relative}
+.hero .cd b{font-size:22px;font-variant-numeric:tabular-nums}
+.hero .chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 16px;position:relative}
+.hero .chip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:999px;background:color-mix(in srgb,var(--on-hero) 14%,transparent);font-size:13px;font-weight:600}
+.hero .chip svg{width:15px;height:15px}
+.hero .acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;position:relative}
+.hbtn{min-height:48px;border-radius:var(--r);border:0;font-weight:700;font-size:15px;white-space:nowrap;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;text-align:center;line-height:1.15}
+.hbtn.a{background:var(--on-hero);color:var(--hero-b)}
+.hbtn.b{background:color-mix(in srgb,var(--on-hero) 16%,transparent);color:var(--on-hero);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--on-hero) 40%,transparent)}
+.fams-row{display:flex;margin-top:2px}.fams-row .av{width:28px;height:28px;font-size:12px;border-radius:50%;box-shadow:0 0 0 2px var(--hero-a);background:var(--on-hero);color:var(--hero-b)}.fams-row .av+.av{margin-left:-6px}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.view:not([hidden]) .card{animation:rise .45s var(--ease) both}
+.view:not([hidden]) .card:nth-child(2){animation-delay:.04s}.view:not([hidden]) .card:nth-child(3){animation-delay:.08s}
+/* Chef */
+.chefhead{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin-bottom:16px}
+.chefhead .ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(140deg,var(--hero-a),var(--hero-b));color:var(--on-hero)}
+.chefhead .ico svg{width:28px;height:28px}
+.chefhead h1{margin:0;font-size:22px;letter-spacing:-.02em;line-height:1.15}
+.chefhead p{margin:2px 0 0;font-size:13px;color:var(--text-3)}
+.fstat{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.fstat:first-child{border-top:0;padding-top:0}
+.okdot{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:650;color:var(--pos)}.okdot svg{width:14px;height:14px}
+.progress{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:4px 0 14px}
+.progress div{height:100%;background:var(--accent);border-radius:99px;transition:width .5s var(--ease)}
+.kgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kbox{border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;min-width:0}
+.kbox span{display:block;font-size:12px;color:var(--text-3)}
+.kbox b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+.kbox small{display:block;font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.vs{margin-top:14px;display:grid;gap:8px}
+.vsrow{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.vsbar{height:12px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.vsbar div{height:100%;border-radius:99px;background:var(--accent)}
+.vsbar.f div{background:var(--fam-2)}
+.dayrows{display:grid;margin-top:8px}
+.dayrow{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.dayrow .dots{display:flex;gap:3px;flex-wrap:wrap}
+.dayrow .dots i{width:12px;height:12px;border-radius:4px;border:1px solid var(--border-strong)}
+.dayrow .dots i.casa{background:var(--accent);border-color:var(--accent)}.dayrow .dots i.fora{background:color-mix(in srgb,var(--fam-2) 45%,var(--surface));border-color:var(--fam-2)}.dayrow .dots i.livre{border-style:dashed}
+.rk{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--border)}
+.rk:first-child{border-top:0;padding-top:4px}
+.rk .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--accent-soft);color:var(--text)}
+.rk:first-child .n{background:var(--accent);color:var(--on-accent)}
+.aff{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:6px}
+.aff .bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.aff .bar div{height:100%;border-radius:99px;background:var(--accent)}
+.aff b{font-size:13px;font-variant-numeric:tabular-nums}
+.daystrip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px 8px;scrollbar-width:none}
+.daystrip::-webkit-scrollbar{display:none}
+.daystrip button{flex:none;min-width:52px;min-height:56px;border-radius:12px;border:1px solid var(--border-strong);background:var(--surface);display:grid;place-items:center;padding:4px 6px;font-size:12px;color:var(--text-2);font-weight:600;line-height:1.15;position:relative}
+.daystrip button b{font-size:17px;color:var(--text)}
+.daystrip button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.daystrip button[aria-pressed="true"] b{color:var(--on-accent)}
+.daystrip button i{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.daystrip button i.ok{background:var(--pos)}
+.sg{border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px}
+.sg.accepted{border-color:color-mix(in srgb,var(--pos) 45%,var(--border));background:color-mix(in srgb,var(--pos-soft) 45%,var(--surface))}
+.sg.rejected{opacity:.7}
+.sg.special{border:1.5px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sg .sh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sg .sh b{font-size:16px}
+.sg .meta2{font-size:13px;color:var(--text-3);margin-top:2px}
+.course{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;align-items:center;padding:10px 0;border-top:1px dashed var(--border)}
+.course:first-of-type{border-top:0}
+.course .ct{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.course .dish{border:0;background:none;padding:0;text-align:left;font-size:15px;font-weight:600;color:var(--text);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;min-height:28px;line-height:1.3}
+.course .wl{font-size:12.5px;color:var(--text-2);margin-top:2px;display:flex;gap:4px;align-items:flex-start}
+.course .wl svg{width:14px;height:14px;flex:none;margin-top:2px;color:var(--cat-alcohol)}
+.swap{width:44px;height:44px;border-radius:12px;border:1px solid var(--border-strong);background:var(--surface);display:grid;place-items:center;color:var(--text-2)}
+.sgacts{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}
+.wine{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--border)}
+.wine:first-child{border-top:0;padding-top:4px}
+.wine .gl{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--cat-alcohol) 16%,var(--surface));color:color-mix(in srgb,var(--cat-alcohol) 70%,var(--text))}
+.wine .nm{font-weight:650;font-size:15px}
+.wine .aw{display:flex;gap:6px;align-items:flex-start;font-size:13px;color:var(--text-2);margin-top:4px}
+.wine .aw svg{width:15px;height:15px;flex:none;margin-top:2px;color:var(--warn)}
+.wine a{color:var(--accent);font-weight:600;text-underline-offset:2px}
+[data-theme="dark"] .wine a{color:var(--accent)}
+.price{font-size:12.5px;color:var(--text-3)}
+.bottles{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:var(--accent-soft);font-size:12px;font-weight:700;color:var(--text)}
+.fine{font-size:12px;color:var(--text-3);margin:14px 0 0;line-height:1.5}
+.rota{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.rota:first-child{border-top:0;padding-top:0}
+.rbars{display:grid;gap:4px;margin-top:4px}
+.rbar{display:grid;grid-template-columns:62px minmax(0,1fr) 24px;gap:8px;align-items:center;font-size:12px;color:var(--text-2)}
+.rbar .b{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}.rbar .b div{height:100%;background:var(--accent);border-radius:99px}
+.rbar.cl .b div{background:var(--fam-3)}
+.freshb{background:color-mix(in srgb,var(--fam-3) 18%,var(--surface));color:var(--text);border-color:transparent}
+/* Briefing dialog */
+dialog.brief{width:100%;max-width:640px;height:100%;max-height:100%;margin:0 auto;border:0;padding:0;background:var(--bg);color:var(--text)}
+dialog.brief::backdrop{background:rgba(0,0,0,.5)}
+@media(min-width:700px){dialog.brief{height:auto;max-height:92vh;margin:4vh auto;border-radius:20px;border:1px solid var(--border)}}
+.bwrap{display:flex;flex-direction:column;min-height:100%}
+.bhead{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:calc(12px + var(--sat)) calc(16px + var(--sar)) 12px calc(16px + var(--sal));display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border-bottom:1px solid var(--border)}
+.bhead h2{margin:0;font-size:18px}.bhead p{margin:2px 0 0;font-size:13px;color:var(--text-3)}
+.bbody{padding:8px calc(16px + var(--sar)) 24px calc(16px + var(--sal));display:grid;gap:4px}
+.q{padding:16px 0;border-top:1px solid var(--border)}
+.q:first-child{border-top:0}
+.q h3{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
+.q .qs{margin:0 0 12px;font-size:13px;color:var(--text-3)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);font-weight:600;font-size:14px;color:var(--text-2);display:inline-flex;align-items:center;gap:6px;text-align:left;line-height:1.2}
+.opts button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.opts.big{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.opts.big button{border-radius:14px;flex-direction:column;align-items:flex-start;padding:12px;min-height:72px}
+.opts.big button small{font-weight:500;font-size:12px;opacity:.85}
+@media(max-width:400px){.opts.big{grid-template-columns:minmax(0,1fr)}.opts.big button{min-height:56px}}
+.bfoot{position:sticky;bottom:0;margin-top:auto;padding:12px calc(16px + var(--sar)) calc(12px + var(--sab)) calc(16px + var(--sal));background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--border);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.lock{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text-2);background:var(--surface-2);border-radius:var(--r);padding:10px 12px;margin-top:12px}
+.lock svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--accent)}
+/* cook mode extras */
+.cookin.fs1{font-size:22px}.cookin.fs2{font-size:26px}
+.cookin .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.timer{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;color:var(--text);margin-top:6px}
+.timer.run{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.timer.end{background:var(--neg);color:#fff;border-color:var(--neg)}
+.cwine{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:15px;margin-top:8px}
+.cwine .t2{font-size:13px}
 </style>
 </head>
 <body data-view="inicio">
@@ -394,17 +562,20 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 </div></header>
 
 <nav class="tabbar" id="tabbar" role="tablist" aria-label="Seções">
-  <button role="tab" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
-  <button role="tab" data-view="planejar" aria-selected="false"><span data-i="calendar"></span><span>Planejar</span></button>
-  <button role="tab" data-view="gastos" aria-selected="false"><span data-i="wallet"></span><span>Gastos</span></button>
-  <button role="tab" data-view="acertos" aria-selected="false"><span data-i="scale"></span><span>Acertos</span></button>
+  <button role="tab" id="tab-inicio" aria-controls="v-inicio" data-view="inicio" aria-selected="true"><span data-i="home"></span><span>Início</span></button>
+  <button role="tab" id="tab-planejar" aria-controls="v-planejar" data-view="planejar" aria-selected="false" tabindex="-1"><span data-i="calendar"></span><span>Planejar</span></button>
+  <button role="tab" id="tab-chef" aria-controls="v-chef" data-view="chef" aria-selected="false" tabindex="-1"><span data-i="chef"></span><span>Chef</span></button>
+  <button role="tab" id="tab-gastos" aria-controls="v-gastos" data-view="gastos" aria-selected="false" tabindex="-1"><span data-i="wallet"></span><span>Gastos</span></button>
+  <button role="tab" id="tab-acertos" aria-controls="v-acertos" data-view="acertos" aria-selected="false" tabindex="-1"><span data-i="scale"></span><span>Acertos</span></button>
 </nav>
 
 <main class="wrap">
+<div id="storeAlert"></div>
 <!-- ============ INÍCIO ============ -->
-<section class="view" id="v-inicio" role="tabpanel">
+<section class="view" id="v-inicio" role="tabpanel" aria-labelledby="tab-inicio">
   <div class="grid">
     <div class="col">
+      <section class="card hero" id="heroCard" aria-label="Viagem"></section>
       <section class="card summary" aria-labelledby="sumLbl">
         <div class="lbl" id="sumLbl">Total da viagem</div>
         <div class="big num" id="heroTotal">R$ 0,00</div>
@@ -414,7 +585,6 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <div><b class="num" id="heroPeople">0</b><span>pessoas</span></div>
         </div>
       </section>
-      <div id="pendCard"></div>
       <section class="card" aria-labelledby="qTitle" id="quickCard">
         <div class="ch"><h2 id="qTitle">Lançamento rápido</h2><span class="meta">escreva como no WhatsApp</span></div>
         <div class="quickrow">
@@ -427,7 +597,9 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
           <button class="btn primary" id="qSave" disabled><span data-i="check"></span><span>Lançar</span></button>
           <button class="btn secondary" id="qMore"><span data-i="edit"></span><span>Completar</span></button>
         </div></div>
+        <p class="qhint" id="qHint">Escreva o valor e quem pagou para lançar.</p>
       </section>
+      <div id="pendCard"></div>
     </div>
     <div class="col">
       <section class="card" aria-labelledby="nTitle">
@@ -446,7 +618,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 </section>
 
 <!-- ============ PLANEJAR ============ -->
-<section class="view" id="v-planejar" role="tabpanel" hidden>
+<section class="view" id="v-planejar" role="tabpanel" aria-labelledby="tab-planejar" hidden>
   <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
     <button role="tab" data-sub="cardapio" aria-selected="true">Cardápio</button>
     <button role="tab" data-sub="receitas" aria-selected="false">Receitas</button>
@@ -463,6 +635,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
         </section>
         <section class="card" aria-labelledby="tTitle">
           <div class="ch"><h2 id="tTitle">Viagem</h2><span class="meta" id="tMeta"></span></div>
+          <div class="field" style="margin-bottom:16px"><label for="tName">Nome da viagem</label><input class="inp" id="tName" maxlength="40" placeholder="Ex.: Praia com as famílias"></div>
           <div class="row2">
             <div class="field"><label for="tStart">Início</label><input class="inp" type="date" id="tStart"></div>
             <div class="field"><label for="tEnd">Fim</label><input class="inp" type="date" id="tEnd"></div>
@@ -533,11 +706,32 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
       <p class="hint" style="margin-top:12px">Usado no rateio “Por porções”, na escala das receitas e na lista de compras.</p>
     </section>
     <div class="fgrid" id="people"></div>
+    <button class="btn secondary block" id="addFam" style="margin-top:16px"><span data-i="plus"></span><span>Adicionar família</span></button>
+  </div>
+</section>
+
+<!-- ============ CHEF ============ -->
+<section class="view" id="v-chef" role="tabpanel" aria-labelledby="tab-chef" hidden>
+  <div class="chefhead"><span class="ico"><span data-i="chef"></span></span><div style="min-width:0"><h1>Chef da viagem</h1><p>Cardápio de praia e verão para um grupo grande com crianças. Tudo calculado neste aparelho, sem internet e sem IA externa.</p></div></div>
+  <div class="grid">
+    <div class="col">
+      <section class="card" aria-labelledby="briefTitle"><div class="ch"><h2 id="briefTitle">Pré-briefing das famílias</h2><span class="meta" id="briefMeta"></span></div><div id="briefBody"></div></section>
+      <section class="card" aria-labelledby="countTitle"><div class="ch"><h2 id="countTitle">Refeições da viagem</h2><span class="meta" id="countMeta"></span></div><div id="countBody"></div></section>
+      <section class="card" aria-labelledby="rankTitle"><div class="ch"><h2 id="rankTitle">Mais indicados para o grupo</h2><span class="meta" id="rankMeta"></span></div>
+        <div class="pills sm" id="rankSeg" role="group" aria-label="Etapa" style="margin-bottom:14px"></div><div id="rankList"></div></section>
+    </div>
+    <div class="col">
+      <section class="card" aria-labelledby="menuTitle"><div class="ch"><h2 id="menuTitle">Cardápio sugerido</h2><span class="meta" id="menuMeta"></span></div><div id="menuBody"></div></section>
+      <section class="card" aria-labelledby="wineTitle"><div class="ch"><h2 id="wineTitle">Adega da viagem</h2><span class="meta" id="wineMeta"></span></div>
+        <div class="pills sm" id="wineSeg" role="group" aria-label="Faixa de preço" style="margin-bottom:12px"></div><div id="wineList"></div>
+        <div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button class="btn secondary" id="wineCopy"><span data-i="copy"></span><span>Copiar adega</span></button><a class="btn secondary" id="wineWa" target="_blank" rel="noopener"><span data-i="chat"></span><span>WhatsApp</span></a></div></div></section>
+      <section class="card" aria-labelledby="rotaTitle"><div class="ch"><h2 id="rotaTitle">Escala da cozinha</h2><span class="meta">quem cozinha e quem limpa</span></div><div id="rotaBody"></div></section>
+    </div>
   </div>
 </section>
 
 <!-- ============ GASTOS ============ -->
-<section class="view" id="v-gastos" role="tabpanel" hidden>
+<section class="view" id="v-gastos" role="tabpanel" aria-labelledby="tab-gastos" hidden>
   <div class="grid">
     <div class="col">
       <section class="card" id="addCard" aria-labelledby="formTitle">
@@ -547,41 +741,45 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
             <label for="amt">Valor</label>
             <div class="money lg"><span>R$</span><input class="inp" id="amt" inputmode="decimal" placeholder="0,00" aria-describedby="amtErr"></div>
             <div class="err" id="amtErr" role="alert"><span data-i="alert"></span><span>Informe um valor maior que zero.</span></div>
-            <label class="switch" style="height:32px"><input type="checkbox" role="switch" id="estChk">Valor estimado (troco pelo real quando a nota chegar)</label>
           </div>
-          <div id="fuelBox" hidden>
-            <div class="row3">
-              <div class="field"><label for="fKm">km</label><input class="inp sm" id="fKm" inputmode="decimal" placeholder="320"></div>
-              <div class="field"><label for="fKml">km/L</label><input class="inp sm" id="fKml" inputmode="decimal" placeholder="11"></div>
-              <div class="field"><label for="fPrice">R$/L</label><input class="inp sm" id="fPrice" inputmode="decimal" placeholder="6,19"></div>
-            </div>
-            <p class="hint" id="fOut" style="margin-top:8px">Calculadora de combustível: km ÷ km/L × preço.</p>
-          </div>
-          <div class="field"><span class="flabel" id="catLbl">Categoria</span><div class="segwrap"><div class="seg" id="catSeg" role="group" aria-labelledby="catLbl"></div></div></div>
           <div class="field">
             <label for="payer">Quem pagou</label>
-            <input class="inp sm" id="payerSearch" placeholder="Buscar pessoa…" aria-label="Buscar quem pagou" autocomplete="off">
+            <input class="inp sm" id="payerSearch" placeholder="Buscar pessoa…" aria-label="Buscar quem pagou" autocomplete="off" hidden>
             <select class="inp" id="payer" aria-describedby="payerErr"></select>
-            <div class="err" id="payerErr" role="alert"><span data-i="alert"></span><span>Adicione pelo menos uma pessoa nas famílias.</span></div>
+            <div class="err" id="payerErr" role="alert"><span data-i="alert"></span><span id="payerErrTxt">Escolha quem pagou.</span></div>
           </div>
+          <div class="field"><span class="flabel" id="catLbl">Categoria</span><div class="segwrap"><div class="seg" id="catSeg" role="group" aria-labelledby="catLbl"></div></div></div>
           <div class="field">
             <label for="desc">Descrição <span class="sub">(opcional)</span></label>
             <input class="inp" id="desc" placeholder="Ex.: Mercado do sábado" maxlength="60">
             <div class="sugg" id="sugg" aria-label="Sugestões"></div>
           </div>
-          <div class="field"><span class="flabel" id="proofLbl">Comprovante</span><div class="pills" id="proofSeg" role="group" aria-labelledby="proofLbl"></div></div>
-          <div class="field" id="proofExtra">
-            <div class="row2" style="grid-template-columns:auto minmax(0,1fr);align-items:center">
-              <label class="btn secondary sm" for="photo" style="cursor:pointer"><span data-i="camera"></span><span>Foto</span></label>
-              <div id="photoPrev" class="hint">Opcional: foto do produto, placa ou papel.</div>
+          <details class="more" id="moreBox"><summary><span data-i="chev"></span><span>Mais detalhes</span><span class="sub" style="font-weight:500">estimado, comprovante, foto, itens</span></summary>
+            <div class="stack">
+              <label class="switch" style="height:auto;min-height:44px"><input type="checkbox" role="switch" id="estChk">Valor estimado (troco pelo real quando a nota chegar)</label>
+              <div id="fuelBox" hidden>
+                <div class="row3">
+                  <div class="field"><label for="fKm">km</label><input class="inp sm" id="fKm" inputmode="decimal" placeholder="320"></div>
+                  <div class="field"><label for="fKml">km/L</label><input class="inp sm" id="fKml" inputmode="decimal" placeholder="11"></div>
+                  <div class="field"><label for="fPrice">R$/L</label><input class="inp sm" id="fPrice" inputmode="decimal" placeholder="6,19"></div>
+                </div>
+                <p class="hint" id="fOut" style="margin-top:8px">Calculadora de combustível: km ÷ km/L × preço.</p>
+              </div>
+              <div class="field"><span class="flabel" id="proofLbl">Comprovante</span><div class="pills" id="proofSeg" role="group" aria-labelledby="proofLbl"></div></div>
+              <div class="field" id="proofExtra">
+                <div class="row2" style="grid-template-columns:auto minmax(0,1fr);align-items:center">
+                  <label class="btn secondary sm" for="photo" style="cursor:pointer"><span data-i="camera"></span><span>Foto</span></label>
+                  <div id="photoPrev" class="hint">Opcional: foto do produto, placa ou papel.</div>
+                </div>
+                <input type="file" id="photo" accept="image/*" capture="environment" class="sr-only">
+                <input class="inp sm" id="note" placeholder="Observação (ex.: feira da praça, barraca do Zé)" maxlength="80">
+              </div>
+              <div class="field" id="itemsField">
+                <label for="items">Itens comprados <span class="sub">(opcional — abate da lista de compras)</span></label>
+                <input class="inp sm" id="items" placeholder="Ex.: picanha 2 kg, carvão, cerveja 2 fardos">
+              </div>
             </div>
-            <input type="file" id="photo" accept="image/*" capture="environment" class="sr-only">
-            <input class="inp sm" id="note" placeholder="Observação (ex.: feira da praça, barraca do Zé)" maxlength="80">
-          </div>
-          <div class="field" id="itemsField">
-            <label for="items">Itens comprados <span class="sub">(opcional — abate da lista de compras)</span></label>
-            <input class="inp sm" id="items" placeholder="Ex.: picanha 2 kg, carvão, cerveja 2 fardos">
-          </div>
+          </details>
           <div class="formactions">
             <button class="btn primary block" type="submit" id="submitBtn"><span data-i="plus"></span><span>Adicionar despesa</span></button>
             <button class="btn secondary" type="button" id="cancelEdit">Cancelar</button>
@@ -600,7 +798,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 </section>
 
 <!-- ============ ACERTOS ============ -->
-<section class="view" id="v-acertos" role="tabpanel" hidden>
+<section class="view" id="v-acertos" role="tabpanel" aria-labelledby="tab-acertos" hidden>
   <div class="grid">
     <div class="col">
       <section class="card" aria-labelledby="mTitle">
@@ -621,7 +819,8 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
     </div>
     <div class="col">
       <section class="card" aria-labelledby="kTitle">
-        <div class="ch"><h2 id="kTitle">Sobra da viagem</h2><span class="meta">caixinha</span></div>
+        <div class="ch"><h2 id="kTitle">Caixinha</h2><span class="sim">Simulação</span></div>
+        <p class="hint" style="margin:-6px 0 14px">Só para acompanhar um fundo comum. Não muda o acerto: o que vale é “Quem paga quem”.</p>
         <div class="field">
           <label for="kitty">Contribuição por família</label>
           <div class="money"><span>R$</span><input class="inp" id="kitty" inputmode="decimal" placeholder="0,00"></div>
@@ -657,6 +856,7 @@ dialog.photo::backdrop{background:rgba(0,0,0,.75)}
 </footer>
 
 <dialog class="cook" id="cookDlg" aria-labelledby="cookTitle"><div class="cookin" id="cookBody"></div></dialog>
+<dialog class="brief" id="briefDlg" aria-labelledby="bTitle"></dialog>
 <dialog class="photo" id="photoDlg"><form method="dialog"><button class="iconbtn" style="position:absolute;top:8px;right:8px" aria-label="Fechar"><span data-i="x"></span></button></form><img id="photoBig" alt="Foto do gasto"></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -668,7 +868,7 @@ const CATEGORIES = {
   gas:       { label: 'Combustível', icon: 'fuel',  color: 'var(--cat-gas)',       scope: 'all' },
   alcohol:   { label: 'Álcool',      icon: 'wine',  color: 'var(--cat-alcohol)',   scope: 'drinkers' },
 };
-const FAMILY_COLORS = ['var(--fam-1)', 'var(--fam-2)', 'var(--fam-3)', 'var(--fam-4)'];
+const FAMILY_COLORS = ['var(--fam-1)', 'var(--fam-2)', 'var(--fam-3)', 'var(--fam-4)', 'var(--fam-5)', 'var(--fam-6)'];
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
 function allPeople(state) {
@@ -985,7 +1185,7 @@ function parseBought(state) {
   return got;
 }
 function shoppingList(state, opts) {
-  const P = portions(state), need = {}, defs = {}, gosto = {}, dishes = [], add = (k, q) => { need[k] = (need[k] || 0) + q; };
+  const P = portions(state), need = {}, defs = {}, gosto = {}, dishes = [], freshDays = {}, add = (k, q) => { need[k] = (need[k] || 0) + q; };
   const only = opts && opts.days ? new Set(opts.days) : null;
   for (const day of P.days) for (const meal of P.meals) {
     if (only && !only.has(day)) continue;
@@ -997,7 +1197,7 @@ function shoppingList(state, opts) {
       for (const ing of r.ingredients || []) {
         const k = ingKey(ing); if (!ITEMS[k]) defs[k] = defs[k] || customDef(state, k, ing);
         if (ing.qty == null) { gosto[k] = true; continue; }
-        add(k, ing.qty * f); const it = ITEMS[k] ? itemDef(state, k) : defs[k]; cost += ing.qty * f * it.price / it.pack;
+        add(k, ing.qty * f); if (ITEMS[k] && ITEMS[k].fresh) (freshDays[k] = freshDays[k] || new Set()).add(day); const it = ITEMS[k] ? itemDef(state, k) : defs[k]; cost += ing.qty * f * it.price / it.pack;
       }
       dishes.push({ day, meal, recipe: r.id, title: r.title, portions: cp.portions, cost });
     }
@@ -1015,7 +1215,7 @@ function shoppingList(state, opts) {
     const g = !!gosto[k] && need[k] === 0;
     const packs = g ? 1 : Math.ceil(need[k] / it.pack - 1e-9), toBuy = b.covered ? 0 : (g ? (b.qty ? 0 : it.pack) : Math.max(0, need[k] - b.qty)), packsLeft = g ? (toBuy ? 1 : 0) : Math.ceil(toBuy / it.pack - 1e-9);
     rows.push({ key: k, name: it.name, section: it.section, unit: it.unit, need: need[k], packs, packLabel: it.packLabel, price: it.price, cost: packs * it.price,
-      bought: b.qty, covered: b.covered, toBuy, packsLeft, costLeft: packsLeft * it.price, alcohol: !!it.alcohol, aGosto: g, custom: !!it.custom });
+      bought: b.qty, covered: b.covered, toBuy, packsLeft, costLeft: packsLeft * it.price, alcohol: !!it.alcohol, aGosto: g, custom: !!it.custom, fresh: !!it.fresh, freshDays: freshDays[k] ? [...freshDays[k]].sort() : [] });
   }
   const sum = (a, f) => a.reduce((s, r) => s + f(r), 0);
   const groceryTotal = sum(rows, r => r.cost), alcoholTotal = sum(rows.filter(r => r.alcohol), r => r.cost), foodTotal = groceryTotal - alcoholTotal;
@@ -1034,7 +1234,7 @@ const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocal
 function shoppingText(state, S) {
   const L = ['*Lista de compras — Rateio da Viagem*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
-    L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
+    L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
   return L.join('\n');
 }
@@ -1188,6 +1388,7 @@ function parseRecipe(text) {
 // Unified recipe access: user recipes (state.recipes) or built-in per-portion templates.
 function getRecipe(state, id) {
   const r = (state.recipes || []).find(x => x.id === id); if (r) return r;
+  if (typeof CHEF !== 'undefined' && CHEF[id]) return chefRecipe(id);
   const t = TEMPLATES[id]; if (!t) return null;
   return { id, title: t.label, yield: 1, builtin: true, ingredients: Object.entries(t.items).map(([k, q]) => ({ qty: tplQty(state, id, k), unit: ITEMS[k].unit, name: ITEMS[k].name, itemKey: k, status: 'ok' })), steps: [] };
 }
@@ -1280,13 +1481,325 @@ function summaryText(state, split, xfers, k) {
   for (const t of xfers) { const st = (state.settled || {})[t.from + '_' + t.to]; const paid = st && Math.abs(st.amount - t.amount) < 0.01; L.push(`- ${t.fromName} → ${t.toName}: ${brl(t.amount)}${paid ? ' ✓ pago' : ''}`); }
   if (k && k.budget > 0) {
     L.push('');
-    L.push(`*Caixinha*: ${brl(k.budget)} · gasto ${brl(k.spent)} · ${k.left >= 0 ? 'sobra ' + brl(k.left) : 'faltam ' + brl(-k.left)}`);
+    L.push(`*Caixinha (simulação, não entra no acerto)*: ${brl(k.budget)} · gasto ${brl(k.spent)} · ${k.left >= 0 ? 'sobra ' + brl(k.left) : 'faltam ' + brl(-k.left)}`);
   }
   return L.join('\n');
 }
+// ===================== Chef: banco de receitas curado, vinhos verificados, afinidade e cardápio =====================
+// Itens novos (preço = estimativa editável da embalagem; fresh = comprar no dia)
+SECTIONS.splice(1, 0, 'Peixaria');
+Object.assign(ITEMS.peixe, { section: 'Peixaria', fresh: true });
+Object.assign(ITEMS, {
+  camarao:       { name: 'Camarão limpo', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 89.9, fresh: true },
+  lula:          { name: 'Lula em anéis', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 54.9, fresh: true },
+  mexilhao:      { name: 'Mexilhão', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 39.9, fresh: true },
+  polvo:         { name: 'Polvo', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 119.9, fresh: true },
+  salmao:        { name: 'Salmão (filé)', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 99.9, fresh: true },
+  bacalhau:      { name: 'Bacalhau dessalgado (lombo)', section: 'Peixaria', unit: 'g', pack: 1000, packLabel: '1 kg', price: 139.9 },
+  lombo:         { name: 'Lombo suíno', section: 'Açougue', unit: 'g', pack: 1000, packLabel: '1 kg', price: 29.9 },
+  parma:         { name: 'Presunto cru fatiado', section: 'Padaria', unit: 'g', pack: 100, packLabel: '100 g', price: 24.9 },
+  bufala:        { name: 'Mussarela de búfala', section: 'Padaria', unit: 'g', pack: 250, packLabel: 'pote 250 g', price: 22.9 },
+  mussarela:     { name: 'Mussarela (peça)', section: 'Padaria', unit: 'g', pack: 500, packLabel: '500 g', price: 32.9 },
+  coalho:        { name: 'Queijo coalho', section: 'Padaria', unit: 'g', pack: 500, packLabel: 'pacote 500 g', price: 29.9 },
+  pao_italiano:  { name: 'Pão italiano', section: 'Padaria', unit: 'un', pack: 1, packLabel: 'filão', price: 14.9 },
+  batata:        { name: 'Batata', section: 'Hortifruti', unit: 'g', pack: 1000, packLabel: '1 kg', price: 6.9 },
+  tomate_cereja: { name: 'Tomate-cereja', section: 'Hortifruti', unit: 'g', pack: 250, packLabel: 'bandeja 250 g', price: 7.9 },
+  rucula:        { name: 'Rúcula', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'maço', price: 4.5 },
+  manjericao:    { name: 'Manjericão', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'maço', price: 4.5 },
+  pimentao:      { name: 'Pimentão', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 2.5 },
+  manga:         { name: 'Manga', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 4.5 },
+  melao:         { name: 'Melão', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 12.9 },
+  abacaxi:       { name: 'Abacaxi', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 9.9 },
+  maracuja:      { name: 'Maracujá', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 2.5 },
+  frutas_verm:   { name: 'Frutas vermelhas congeladas', section: 'Mercearia', unit: 'g', pack: 300, packLabel: 'pacote 300 g', price: 19.9 },
+  leite_coco:    { name: 'Leite de coco', section: 'Mercearia', unit: 'ml', pack: 200, packLabel: 'vidro 200 ml', price: 6.9 },
+  arborio:       { name: 'Arroz arbóreo', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 29.9 },
+  massa_lasanha: { name: 'Massa de lasanha', section: 'Mercearia', unit: 'g', pack: 500, packLabel: '500 g', price: 9.9 },
+  leite_cond:    { name: 'Leite condensado', section: 'Mercearia', unit: 'g', pack: 395, packLabel: 'lata 395 g', price: 7.9 },
+  mel:           { name: 'Mel', section: 'Mercearia', unit: 'g', pack: 300, packLabel: 'pote 300 g', price: 19.9 },
+  sorvete:       { name: 'Sorvete de creme', section: 'Mercearia', unit: 'ml', pack: 1500, packLabel: 'pote 1,5 L', price: 29.9 },
+});
+Object.assign(ITEM_SYNONYMS, {
+  camarao: ['camarao'], lula: ['lula'], mexilhao: ['mexilhao', 'marisco'], polvo: ['polvo'], salmao: ['salmao'], bacalhau: ['bacalhau'], lombo: ['lombo'],
+  parma: ['presunto cru', 'parma'], bufala: ['bufala', 'burrata'], mussarela: ['mussarela peca'], coalho: ['coalho'], pao_italiano: ['pao italiano'], batata: ['batata'],
+  tomate_cereja: ['tomate cereja', 'tomatinho'], rucula: ['rucula'], manjericao: ['manjericao'], pimentao: ['pimentao'], manga: ['manga'], melao: ['melao'], abacaxi: ['abacaxi'],
+  maracuja: ['maracuja'], frutas_verm: ['frutas vermelhas'], leite_coco: ['leite de coco'], arborio: ['arboreo', 'arborio'], massa_lasanha: ['massa de lasanha', 'lasanha'],
+  leite_cond: ['leite condensado'], mel: ['mel'], sorvete: ['sorvete'],
+});
+ITEM_SYNONYMS.peixe.push('robalo', 'tainha', 'linguado', 'peixe branco');
+
+// Vinhos: só rótulos reais. Prêmio/nota apenas quando conferido em fonte pública (url guardada). Preço = faixa aproximada.
+const WINE_TIERS = { medio: 'Médio custo', alto: 'Alto custo' };
+const WINES = {
+  miolo_cuvee: { name: 'Miolo Cuvée Tradition Brut', producer: 'Miolo', country: 'Brasil', type: 'Espumante', grape: 'Chardonnay e Pinot Noir', tier: 'medio', price: 'R$ 70–120',
+    award: 'Medalha de Ouro no 9º Concurso do Espumante Brasileiro (2015)', src: 'Meu Vinho, 17/11/2015', url: 'https://www.meuvinho.com.br/news/583/miolo-cuvee-tradition2c-um-brinde-a-tudo-que-e-brilhante21' },
+  geisse_brut: { name: 'Cave Geisse Brut', producer: 'Cave Geisse', country: 'Brasil', type: 'Espumante', grape: 'Chardonnay e Pinot Noir', tier: 'medio', price: 'R$ 150–200',
+    award: '91 pontos na Decanter (prova de Steven Spurrier)', src: 'Decanter', url: 'https://www.decanter.com/wine-reviews/brazil/serra-gaucha/pinto-bandeira-cave-geisse-brut-serra-gaucha-brazil-5580/' },
+  leopoldina: { name: 'Casa Valduga Leopoldina Chardonnay', producer: 'Casa Valduga', country: 'Brasil', type: 'Branco', grape: 'Chardonnay', tier: 'medio', price: 'R$ 120–180',
+    award: 'Medalha de Prata no Decanter World Wine Awards 2017 (safra 2015)', src: 'Associação Brasileira de Enologia', url: 'https://www.enologia.org.br/noticia/concurso-decanter-vinhos-e-espumantes-brasileiros-sao-destaque-na-maior-competicao-do-mundo' },
+  mcc_chard: { name: 'Marques de Casa Concha Chardonnay', producer: 'Concha y Toro', country: 'Chile', type: 'Branco', grape: 'Chardonnay', tier: 'medio', price: 'R$ 120–180',
+    award: '93 pontos no Guia Descorchados 2024 (safra 2022)', src: 'Marques de Casa Concha', url: 'https://marquesdecasaconcha.com/blog/marques-de-casa-concha-cumple-una-solida-participacion-en-la-guia-descorchados-2024/' },
+  mcc_cab: { name: 'Marques de Casa Concha Cabernet Sauvignon', producer: 'Concha y Toro', country: 'Chile', type: 'Tinto', grape: 'Cabernet Sauvignon', tier: 'medio', price: 'R$ 120–180',
+    award: '93 pontos no Guia Descorchados 2024 (safra 2022)', src: 'Marques de Casa Concha', url: 'https://marquesdecasaconcha.com/blog/marques-de-casa-concha-cumple-una-solida-participacion-en-la-guia-descorchados-2024/' },
+  catena_app: { name: 'Catena Appellation Lunlunta Malbec', producer: 'Catena', country: 'Argentina', type: 'Tinto', grape: 'Malbec', tier: 'medio', price: 'R$ 150–250',
+    award: 'Medalha de Prata, 92 pontos, Decanter World Wine Awards 2018 (safra 2017)', src: 'Decanter World Wine Awards', url: 'https://awards.decanter.com/DWWA/any/wines/540015' },
+  ruffino: { name: 'Ruffino Riserva Ducale Chianti Classico', producer: 'Ruffino', country: 'Itália', type: 'Tinto', grape: 'Sangiovese', tier: 'medio', price: 'R$ 180–280',
+    award: '93 pontos na Wine Spectator e 17º no Top 100 de 2025 (safra 2021)', src: 'Ficha técnica Ruffino', url: 'https://wineclub.ruffino.it/media/file/product/9/Riserva%20Ducale%202021%20ENG.pdf' },
+  ponto_nero: { name: 'Ponto Nero Moscatel', producer: 'Domno do Brasil', country: 'Brasil', type: 'Espumante doce', grape: 'Moscatel', tier: 'medio', price: 'R$ 50–90',
+    award: 'Medalha de Prata no Decanter World Wine Awards 2017', src: 'Associação Brasileira de Enologia', url: 'https://www.enologia.org.br/noticia/concurso-decanter-vinhos-e-espumantes-brasileiros-sao-destaque-na-maior-competicao-do-mundo' },
+  geisse_terroir: { name: 'Cave Geisse Terroir Nature', producer: 'Cave Geisse', country: 'Brasil', type: 'Espumante', grape: 'Chardonnay e Pinot Noir', tier: 'alto', price: 'R$ 250–400',
+    award: '95 pontos no Guia Descorchados 2024, melhor espumante do Brasil na edição (safra 2020)', src: 'Exame', url: 'https://exame.com/casual/melhores-espumantes-do-brasil-metodo-tradicional/' },
+  soalheiro: { name: 'Soalheiro Primeiras Vinhas Alvarinho', producer: 'Soalheiro', country: 'Portugal', type: 'Branco', grape: 'Alvarinho', tier: 'alto', price: 'R$ 250–400',
+    award: 'Medalha de Ouro, 95 pontos, Decanter World Wine Awards (safra 2020)', src: 'Decanter World Wine Awards', url: 'https://awards.decanter.com/DWWA/any/wines/705502' },
+  cloudy: { name: 'Cloudy Bay Sauvignon Blanc', producer: 'Cloudy Bay', country: 'Nova Zelândia', type: 'Branco', grape: 'Sauvignon Blanc', tier: 'alto', price: 'R$ 300–450',
+    award: '94 pontos na Decanter, prova de Emma Jenkins MW (safra 2024)', src: 'Decanter', url: 'https://www.decanter.com/wine-reviews/new-zealand/marlborough/cloudy-bay-sauvignon-blanc-marlborough-new-zealand-2024-97362/' },
+  whispering: { name: 'Whispering Angel', producer: "Caves d'Esclans", country: 'França (Provence)', type: 'Rosé', grape: 'Grenache, Cinsault e Rolle', tier: 'alto', price: 'R$ 250–350',
+    award: 'Medalha de Ouro no Decanter World Wine Awards (safra 2014)', src: 'Decanter World Wine Awards', url: 'https://awards.decanter.com/dwwa/any/wines/631177' },
+  guaspari: { name: 'Guaspari Vista do Chá Syrah', producer: 'Guaspari', country: 'Brasil (SP)', type: 'Tinto', grape: 'Syrah', tier: 'alto', price: 'R$ 250–450',
+    award: 'Medalha de Ouro, 95 pontos, Decanter World Wine Awards 2016 (safra 2012), o primeiro ouro brasileiro na premiação', src: 'Decanter World Wine Awards', url: 'https://results.decanter.com/DWWA/any/wines/560182' },
+  pizzato_dna: { name: 'Pizzato DNA99 Merlot', producer: 'Pizzato', country: 'Brasil', type: 'Tinto', grape: 'Merlot', tier: 'alto', price: 'R$ 350–500',
+    award: '95 pontos na revista Decanter (2018)', src: 'Pizzato', url: 'https://www.pizzato.net/en/pizzato-dna-99-en/' },
+  catena_zapata: { name: 'Catena Zapata Malbec Argentino', producer: 'Catena Zapata', country: 'Argentina', type: 'Tinto', grape: 'Malbec', tier: 'alto', price: 'R$ 700–1.200',
+    award: '94 pontos na Wine Spectator (safra 2022)', src: 'Ficha técnica Mistral', url: 'https://v2.mistral.com.br/downloads/produto/ficha-tecnica/38009' },
+};
+
+// Receitas do Chef: quantidades por porção de adulto (porção = 1). [itemKey, qtd] ou [nome, qtd|null, unidade] para itens livres.
+const COURSES = { entrada: 'Entrada', principal: 'Principal', sobremesa: 'Sobremesa' };
+const LEVELS = ['', 'Descontraído', 'Caprichado', 'Gourmet'];
+const CHEF = {
+  c_ceviche: { title: 'Ceviche de peixe branco com manga', course: 'entrada', cat: 'mar', prot: ['peixe'], level: 3, kids: 0, time: 25, diff: 'Média',
+    ing: [['peixe', 90], ['limao', 1], ['cebola', 0.15], ['manga', 0.15], ['cheiro_verde', 0.1], ['Pimenta dedo-de-moça', null, 'un'], ['sal', null]],
+    steps: ['Corte o peixe bem fresco em cubos de 1,5 cm e mantenha na geladeira.', 'Fatie a cebola bem fina e deixe 5 min em água com gelo.', 'Esprema os limões na hora e tempere o peixe com sal e a pimenta sem sementes.', 'Junte o limão e deixe “cozinhar” por 10 min, mexendo uma vez.', 'Misture a manga em cubos, a cebola e o coentro ou cheiro-verde. Sirva gelado.'],
+    wines: { medio: ['miolo_cuvee', 'mcc_chard'], alto: ['soalheiro', 'cloudy'], estilo: 'Branco cítrico ou espumante brut' }, sobras: 'Não guarde: o limão continua “cozinhando” o peixe. Prepare só na hora.' },
+  c_camarao_alho: { title: 'Camarão no alho e azeite com pão italiano', course: 'entrada', cat: 'mar', prot: ['camarao'], level: 2, kids: 1, time: 20, diff: 'Fácil',
+    ing: [['camarao', 100], ['alho', 1.5], ['azeite', 15], ['limao', 0.25], ['cheiro_verde', 0.05], ['pao_italiano', 0.12], ['sal', null]],
+    steps: ['Seque bem o camarão com papel e tempere com sal.', 'Aqueça o azeite com o alho fatiado em fogo baixo até perfumar (2 min), sem dourar demais.', 'Aumente o fogo e salteie o camarão por 3 min, até ficar rosado.', 'Finalize com limão e cheiro-verde. Sirva com o pão para molhar no azeite.'],
+    wines: { medio: ['geisse_brut', 'miolo_cuvee'], alto: ['cloudy', 'geisse_terroir'], estilo: 'Espumante brut ou Sauvignon Blanc' }, sobras: 'O camarão que sobrar vai bem num risoto ou no macarrão do dia seguinte.' },
+  c_bruschetta: { title: 'Bruschetta de tomate-cereja e manjericão', course: 'entrada', cat: 'leve', prot: ['veg'], level: 1, kids: 2, time: 15, diff: 'Fácil',
+    ing: [['pao_italiano', 0.15], ['tomate_cereja', 60], ['manjericao', 0.1], ['alho', 0.5], ['azeite', 10], ['sal', null]],
+    steps: ['Corte o pão em fatias e toste na grelha ou no forno (5 min).', 'Esfregue meio dente de alho em cada fatia ainda quente.', 'Corte os tomates em quatro e tempere com azeite, sal e manjericão rasgado.', 'Monte na hora de servir para o pão não amolecer.'],
+    wines: { medio: ['miolo_cuvee'], alto: ['whispering'], estilo: 'Rosé seco ou espumante' }, sobras: 'Tomate temperado que sobrar vira molho rápido para a massa.' },
+  c_caprese: { title: 'Caprese de búfala com rúcula', course: 'entrada', cat: 'leve', prot: ['veg'], level: 2, kids: 1, time: 10, diff: 'Fácil',
+    ing: [['bufala', 60], ['tomate_cereja', 60], ['rucula', 0.15], ['manjericao', 0.05], ['azeite', 10], ['sal', null]],
+    steps: ['Lave e seque bem a rúcula.', 'Corte a búfala e os tomates ao meio.', 'Monte sobre a rúcula e tempere na hora com azeite, sal e manjericão.'],
+    wines: { medio: ['mcc_chard'], alto: ['whispering'], estilo: 'Rosé da Provence ou Chardonnay leve' }, sobras: 'Sobrou búfala? Vai muito bem na bruschetta ou na massa ao sugo.' },
+  c_parma_melao: { title: 'Presunto cru com melão gelado', course: 'entrada', cat: 'leve', prot: ['porco'], level: 2, kids: 1, time: 10, diff: 'Fácil',
+    ing: [['parma', 25], ['melao', 0.1], ['Pimenta-do-reino', null, 'un']],
+    steps: ['Deixe o melão bem gelado.', 'Corte em fatias finas, sem casca.', 'Envolva cada fatia com o presunto e finalize com pimenta moída na hora.'],
+    wines: { medio: ['geisse_brut'], alto: ['geisse_terroir'], estilo: 'Espumante brut' }, sobras: 'O melão que sobrar entra no café da manhã.' },
+  c_coalho: { title: 'Queijo coalho na brasa com mel', course: 'entrada', cat: 'churrasco', prot: ['veg'], level: 1, kids: 2, time: 15, diff: 'Fácil',
+    ing: [['coalho', 70], ['mel', 10], ['Orégano', null, 'un']],
+    steps: ['Coloque o queijo no espeto ou na grelha bem quente.', 'Doure por 2 min de cada lado, sem mexer antes de soltar.', 'Sirva com um fio de mel e orégano.'],
+    wines: { medio: ['miolo_cuvee'], alto: ['whispering'], estilo: 'Rosé ou espumante' }, sobras: 'Queijo que sobrou vai picado na salada tropical.' },
+  c_lula: { title: 'Lula à dorê com maionese de limão', course: 'entrada', cat: 'mar', prot: ['frutos_mar'], level: 2, kids: 2, time: 30, diff: 'Média',
+    ing: [['lula', 100], ['farinha', 20], ['ovos', 0.3], ['oleo', 50], ['limao', 0.25], ['Maionese', 20, 'g'], ['sal', null]],
+    steps: ['Seque bem os anéis de lula e tempere com sal e limão.', 'Passe no ovo batido e depois na farinha.', 'Frite em óleo bem quente, em poucas porções, por 2 min, até dourar.', 'Escorra em papel. Misture raspas e suco de limão na maionese e sirva junto.'],
+    wines: { medio: ['geisse_brut', 'mcc_chard'], alto: ['cloudy'], estilo: 'Espumante brut ou branco fresco' }, sobras: 'Frita não guarda bem: frite só o que for comer.' },
+  c_polvo: { title: 'Salada morna de polvo com batata', course: 'entrada', cat: 'mar', prot: ['frutos_mar'], level: 3, kids: 0, time: 90, diff: 'Desafio',
+    ing: [['polvo', 120], ['batata', 120], ['azeite', 20], ['tomate_cereja', 40], ['cheiro_verde', 0.05], ['alho', 1], ['sal', null]],
+    steps: ['Cozinhe o polvo na panela de pressão sem água, só com uma cebola, por 20 min.', 'Cozinhe as batatas com casca até ficarem macias (20 min) e corte em rodelas.', 'Corte o polvo em pedaços e doure no azeite com alho (3 min).', 'Misture com a batata, os tomates e o cheiro-verde. Sirva morno.'],
+    wines: { medio: ['leopoldina'], alto: ['soalheiro'], estilo: 'Alvarinho ou branco com boa acidez' }, sobras: 'Sobrou polvo? Vai picado no arroz do dia seguinte.' },
+  c_salada_tropical: { title: 'Salada tropical de folhas e manga', course: 'entrada', cat: 'leve', prot: ['veg'], level: 2, kids: 1, time: 15, diff: 'Fácil',
+    ing: [['rucula', 0.2], ['salada', 60], ['manga', 0.2], ['Castanha-de-caju', 10, 'g'], ['limao', 0.2], ['azeite', 10], ['mel', 5]],
+    steps: ['Lave e seque bem as folhas.', 'Corte a manga em cubos.', 'Faça o molho: limão, azeite, mel e sal.', 'Monte e tempere só na hora. Finalize com a castanha picada.'],
+    wines: { medio: ['miolo_cuvee'], alto: ['whispering'], estilo: 'Rosé seco ou espumante' }, sobras: 'Guarde as folhas sem molho; duram mais um dia.' },
+  // Principais
+  c_churrasco: { title: 'Churrasco de picanha com vinagrete e farofa', course: 'principal', cat: 'churrasco', prot: ['boi'], level: 1, kids: 2, time: 120, diff: 'Média', heavy: true,
+    ing: [['carne', 350], ['linguica', 100], ['pao_alho', 1], ['carvao', 500], ['sal_grosso', 15], ['farofa', 40], ['tomate', 0.5], ['cebola', 0.25], ['cheiro_verde', 0.1], ['limao', 0.3]],
+    steps: ['Acenda o carvão 40 min antes e espere virar brasa branca.', 'Faça o vinagrete: tomate, cebola e cheiro-verde picados, com limão, azeite e sal.', 'Asse a linguiça e o pão de alho primeiro, para as crianças comerem logo (20 min).', 'Salgue a picanha com sal grosso só na hora e asse com a gordura para cima (25 min).', 'Fatie contra a fibra e sirva com farofa e vinagrete.'],
+    wines: { medio: ['catena_app', 'mcc_cab'], alto: ['catena_zapata', 'guaspari'], estilo: 'Tinto encorpado: Malbec, Cabernet ou Syrah' }, sobras: 'Separe a carne que sobrar: amanhã vira arroz de churrasco (o Chef já sugere).' },
+  c_moqueca: { title: 'Moqueca de peixe e camarão', course: 'principal', cat: 'mar', prot: ['peixe', 'camarao'], level: 2, kids: 1, time: 60, diff: 'Média',
+    ing: [['peixe', 200], ['camarao', 60], ['leite_coco', 70], ['tomate', 0.7], ['cebola', 0.4], ['pimentao', 0.3], ['cheiro_verde', 0.15], ['limao', 0.5], ['Azeite de dendê', 10, 'ml'], ['arroz', 70], ['sal', null]],
+    steps: ['Tempere o peixe em postas com limão e sal e deixe 15 min.', 'Na panela de barro ou larga, faça camadas de cebola, tomate e pimentão em rodelas.', 'Acomode o peixe por cima, regue com o leite de coco e o dendê.', 'Tampe e cozinhe em fogo médio por 15 min, sem mexer. Junte o camarão nos últimos 5 min.', 'Finalize com cheiro-verde e sirva com arroz branco.'],
+    wines: { medio: ['leopoldina', 'mcc_chard'], alto: ['soalheiro', 'whispering'], estilo: 'Branco com corpo ou rosé' }, sobras: 'Moqueca fica ainda melhor no dia seguinte; o caldo vira pirão.' },
+  c_peixe_brasa: { title: 'Peixe na brasa com manteiga de limão e ervas', course: 'principal', cat: 'mar', prot: ['peixe'], level: 2, kids: 2, time: 45, diff: 'Fácil',
+    ing: [['peixe', 250], ['manteiga', 15], ['limao', 0.5], ['alho', 1], ['cheiro_verde', 0.1], ['batata', 150], ['salada', 80], ['sal', null]],
+    steps: ['Peça na peixaria um peixe firme (robalo, tainha ou pescada) já limpo.', 'Tempere com sal, alho e limão por 15 min.', 'Asse na grelha untada ou em papel-alumínio, 8 min de cada lado.', 'Derreta a manteiga com raspas de limão e ervas e regue na hora de servir.', 'Acompanhe com batatas cozidas e salada.'],
+    wines: { medio: ['leopoldina', 'miolo_cuvee'], alto: ['cloudy', 'soalheiro'], estilo: 'Branco fresco: Sauvignon Blanc ou Alvarinho' }, sobras: 'Peixe que sobrar vira bolinho ou salada fria com maionese.' },
+  c_risoto_camarao: { title: 'Risoto de camarão com limão-siciliano', course: 'principal', cat: 'mar', prot: ['camarao'], level: 3, kids: 1, time: 45, diff: 'Média',
+    ing: [['arborio', 80], ['camarao', 120], ['cebola', 0.25], ['manteiga', 15], ['queijo', 15], ['limao', 0.3], ['azeite', 10], ['Vinho branco seco (para cozinhar)', 30, 'ml'], ['sal', null]],
+    steps: ['Ferva água com sal (ou caldo de legumes) e mantenha quente.', 'Doure o camarão no azeite por 2 min e reserve.', 'Refogue a cebola, junte o arroz e mexa por 1 min. Coloque o vinho e deixe evaporar.', 'Adicione o caldo aos poucos, mexendo, por 18 min, até o arroz ficar al dente.', 'Desligue, junte manteiga, queijo, raspas de limão e o camarão. Tampe por 2 min e sirva.'],
+    wines: { medio: ['mcc_chard', 'geisse_brut'], alto: ['geisse_terroir', 'soalheiro'], estilo: 'Chardonnay ou espumante' }, sobras: 'Risoto que sobrar vira bolinho frito (arancini) no lanche.' },
+  c_espaguete_mar: { title: 'Espaguete aos frutos do mar', course: 'principal', cat: 'massa', prot: ['camarao', 'frutos_mar'], level: 3, kids: 1, time: 40, diff: 'Média',
+    ing: [['macarrao', 110], ['camarao', 70], ['lula', 50], ['mexilhao', 60], ['tomate_cereja', 60], ['alho', 1.5], ['azeite', 15], ['Vinho branco seco (para cozinhar)', 30, 'ml'], ['cheiro_verde', 0.1], ['sal', null]],
+    steps: ['Cozinhe o espaguete em bastante água com sal, 2 min antes do ponto (8 min).', 'No azeite, doure o alho, junte a lula e os mexilhões e coloque o vinho (3 min).', 'Junte os tomates e o camarão e cozinhe até o camarão ficar rosado (3 min).', 'Passe a massa para a frigideira com um pouco da água do cozimento e misture por 1 min.', 'Finalize com cheiro-verde e azeite cru.'],
+    wines: { medio: ['leopoldina'], alto: ['soalheiro', 'cloudy'], estilo: 'Branco mineral ou Alvarinho' }, sobras: 'Melhor comer na hora; frutos do mar reaquecidos ficam borrachudos.' },
+  c_sugo: { title: 'Massa ao sugo com manjericão', course: 'principal', cat: 'massa', prot: ['veg'], level: 1, kids: 2, time: 25, diff: 'Fácil',
+    ing: [['macarrao', 110], ['molho', 130], ['manjericao', 0.1], ['queijo', 15], ['alho', 0.5], ['azeite', 10], ['sal', null]],
+    steps: ['Cozinhe a massa em água com bastante sal (10 min).', 'Doure o alho no azeite, junte o molho e deixe apurar 10 min.', 'Misture a massa ao molho com um pouco da água do cozimento.', 'Sirva com manjericão e queijo ralado.'],
+    wines: { medio: ['ruffino'], alto: ['pizzato_dna'], estilo: 'Tinto de boa acidez: Sangiovese ou Merlot' }, sobras: 'Massa ao sugo esquenta bem: bom almoço rápido para as crianças.' },
+  c_lasanha: { title: 'Lasanha à bolonhesa', course: 'principal', cat: 'massa', prot: ['boi'], level: 1, kids: 2, time: 90, diff: 'Média', heavy: true,
+    ing: [['massa_lasanha', 70], ['carne_moida', 100], ['molho', 120], ['mussarela', 50], ['leite', 60], ['manteiga', 8], ['farinha', 8], ['queijo', 10], ['cebola', 0.2], ['sal', null]],
+    steps: ['Doure a carne moída com cebola, junte o molho e cozinhe 15 min.', 'Faça o molho branco: manteiga e farinha por 1 min, junte o leite e mexa até engrossar (5 min).', 'Monte em camadas: molho, massa, carne, molho branco e mussarela.', 'Cubra com queijo ralado e asse a 200 °C por 40 min.', 'Deixe descansar 10 min antes de cortar.'],
+    wines: { medio: ['ruffino'], alto: ['pizzato_dna'], estilo: 'Tinto italiano ou Merlot' }, sobras: 'Pode montar na véspera e assar no dia: ótima para o dia de praia longo.' },
+  c_salmao: { title: 'Salmão em crosta de ervas com purê', course: 'principal', cat: 'mar', prot: ['peixe'], level: 3, kids: 1, time: 50, diff: 'Média',
+    ing: [['salmao', 180], ['batata', 200], ['manteiga', 15], ['leite', 40], ['cheiro_verde', 0.1], ['limao', 0.3], ['Farinha de rosca', 15, 'g'], ['sal', null]],
+    steps: ['Cozinhe as batatas (20 min) e amasse com manteiga, leite e sal.', 'Misture farinha de rosca, ervas picadas, raspas de limão e um fio de azeite.', 'Tempere o salmão, cubra com a crosta e asse a 200 °C por 12 min.', 'Sirva sobre o purê com gotas de limão.'],
+    wines: { medio: ['leopoldina'], alto: ['whispering', 'geisse_terroir'], estilo: 'Rosé, espumante ou Chardonnay' }, sobras: 'Salmão frio desfiado vira patê para o lanche.' },
+  c_lombo_abacaxi: { title: 'Lombo assado com abacaxi caramelizado', course: 'principal', cat: 'churrasco', prot: ['porco'], level: 2, kids: 2, time: 120, diff: 'Fácil',
+    ing: [['lombo', 220], ['abacaxi', 0.15], ['cebola', 0.2], ['alho', 1], ['mel', 10], ['arroz', 70], ['salada', 80], ['sal', null]],
+    steps: ['Tempere o lombo com alho, sal e limão de véspera ou por 1 h.', 'Asse coberto com papel-alumínio a 200 °C por 60 min.', 'Retire o papel, pincele mel e asse mais 20 min, até dourar.', 'Doure o abacaxi em fatias na frigideira com um pouco de mel (5 min).', 'Fatie e sirva com arroz e salada.'],
+    wines: { medio: ['leopoldina'], alto: ['whispering'], estilo: 'Rosé ou branco aromático' }, sobras: 'Lombo frio fatiado é o melhor sanduíche do dia seguinte.' },
+  c_frango_limao: { title: 'Frango grelhado com limão e salada', course: 'principal', cat: 'leve', prot: ['frango'], level: 1, kids: 2, time: 45, diff: 'Fácil',
+    ing: [['frango', 220], ['limao', 0.5], ['alho', 1], ['azeite', 10], ['arroz', 70], ['salada', 100], ['sal', null]],
+    steps: ['Tempere o frango com alho, limão, azeite e sal por 20 min.', 'Grelhe em fogo médio, 6 min de cada lado.', 'Deixe descansar 5 min antes de fatiar.', 'Sirva com arroz e salada.'],
+    wines: { medio: ['miolo_cuvee', 'mcc_chard'], alto: ['geisse_terroir'], estilo: 'Espumante ou Chardonnay' }, sobras: 'Frango que sobrar vira salpicão com maionese.' },
+  c_bacalhau: { title: 'Bacalhau ao forno com batatas e azeite', course: 'principal', cat: 'mar', prot: ['peixe'], level: 3, kids: 1, time: 90, diff: 'Média', ahead: 'Dessalgue o bacalhau 24–48 h antes, trocando a água na geladeira.',
+    ing: [['bacalhau', 200], ['batata', 200], ['cebola', 0.5], ['azeite', 40], ['pimentao', 0.3], ['ovos', 0.5], ['Azeitona preta', 20, 'g'], ['sal', null]],
+    steps: ['Cozinhe as batatas em rodelas por 8 min, só até começarem a amaciar.', 'Escalde o bacalhau dessalgado por 5 min e separe em lascas grandes.', 'Numa travessa, faça camadas de batata, cebola, pimentão e bacalhau.', 'Regue com bastante azeite e asse a 200 °C por 30 min.', 'Finalize com ovos cozidos, azeitonas e cheiro-verde.'],
+    wines: { medio: ['leopoldina', 'mcc_chard'], alto: ['soalheiro', 'geisse_terroir'], estilo: 'Branco português ou espumante' }, sobras: 'O que sobrar vira bolinho de bacalhau.' },
+  c_arroz_churrasco: { title: 'Arroz de churrasco (aproveitamento)', course: 'principal', cat: 'sobras', prot: ['boi'], level: 1, kids: 2, time: 30, diff: 'Fácil', leftovers: true,
+    ing: [['arroz', 70], ['tomate', 0.3], ['cebola', 0.2], ['cheiro_verde', 0.05], ['ovos', 0.5], ['sal', null]],
+    steps: ['Pique a carne e a linguiça que sobraram do churrasco.', 'Refogue a cebola, junte as carnes e doure (5 min).', 'Junte o arroz, refogue e cubra com água quente. Cozinhe até secar (18 min).', 'Finalize com tomate, cheiro-verde e ovos mexidos.'],
+    wines: { medio: ['mcc_cab'], alto: ['guaspari'], estilo: 'Tinto de corpo médio' }, sobras: 'Usa as carnes do churrasco: nada vai para o lixo.' },
+  // Sobremesas
+  c_mousse_maracuja: { title: 'Mousse de maracujá', course: 'sobremesa', cat: 'doce', prot: ['veg'], level: 1, kids: 2, time: 20, diff: 'Fácil', ahead: 'Precisa de 3 h de geladeira.',
+    ing: [['maracuja', 0.5], ['leite_cond', 50], ['creme_leite', 50]],
+    steps: ['Bata no liquidificador o leite condensado, o creme de leite e o suco de maracujá (3 min).', 'Distribua em potinhos.', 'Leve à geladeira por 3 h. Decore com sementes na hora de servir.'],
+    wines: { medio: ['ponto_nero'], alto: [], estilo: 'Espumante moscatel' }, sobras: 'Dura 2 dias na geladeira.' },
+  c_abacaxi_grelhado: { title: 'Abacaxi grelhado com sorvete e canela', course: 'sobremesa', cat: 'doce', prot: ['veg'], level: 1, kids: 2, time: 15, diff: 'Fácil',
+    ing: [['abacaxi', 0.2], ['acucar', 10], ['sorvete', 80], ['Canela em pó', null, 'un']],
+    steps: ['Corte o abacaxi em fatias grossas.', 'Polvilhe açúcar e canela.', 'Grelhe na brasa final do churrasco, 3 min de cada lado.', 'Sirva quente com uma bola de sorvete.'],
+    wines: { medio: ['ponto_nero'], alto: [], estilo: 'Espumante moscatel' }, sobras: 'Aproveite a brasa do churrasco: sobremesa sem louça extra.' },
+  c_panna_cotta: { title: 'Panna cotta com calda de frutas vermelhas', course: 'sobremesa', cat: 'doce', prot: ['veg'], level: 3, kids: 2, time: 30, diff: 'Média', ahead: 'Precisa de 4 h de geladeira.',
+    ing: [['creme_leite', 100], ['leite', 30], ['acucar', 15], ['Gelatina incolor', 2, 'g'], ['frutas_verm', 40]],
+    steps: ['Hidrate a gelatina conforme a embalagem.', 'Aqueça o creme de leite, o leite e o açúcar sem ferver (5 min) e dissolva a gelatina.', 'Distribua em copinhos e leve à geladeira por 4 h.', 'Para a calda, cozinhe as frutas vermelhas com um pouco de açúcar por 8 min. Sirva por cima.'],
+    wines: { medio: ['ponto_nero'], alto: [], estilo: 'Espumante moscatel ou rosé doce' }, sobras: 'Dura 3 dias na geladeira, coberta.' },
+  c_brigadeiro_colher: { title: 'Brigadeiro de colher', course: 'sobremesa', cat: 'doce', prot: ['veg'], level: 1, kids: 2, time: 20, diff: 'Fácil',
+    ing: [['leite_cond', 70], ['Cacau em pó', 8, 'g'], ['manteiga', 5], ['creme_leite', 25]],
+    steps: ['Leve ao fogo baixo o leite condensado, o cacau e a manteiga.', 'Mexa sem parar até desgrudar do fundo (10 min).', 'Desligue, junte o creme de leite e sirva em potinhos.'],
+    wines: { medio: ['ponto_nero'], alto: [], estilo: 'Espumante moscatel' }, sobras: 'Vira recheio de bolo ou de pão no lanche.' },
+};
+const CHEF_MAR = new Set(['camarao', 'frutos_mar']);
+const isFreshRecipe = c => c.ing.some(([k]) => ITEMS[k] && ITEMS[k].fresh);
+function chefRecipe(id) {
+  const c = CHEF[id]; if (!c) return null;
+  const ingredients = c.ing.map(([k, q, u]) => ITEMS[k] ? { qty: q, unit: ITEMS[k].unit, name: ITEMS[k].name, itemKey: k, status: 'ok' } : { qty: q, unit: u || 'g', name: k, status: 'ok' });
+  return { id, title: c.title, yield: 1, chef: true, ingredients, steps: c.steps.slice(), meta: c };
+}
+// Pré-briefing: respostas por família (ficam só no aparelho). Afinidade 0–100 por prato.
+const BRIEF_VETO = { camarao: { label: 'Camarão', prot: ['camarao'] }, peixe: { label: 'Peixe', prot: ['peixe'] }, mar: { label: 'Frutos do mar', prot: ['camarao', 'frutos_mar'] },
+  porco: { label: 'Carne de porco', prot: ['porco'] }, boi: { label: 'Carne vermelha', prot: ['boi'] }, lactose: { label: 'Lactose', words: DIET.lactose.words },
+  gluten: { label: 'Glúten', words: DIET.gluten.words }, pimenta: { label: 'Pimenta', words: ['pimenta'] }, coentro: { label: 'Coentro', words: ['coentro', 'cheiro verde'] } };
+function briefVetoes(c, a) {
+  if (!a) return [];
+  const out = [], names = c.ing.map(([k]) => normTxt(k + ' ' + (ITEMS[k] ? ITEMS[k].name : '')));
+  for (const v of a.nao || []) { const d = BRIEF_VETO[v]; if (!d) continue;
+    if ((d.prot && c.prot.some(p => d.prot.includes(p))) || (d.words && names.some(n => d.words.some(w => hasPhrase(n, w))))) out.push(d.label); }
+  for (const w of normTxt(a.naoTxt || '').split(/[,;/]+|\s+e\s+/).map(x => x.trim()).filter(x => x.length >= 3))
+    if (names.some(n => n.includes(w)) || normTxt(c.title).includes(w)) out.push(w);
+  return out;
+}
+function famAffinity(c, a) {
+  if (!a || !a.done) return null;
+  let s = 55;
+  if ((a.prot || []).length) s += c.prot.some(p => a.prot.includes(p) || (p === 'frutos_mar' && a.prot.includes('camarao'))) ? 15 : (c.prot.includes('veg') ? 0 : -6);
+  if ((a.estilos || []).includes(c.cat) || (c.cat === 'sobras' && (a.estilos || []).includes('churrasco'))) s += 10;
+  const mar = c.prot.some(p => CHEF_MAR.has(p) || p === 'peixe');
+  if (mar) s += a.mar === 'adoram' ? 12 : a.mar === 'evitar' ? -35 : 0;
+  const lv = a.nivel || 2; s += c.level === lv ? 6 : -9 * Math.abs(c.level - lv);
+  if (c.course === 'entrada') s += a.entradas === 'questao' ? 10 : a.entradas === 'gostam' ? 4 : -6;
+  if (a.criancas === 'simples' && c.course !== 'entrada') s += (c.kids - 1) * 8;
+  if (a.criancas === 'simples' && c.kids === 0) s -= 6;
+  const fav = normTxt(a.fav || '').split(/[^a-z0-9]+/).filter(w => w.length >= 4);
+  if (fav.some(w => normTxt(c.title).includes(w) || c.cat.startsWith(w.slice(0, 5)))) s += 15;
+  if (c.leftovers) s -= 4; // aproveitamento: bom, mas não deve liderar o ranking
+  const vetos = briefVetoes(c, a);
+  return { score: vetos.length ? 0 : Math.max(0, Math.min(100, Math.round(s))), vetos };
+}
+// brief = { [familyId]: answers }. Peso de cada família = soma dos pesos de porção dos membros.
+function chefScores(state, brief) {
+  const fams = state.families.map(f => ({ f, w: f.members.reduce((s, m) => s + weightOf(state, m), 0) || 1, a: brief && brief[f.id] }));
+  const answered = fams.filter(x => x.a && x.a.done), out = {};
+  for (const [id, c] of Object.entries(CHEF)) {
+    let num = 0, den = 0; const vetos = [], per = [];
+    for (const x of answered) { const r = famAffinity(c, x.a); per.push({ id: x.f.id, name: x.f.name, score: r.score });
+      if (r.vetos.length) vetos.push({ fam: x.f.name, what: r.vetos }); num += r.score * x.w; den += x.w; }
+    const base = 58 + c.kids * 3 - Math.abs(c.level - 2) * 3 - (c.leftovers ? 6 : 0);
+    let score = den ? Math.round(num / den) : base;
+    const diet = []; for (const f of state.families) for (const m of f.members) { const d = dietConflicts(state, chefRecipe(id), m); if (d.length) diet.push(m.name); }
+    if (diet.length) score = Math.max(0, score - 8);
+    out[id] = { id, score, vetos, per, diet, course: c.course, answered: answered.length };
+  }
+  return out;
+}
+function groupPrefs(state, brief) {
+  const fams = state.families.map(f => ({ w: f.members.reduce((s, m) => s + weightOf(state, m), 0) || 1, a: brief && brief[f.id] })).filter(x => x.a && x.a.done);
+  const tw = fams.reduce((s, x) => s + x.w, 0);
+  const avg = fn => tw ? fams.reduce((s, x) => s + fn(x.a) * x.w, 0) / tw : null;
+  const nivel = avg(a => a.nivel || 2), entradas = avg(a => a.entradas === 'questao' ? 1 : a.entradas === 'gostam' ? 0.5 : 0);
+  const faixa = fams.length ? (fams.some(x => x.a.vinho === 'alto' || x.a.vinho === 'ambos') ? (fams.every(x => x.a.vinho === 'alto') ? 'alto' : 'ambos') : 'medio') : 'ambos';
+  const tipos = new Set(); fams.forEach(x => (x.a.tipos || []).forEach(t => tipos.add(t)));
+  return { nivel: nivel == null ? 2 : nivel, entradas: entradas == null ? 0.5 : entradas, faixa, tipos: [...tipos], answered: fams.length };
+}
+const SPECIAL = { '12-24|jantar': { label: 'Ceia de Natal', ids: ['c_parma_melao', 'c_bacalhau', 'c_panna_cotta'] }, '12-25|almoco': { label: 'Almoço de Natal', ids: ['c_caprese', 'c_lombo_abacaxi', 'c_mousse_maracuja'] },
+  '12-31|jantar': { label: 'Réveillon', ids: ['c_camarao_alho', 'c_risoto_camarao', 'c_panna_cotta'] } };
+// Cardápio sugerido para as refeições "em casa" (almoço, lanche e jantar). Determinístico para o mesmo seed.
+function chefPlan(state, brief, seed) {
+  const P = portions(state), sc = chefScores(state, brief), g = groupPrefs(state, brief), out = {};
+  const rank = course => Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers).sort((a, b) => (b.score - (b.vetos.length ? 60 : 0)) - (a.score - (a.vetos.length ? 60 : 0)) || (a.id < b.id ? -1 : 1));
+  const R = { entrada: rank('entrada'), principal: rank('principal'), sobremesa: rank('sobremesa') };
+  const last = {}; let prevLunchChurrasco = false, k = 0; const s0 = Number(seed) || 0, reserved = new Set();
+  P.days.forEach(d => ['almoco', 'jantar'].forEach(m => { const sp = SPECIAL[d.slice(5) + '|' + m]; if (sp) reserved.add(sp.ids[1]); }));
+  const pick = (course, day, avoid, pred) => {
+    let list = R[course].filter(x => !avoid.has(x.id) && (pred ? pred(CHEF[x.id]) : true));
+    if (list.some(x => !reserved.has(x.id))) list = list.filter(x => !reserved.has(x.id));
+    const fresh = list.filter(x => last[x.id] == null || day - last[x.id] >= (course === 'principal' ? 4 : 3));
+    const pool = (fresh.length ? fresh : list).slice(0, Math.max(1, Math.min(4, (fresh.length ? fresh : list).length)));
+    const top = pool.filter(x => x.score >= pool[0].score - 12);
+    return top.length ? top[(s0 + k++) % top.length].id : null;
+  };
+  P.days.forEach((d, i) => {
+    const wd = new Date(d + 'T12:00:00Z').getUTCDay(), md = d.slice(5), dayCh = new Set();
+    for (const meal of P.meals) {
+      if (meal === 'cafe') continue;
+      const c = cellOf(state, d, meal), cp = P.cell[d + '|' + meal]; if (c.mode !== 'casa' || !cp || !cp.portions) continue;
+      const sp = SPECIAL[md + '|' + meal]; let ids = [], label = '';
+      if (sp) { ids = sp.ids.slice(); label = sp.label; }
+      else if (meal === 'lanche') { if (g.entradas >= 0.4) { const e = pick('entrada', i, dayCh, x => x.kids >= 1 && x.time <= 30); if (e) ids = [e]; label = 'Petisco'; } }
+      else {
+        let p = null;
+        if (meal === 'almoco' && prevLunchChurrasco && sc.c_arroz_churrasco && !sc.c_arroz_churrasco.vetos.length) { p = 'c_arroz_churrasco'; label = 'Aproveitamento'; }
+        else if (meal === 'almoco' && (wd === 0 || wd === 6) && sc.c_churrasco.score >= 40 && !sc.c_churrasco.vetos.length && (last.c_churrasco == null || i - last.c_churrasco >= 3)) { p = 'c_churrasco'; label = 'Churrasco'; }
+        else p = pick('principal', i, dayCh, meal === 'jantar' ? (x => !x.heavy) : (x => x.cat !== 'massa' || i % 2 === 0));
+        const stages = meal === 'jantar' && (g.nivel >= 2 || g.entradas >= 0.6);
+        const e = stages ? pick('entrada', i, dayCh, x => !(p && CHEF[p].cat === 'mar' && x.cat === 'mar' && x.level < 3)) : null;
+        const s = (meal === 'jantar' && (g.nivel >= 2.3 || i % 2 === 1)) || p === 'c_churrasco' ? (p === 'c_churrasco' ? 'c_abacaxi_grelhado' : pick('sobremesa', i, dayCh)) : null;
+        ids = [e, p, s].filter(Boolean); if (!label) label = stages ? 'Jantar em etapas' : '';
+      }
+      if (!ids.length) continue;
+      ids.forEach(x => { last[x] = i; dayCh.add(x); });
+      if (meal === 'almoco') prevLunchChurrasco = ids.includes('c_churrasco');
+      out[d + '|' + meal] = { ids, label, portions: cp.portions, people: cp.people };
+    }
+    if (!P.meals.includes('almoco') || cellOf(state, d, 'almoco').mode !== 'casa') prevLunchChurrasco = false;
+  });
+  return { sugg: out, scores: sc, prefs: g };
+}
+// Contagem de refeições: por dia e total, em casa × fora × livre, com porções.
+function mealCounts(state) {
+  const P = portions(state), days = P.days.map(d => ({ day: d, casa: 0, fora: 0, livre: 0, pc: 0, pf: 0 }));
+  P.days.forEach((d, i) => P.meals.forEach(m => { const c = cellOf(state, d, m), cp = P.cell[d + '|' + m]; if (!cp) return;
+    const x = days[i]; if (c.mode === 'casa') { x.casa++; x.pc += cp.portions; } else if (c.mode === 'fora') { x.fora++; x.pf += cp.portions; } else x.livre++; }));
+  const sum = k => days.reduce((s, x) => s + x[k], 0);
+  return { days, casa: sum('casa'), fora: sum('fora'), livre: sum('livre'), pc: P.casaTotal, pf: P.foraTotal };
+}
+// Adega: garrafas por refeição (jantar ≈ 2 taças por pessoa que bebe no principal, 0,6 na entrada e na sobremesa; almoço na praia, metade).
+function wineList(state, plan, tier) {
+  const P = portions(state), byWine = {};
+  for (const [key, s] of Object.entries(plan)) {
+    const [d, meal] = key.split('|'), days = P.days, idx = days.indexOf(d) * 4 + MEAL_ORDER.indexOf(meal);
+    let drinkers = 0; for (const f of state.families) for (const m of f.members) { const [a, b] = presenceRange(state, m, f, days); if (m.drinks && idx >= a && idx <= b) drinkers++; }
+    if (!drinkers) continue;
+    s.ids.forEach((id, j) => { const c = CHEF[id]; if (!c) return; const opts = (c.wines[tier] || []).length ? c.wines[tier] : c.wines.medio; if (!opts.length) return;
+      const w = opts[(days.indexOf(d) + j) % opts.length], glasses = (c.course === 'principal' ? 2 : 0.6) * (meal === 'jantar' ? 1 : 0.5), x = byWine[w] = byWine[w] || { id: w, bottles: 0, dishes: new Set() };
+      x.bottles += drinkers * glasses / 5; x.dishes.add(c.title); });
+  }
+  return Object.values(byWine).map(x => ({ ...x, bottles: Math.max(1, Math.ceil(x.bottles - 0.15)), dishes: [...x.dishes] })).sort((a, b) => b.bottles - a.bottles);
+}
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = { parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
+  module.exports = { CHEF, WINES, chefRecipe, chefScores, chefPlan, groupPrefs, mealCounts, wineList, famAffinity, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF };
 }
 </script>
 <script>
@@ -1319,7 +1832,7 @@ if (typeof module !== 'undefined' && typeof window === 'undefined') {
     edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', sparkle: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6',
     users: 'M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
     clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2', book: 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z',
-    image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01',
+    image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01', dl: 'M17 7 7 17M17 17H7V7', ur: 'M7 17 17 7M7 7h10v10', minus: 'M5 12h14',
   };
   const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[n]}"/></svg>`;
   const hydrate = root => root.querySelectorAll('[data-i]').forEach(el => { el.outerHTML = icon(el.dataset.i); });
@@ -1404,20 +1917,19 @@ Corte as frutas e monte a mesa com pães e frios.`,
       F('Família A', [['Carlos', true], ['Ana', true], ['Pedro', false, 'adolescente'], ['Lia', false, 'crianca']]),
       F('Família B', [['Marcos', true], ['Júlia', false], ['Rafa', true]]),
       F('Família C', [['Beto', true], ['Clara', true, 'adulto', { veg: true }], ['Davi', false, 'crianca', { alergia: 'kiwi (exemplo)' }], ['Nina', false, 'bebe']]),
-      F('Família D', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'abacaxi (exemplo)' }], ['Leo', false, 'crianca']], { arrive: '2026-12-28', arriveMeal: 'jantar' }),
+      F('Família D', [['Tiago', true], ['Bia', false, 'adulto', { alergia: 'abacaxi (exemplo)' }], ['Leo', false, 'crianca']], { arrive: '2026-12-23', arriveMeal: 'jantar' }),
+      F('Família E', [['Rui', true], ['Sofia', true], ['Tom', false, 'crianca']]),
     ];
     const p = (fi, mi) => fams[fi].members[mi].id;
     let t = Date.now();
     const E = (amount, category, description, payerId, extra) => ({ id: uid(), amount, category, description, payerId, proof: 'nf', ts: t--, ...extra });
     const recipes = Object.entries(SEED_RECIPES).map(([id, txt]) => recipeFromText(id, txt));
-    const days = tripDays({ start: '2026-12-26', end: '2027-01-03' });
-    const C = r => ({ mode: 'casa', recipes: r ? [r] : [] }), O = { mode: 'fora' }, L = { mode: 'livre' }, cf = C('r_cafe');
-    const rows = [[L, O, C('r_bolonhesa')], [cf, C('r_carreteiro'), O], [cf, C('r_churrasco'), L], [cf, O, C('r_carreteiro')], [cf, C('r_bolonhesa'), O],
-      [cf, L, C('r_churrasco')], [L, C('r_churrasco'), C('r_bolonhesa')], [cf, C('r_carreteiro'), O], [cf, O, L]];
-    const plan = {}; days.forEach((d, i) => { plan[d] = { cafe: rows[i][0], almoco: rows[i][1], jantar: rows[i][2] }; });
+    const days = tripDays({ start: '2026-12-20', end: '2027-01-02' });
+    const C = r => ({ mode: 'casa', recipes: r ? [r] : [] }), O = { mode: 'fora' }, L = { mode: 'livre' };
+    const plan = {}; days.forEach((d, i) => { plan[d] = { cafe: C('r_cafe'), almoco: i % 3 === 1 ? O : i % 5 === 4 ? L : C(), jantar: i % 4 === 2 ? O : C() }; });
     return {
-      families: fams, kittyPerFamily: 1200, splitMode: 'porcoes', includeUnconfirmed: true, settled: {},
-      trip: { start: '2026-12-26', end: '2027-01-03', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
+      families: fams, kittyPerFamily: 1200, splitMode: 'porcoes', includeUnconfirmed: true, settled: {}, demoChef: true, chef: { seed: 0, sugg: {} },
+      trip: { name: 'Praia com as famílias', start: '2026-12-20', end: '2027-01-02', meals: { cafe: true, almoco: true, lanche: false, jantar: true } },
       weights: {}, prices: {}, planQty: {}, plan, recipes,
       expenses: [
         E(64, 'food', 'Milho e água de coco', p(1, 2), { proof: 'none', note: 'Ambulante da praia' }),
@@ -1429,6 +1941,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         E(360, 'alcohol', 'Cerveja e vinho', p(3, 0), { items: 'cerveja 3 fardos' }),
         E(540, 'food', 'Restaurante na estrada', p(2, 0), { proof: 'comp' }),
         E(420, 'gas', 'Gasolina ida', p(1, 0), { proof: 'comp' }),
+        E(95, 'food', 'Sorvete e açaí na orla', p(4, 1), { proof: 'none', note: 'Quiosque da praia' }),
         E(680, 'groceries', 'Mercado da chegada', p(0, 0), { items: 'picanha 2 kg, linguiça 1 kg, carvão, arroz 5 kg, macarrão 4 pacotes, café 2 pacotes, leite 6 l, cerveja 2 fardos' }),
       ],
     };
@@ -1437,6 +1950,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     s.settled = s.settled || {}; s.expenses = s.expenses || []; s.recipes = s.recipes || []; s.plan = s.plan || {};
     s.weights = s.weights || {}; s.prices = s.prices || {}; s.planQty = s.planQty || {};
     s.trip = s.trip || { start: '', end: '', meals: { cafe: true, almoco: true, lanche: false, jantar: true } };
+    s.chef = s.chef || { seed: 0, sugg: {} }; s.chef.sugg = s.chef.sugg || {}; if (s.trip.name == null) s.trip.name = '';
     s.splitMode = s.splitMode || 'porcoes'; if (s.includeUnconfirmed === undefined) s.includeUnconfirmed = true;
     return s;
   }
@@ -1449,8 +1963,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} };
   let storageWarned = false;
   const save = () => {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { toast('Armazenamento cheio: remova fotos antigas', 'alert'); return; }
+    const sa = document.getElementById('storeAlert');
+    try { localStorage.setItem(KEY, JSON.stringify(state)); if (sa) sa.innerHTML = ''; }
+    catch (e) { if (sa) sa.innerHTML = '<div class="alert" role="alert" style="margin-top:8px">Armazenamento cheio: a última alteração não foi salva neste aparelho. Remova fotos antigas dos gastos.</div>'; return; }
     const used = JSON.stringify(state).length;
     if (used > 3.5e6 && !storageWarned) { storageWarned = true; toast('Armazenamento quase cheio (fotos)', 'alert'); }
   };
@@ -1471,7 +1986,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const shortFam = name => String(name).replace(/^Fam[ií]lia\s+/i, '').trim() || name;
   const famInitial = name => (shortFam(name)[0] || '?').toUpperCase();
   const famAv = f => `<span class="av" style="--c:${famColor(f.id)}" aria-hidden="true">${esc(famInitial(f.name))}</span>`;
-  const toast = (msg, ic = 'check') => { const t = $('#toast'); t.innerHTML = icon(ic) + esc(msg); t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2000); };
+  const toast = (msg, ic = 'check', act) => { const t = $('#toast'); t.innerHTML = icon(ic) + `<span>${esc(msg)}</span>` + (act ? `<button class="tbtn" type="button">${esc(act.label)}</button>` : '');
+    t.classList.toggle('act', !!act); if (act) t.querySelector('.tbtn').onclick = () => { t.classList.remove('on', 'act'); clearTimeout(toast.t); act.fn(); };
+    t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on', 'act'), act ? 5000 : 4000); };
   const parseMoney = s => { s = String(s).trim().replace(/[^\d,.-]/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return parseFloat(s); };
   const fmtInput = n => n ? n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
   const fmtN = (n, d = 1) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: d });
@@ -1501,24 +2018,27 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const base = fmtQty(ing.qty * factor, ing.unit);
     const su = ing.srcUnit, sq = ing.srcQty;
     if (su && sq && !['g', 'kg', 'ml', 'l', 'un'].includes(su)) { const v = sq * factor; return `${niceNum(v)} ${UNIT_LABEL[su] || su}${v > 1.25 && !/\)$/.test(UNIT_LABEL[su] || '') ? 's' : ''} <span class="t2">(≈ ${base})</span>`; }
-    if (ing.unit === 'un') { const v = ing.qty * factor; return `${niceNum(v)} un`; }
+    if (ing.unit === 'un') { const v = ing.qty * factor; return `${niceNum(v >= 2 ? Math.ceil(v * 2) / 2 : v)} un`; }
     return base;
   }
 
   // ---------- navigation ----------
   function setView(v, opts = {}) {
     ui.view = v; saveUi(); document.body.dataset.view = v;
-    $$('#tabbar [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
+    $$('#tabbar [data-view]').forEach(b => { const on = b.dataset.view === v; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
     $$('.view').forEach(s => { s.hidden = s.id !== 'v-' + v; });
     if (!opts.keepScroll) window.scrollTo({ top: 0 });
     onScroll();
   }
   function setSub(s) {
     ui.sub = s; saveUi();
-    $$('#subnav [data-sub]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.sub === s)));
+    $$('#subnav [data-sub]').forEach(b => { const on = b.dataset.sub === s; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
     $$('#v-planejar [data-panel]').forEach(p => { p.hidden = p.dataset.panel !== s; });
   }
   $('#tabbar').onclick = e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); };
+  const rovingKeys = (sel, go) => $(sel).addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; const bs = $$(sel + ' [role=tab]'), i = bs.indexOf(document.activeElement); if (i < 0) return;
+    e.preventDefault(); const n = e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + bs.length) % bs.length; bs[n].focus(); go(bs[n]); });
+  rovingKeys('#tabbar', b => setView(b.dataset.view, { keepScroll: true })); rovingKeys('#subnav', b => setSub(b.dataset.sub));
   $('#subnav').onclick = e => { const b = e.target.closest('[data-sub]'); if (b) setSub(b.dataset.sub); };
 
   // ---------- shared computed context (one per render) ----------
@@ -1557,7 +2077,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let qParsed = null;
   function renderQuick() {
     const txt = $('#quick').value, el = $('#qPreview');
-    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago pela família D”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; return; }
+    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago pela família D”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; $('#qHint').hidden = false; $('#qHint').textContent = 'Escreva o valor e quem pagou para lançar.'; return; }
     const q = qParsed = parseQuick(txt, state.families), pi = q.payerId && personInfo(q.payerId), cat = CATEGORIES[q.category || 'food'];
     const b = (ok, html) => `<span class="badge ${ok ? 'acc' : 'warn'}">${html}</span>`;
     el.innerHTML = [
@@ -1568,7 +2088,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
       q.estimated ? b(true, 'Estimado') : '',
       q.description ? b(true, `“${esc(q.description)}”`) : '',
     ].join('');
-    $('#qSave').disabled = !(q.amount && q.payerId);
+    $('#qSave').disabled = !(q.amount && q.payerId); $('#qHint').hidden = !$('#qSave').disabled;
+    $('#qHint').textContent = !q.amount && !q.payerId ? 'Escreva o valor e quem pagou para lançar.' : !q.amount ? 'Falta o valor.' : !q.payerId ? 'Falta quem pagou (nome ou “família B”).' : '';
   }
   $('#quick').addEventListener('input', renderQuick);
   $('#quick').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('#qSave').disabled) { e.preventDefault(); $('#qSave').click(); } });
@@ -1715,6 +2236,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (document.activeElement !== $('#tStart')) $('#tStart').value = state.trip.start || '';
     if (document.activeElement !== $('#tEnd')) $('#tEnd').value = state.trip.end || '';
     $('#tMeta').textContent = C.days.length ? `${C.days.length} dias` : '';
+    if (document.activeElement !== $('#tName')) $('#tName').value = state.trip.name || '';
     $('#mealToggles').innerHTML = MEAL_ORDER.map(m => `<button type="button" data-mt="${m}" aria-pressed="${!!state.trip.meals[m]}">${MEALS[m]}</button>`).join('');
   }
   const onDate = () => {
@@ -1723,6 +2245,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     if (tripDays({ start: s, end: e }).length >= 60) { toast('Máximo de 60 dias', 'alert'); return; }
     state.trip.start = s; state.trip.end = e; save(); render();
   };
+  $('#tName').addEventListener('input', e => { state.trip.name = e.target.value.slice(0, 40); save(); renderHero(); });
   $('#tStart').addEventListener('change', onDate); $('#tEnd').addEventListener('change', onDate);
   $('#mealToggles').onclick = e => { const b = e.target.closest('[data-mt]'); if (!b) return; state.trip.meals[b.dataset.mt] = !state.trip.meals[b.dataset.mt]; save(); render(); };
 
@@ -1838,14 +2361,15 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#shopMeta').textContent = `${S.rows.filter(r => r.toBuy > 0).length} itens`;
     $('#shopKpis').innerHTML = `<div class="kpi"><span>Mercado (estimado)</span><b class="num">${brl(S.groceryTotal)}</b></div><div class="kpi"><span>Falta comprar</span><b class="num">${brl(S.leftTotal)}</b></div>
       <div class="kpi"><span>Custo por porção</span><b class="num">${brl(S.costPerPortion)}</b></div><div class="kpi"><span>Refeições fora</span><b class="num">${brl(S.foraTotal)}</b></div>`;
-    let h = '';
+    const freshN = S.rows.filter(r => r.fresh && r.toBuy > 0).length;
+    let h = freshN ? `<div class="callout" style="margin-bottom:12px;background:color-mix(in srgb,var(--fam-3) 14%,var(--surface));color:var(--text)">${icon('clock')}<div><b>Peixes e frutos do mar: comprar no dia.</b> Compre na manhã do preparo (ou na véspera) e mantenha no gelo. Os dias aparecem em cada item.</div></div>` : '';
     for (const sec of SECTIONS) {
       const rs = S.rows.filter(r => r.section === sec); if (!rs.length) continue;
-      h += `<div class="sect">${sec}</div><div class="list">` + rs.map(r => {
+      h += `<div class="sect">${sec === 'Peixaria' ? 'Peixaria · comprar no dia' : sec}</div><div class="list">` + rs.map(r => {
         const done = r.toBuy <= 0;
         const need = r.aGosto ? 'a gosto' : `precisa ${fmtQty(r.need, r.unit)} → ${r.packs} × ${esc(r.packLabel)}`;
         const got = r.covered ? ' · já comprado' : r.bought > 0 ? ` · comprado ${fmtQty(r.bought, r.unit)}${done ? '' : `, falta ${fmtQty(r.toBuy, r.unit)}`}` : '';
-        return `<div class="li ${done ? 'done' : ''}"><div style="min-width:0"><div class="t1">${esc(r.name)}${r.custom ? ' <span class="badge" style="min-height:20px">novo</span>' : ''}</div><div class="t2 num">${need}${got}</div></div>
+        return `<div class="li ${done ? 'done' : ''}"><div style="min-width:0"><div class="t1">${esc(r.name)}${r.custom ? ' <span class="badge" style="min-height:20px">novo</span>' : ''}${r.fresh && r.freshDays.length ? ` <span class="badge freshb" style="min-height:20px">dia ${r.freshDays.slice(0, 6).map(d => dObj(d).getDate()).join(', ')}${r.freshDays.length > 6 ? '…' : ''}</span>` : ''}</div><div class="t2 num">${need}${got}</div></div>
           <div class="amt num" style="font-size:14px">${done ? '<span class="t2">comprado</span>' : brl(r.costLeft)}</div></div>`;
       }).join('') + '</div>';
     }
@@ -1913,7 +2437,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
           <div class="field"><span class="mini">Sai (se diferente)</span>${daySel('data-md aria-label="Saída própria"', m.depart, 'Igual à família')}${m.depart ? mealSel('data-mdm aria-label="Última refeição"', m.departMeal, 'jantar') : ''}</div></div>
           <button class="btn text sm" data-rm style="justify-self:start">${icon('trash')}<span>Remover ${esc(m.name)}</span></button>
         </div></details>`; }).join('')}
-      <button class="btn text addmem" data-add>${icon('plus')}<span>Adicionar membro</span></button></section>`).join('');
+      <button class="btn text addmem" data-add>${icon('plus')}<span>Adicionar membro</span></button>${state.families.length > 1 ? `<button class="btn text sm" data-rmfam>${icon('trash')}<span>Remover ${esc(f.name)}</span></button>` : ''}</section>`).join('');
   }
   const peopleEl = $('#people');
   const ctx = e => { const fEl = e.target.closest('[data-fid]'); if (!fEl) return {}; const f = famById(fEl.dataset.fid), mEl = e.target.closest('[data-mid]'); return { f, m: mEl && f.members.find(x => x.id === mEl.dataset.mid) }; };
@@ -1945,6 +2469,9 @@ Corte as frutas e monte a mesa com pães e frios.`,
   });
   peopleEl.addEventListener('click', e => {
     const { f, m } = ctx(e); if (!f) return;
+    if (e.target.closest('[data-rmfam]')) { const ids = new Set(f.members.map(x => x.id)), n = state.expenses.filter(x => ids.has(x.payerId)).length;
+      if (!confirm(n ? `${f.name} pagou ${n} despesa(s). Remover a família e essas despesas?` : `Remover ${f.name}?`)) return;
+      state.expenses = state.expenses.filter(x => !ids.has(x.payerId)); state.families = state.families.filter(x => x !== f); delete brief[f.id]; saveBrief(); save(); render(); toast('Família removida'); return; }
     const dt = e.target.closest('[data-diet]');
     if (dt) { m.diet = m.diet || {}; m.diet[dt.dataset.diet] = !m.diet[dt.dataset.diet]; save(); render(); return; }
     if (e.target.closest('[data-add]')) { const nm = { id: uid(), name: 'Membro ' + (f.members.length + 1), drinks: false, type: 'adulto' }; f.members.push(nm); openMem.add(nm.id); save(); render(); peopleEl.querySelector(`[data-mid="${nm.id}"] [data-mname]`).select(); return; }
@@ -1955,6 +2482,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
       save(); render(); toast('Membro removido');
     }
   });
+  $('#addFam').onclick = () => { const n = state.families.length + 1, f = { id: uid(), name: 'Família ' + String.fromCharCode(64 + Math.min(n, 26)), members: [{ id: uid(), name: 'Membro 1', drinks: false, type: 'adulto' }] };
+    state.families.push(f); save(); render(); toast(`${f.name} adicionada`); const inp = peopleEl.querySelector(`[data-fid="${f.id}"] [data-fname]`); if (inp) { inp.scrollIntoView({ block: 'center' }); inp.select(); } };
   $('#weights').addEventListener('change', e => { const k = e.target.dataset.w; if (!k) return; const v = parseMoney(e.target.value); if (v >= 0 && v <= 5) { state.weights[k] = v; save(); render(); } else toast('Peso entre 0 e 5', 'alert'); });
 
   // ---------- GASTOS ----------
@@ -1969,7 +2498,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#photoPrev').innerHTML = pendingPhoto ? `<span style="display:inline-flex;gap:8px;align-items:center"><span class="thumb"><img src="${pendingPhoto}" alt=""></span><button type="button" class="btn text sm" id="rmPhoto">Remover foto</button></span>`
       : (selProof === 'none' ? 'Sem nota: uma foto e uma observação ajudam na confirmação.' : 'Opcional: foto do comprovante.');
   }
-  $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); };
+  $('#catSeg').onclick = e => { const b = e.target.closest('[data-cat]'); if (!b) return; selCat = b.dataset.cat; renderSeg(); if (selCat === 'gas') $('#moreBox').open = true; };
   $('#proofSeg').onclick = e => { const b = e.target.closest('[data-proof]'); if (!b) return; selProof = b.dataset.proof; renderProof(); };
   $('#photoPrev').addEventListener('click', e => { if (e.target.closest('#rmPhoto')) { pendingPhoto = null; renderProof(); } });
   $('#photo').addEventListener('change', async e => {
@@ -1989,20 +2518,24 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#fOut').addEventListener('click', e => { if (e.target.closest('#useFuel') && C.fuel) { $('#amt').value = fmtInput(C.fuel); $('#estChk').checked = true; if (!$('#desc').value) $('#desc').value = `Combustível ~${$('#fKm').value} km`; toast('Valor estimado preenchido'); } });
   const SUGG = [['Mercado', 'groceries'], ['Gasolina', 'gas'], ['Pedágio', 'gas'], ['Feira', 'groceries'], ['Restaurante', 'food'], ['Padaria', 'food'], ['Gorjeta', 'food'], ['Gelo', 'groceries'], ['Cerveja', 'alcohol']];
   $('#sugg').innerHTML = SUGG.map(([l], i) => `<button type="button" data-s="${i}">${l}</button>`).join('');
-  $('#sugg').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; const [d, c] = SUGG[b.dataset.s]; selCat = c; renderSeg(); $('#desc').value = d; if (/Feira|Gorjeta|Pedágio/.test(d)) { selProof = 'none'; renderProof(); } if (!$('#amt').value) $('#amt').focus(); };
+  $('#sugg').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; const [d, c] = SUGG[b.dataset.s]; selCat = c; renderSeg(); $('#desc').value = d; if (/Feira|Gorjeta|Pedágio/.test(d)) { selProof = 'none'; renderProof(); $('#moreBox').open = true; } if (!$('#amt').value) $('#amt').focus(); };
   function renderPayers() {
     const sel = $('#payer'), cur = sel.value, q = normTxt($('#payerSearch').value.trim());
     const ok = (m, f) => !q || normTxt(m.name).includes(q) || normTxt(f.name).includes(q);
-    sel.innerHTML = state.families.filter(f => f.members.some(m => ok(m, f))).map(f => `<optgroup label="${esc(f.name)}">${f.members.filter(m => ok(m, f)).map(m => `<option value="${m.id}">${esc(m.name || 'Sem nome')} · ${esc(shortFam(f.name))}</option>`).join('')}</optgroup>`).join('');
+    $('#payerSearch').hidden = allPeople(state).length <= 8;
+    sel.innerHTML = '<option value="">Escolha quem pagou</option>' + state.families.filter(f => f.members.some(m => ok(m, f))).map(f => `<optgroup label="${esc(f.name)}">${f.members.filter(m => ok(m, f)).map(m => `<option value="${m.id}">${esc(m.name || 'Sem nome')} · ${esc(shortFam(f.name))}</option>`).join('')}</optgroup>`).join('');
     if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
   }
   $('#payerSearch').addEventListener('input', renderPayers);
   const setErr = (inp, err, on) => { inp.setAttribute('aria-invalid', on ? 'true' : 'false'); err.classList.toggle('on', on); };
-  $('#amt').addEventListener('input', () => setErr($('#amt'), $('#amtErr'), false));
+  const updSubmit = () => { if (editingId) return; const v = round2(parseMoney($('#amt').value)); $('#submitBtn').innerHTML = icon('plus') + `<span>${v > 0 ? 'Adicionar ' + brl(v) : 'Adicionar despesa'}</span>`; };
+  $('#amt').addEventListener('input', () => { setErr($('#amt'), $('#amtErr'), false); updSubmit(); });
+  $('#payer').addEventListener('change', () => setErr($('#payer'), $('#payerErr'), false));
   $('#amt').addEventListener('blur', () => { const v = parseMoney($('#amt').value); if (v > 0) $('#amt').value = fmtInput(round2(v)); });
   $('#expForm').onsubmit = e => {
     e.preventDefault();
     const amount = round2(parseMoney($('#amt').value)), okAmt = amount > 0 && amount < 1e7, okPayer = !!$('#payer').value;
+    $('#payerErrTxt').textContent = allPeople(state).length ? 'Escolha quem pagou.' : 'Adicione pelo menos uma pessoa nas famílias.';
     setErr($('#amt'), $('#amtErr'), !okAmt); setErr($('#payer'), $('#payerErr'), !okPayer);
     if (!okAmt) { $('#amt').focus(); return; } if (!okPayer) return;
     const data = { amount, category: selCat, description: $('#desc').value.trim(), payerId: $('#payer').value, proof: selProof, estimated: $('#estChk').checked,
@@ -2016,15 +2549,15 @@ Corte as frutas e monte a mesa com pães e frios.`,
     editingId = null; pendingPhoto = null; selProof = 'nf';
     ['#amt', '#desc', '#note', '#items', '#payerSearch', '#fKm', '#fKml', '#fPrice'].forEach(s => { $(s).value = ''; }); $('#estChk').checked = false;
     $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
-    $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false);
-    $$('.exp.sel').forEach(x => x.classList.remove('sel')); renderProof(); renderPayers(); fuelCalc();
+    $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false); setErr($('#payer'), $('#payerErr'), false);
+    $$('.exp.sel').forEach(x => x.classList.remove('sel')); renderProof(); renderPayers(); $('#payer').value = ''; $('#moreBox').open = false; fuelCalc();
   }
   function startEdit(id) {
     const e = state.expenses.find(x => x.id === id); if (!e) return;
     editingId = id; selCat = e.category; selProof = proofOf(e); pendingPhoto = e.photo || null; renderSeg(); renderProof();
     $('#payerSearch').value = ''; renderPayers();
     $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId; $('#estChk').checked = !!e.estimated;
-    $('#note').value = e.note || ''; $('#items').value = e.items || '';
+    $('#note').value = e.note || ''; $('#items').value = e.items || ''; $('#moreBox').open = !!(e.estimated || proofOf(e) !== 'nf' || e.items);
     $('#addCard').classList.add('editing'); $('#formTitle').textContent = 'Editar despesa';
     $('#submitBtn').innerHTML = icon('check') + '<span>Salvar alterações</span>';
     $$('.exp').forEach(x => x.classList.toggle('sel', x.dataset.id === id));
@@ -2068,7 +2601,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const b = e.target.closest('[data-del]');
     if (!b) { startEdit(id); return; }
     row.classList.add('out'); if (id === editingId) stopEdit();
-    setTimeout(() => { state.expenses = state.expenses.filter(x => x.id !== id); save(); render(); toast('Despesa excluída'); }, 180);
+    setTimeout(() => { const i = state.expenses.findIndex(x => x.id === id); if (i < 0) return; const [gone] = state.expenses.splice(i, 1); save(); render();
+      toast(`Excluída: ${gone.description || CATEGORIES[gone.category].label} (${brl(gone.amount)})`, 'trash', { label: 'Desfazer', fn: () => { state.expenses.splice(Math.min(i, state.expenses.length), 0, gone); save(); render(); toast('Despesa restaurada'); } }); }, 180);
   };
   expList.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('exp')) { e.preventDefault(); startEdit(e.target.dataset.id); } };
 
@@ -2076,11 +2610,11 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const MODE_HINT = { porcoes: 'Comida e mercado pelas porções que cada pessoa comeu (dias presentes × peso: criança 0,5, bebê 0). Álcool por dias de quem bebe. Combustível por pessoa.',
     pessoa: 'Comida, mercado e combustível igual por pessoa; álcool só entre quem bebe.', igual: 'Tudo dividido igualmente por pessoa, inclusive álcool.' };
   function balCell(net) { const z = Math.abs(net) < 0.005, cls = z ? 'zero' : net > 0 ? 'pos' : 'neg';
-    return `<div class="bal ${cls}"><span class="v num">${z ? brl(0) : (net > 0 ? '+' : '−') + brl(Math.abs(net))}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`; }
+    return `<div class="bal ${cls}"><span class="v num">${z ? brl(0) : icon(net > 0 ? 'dl' : 'ur') + (net > 0 ? '+' : '−') + brl(Math.abs(net))}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`; }
   function renderMode() {
     $('#modeSeg').innerHTML = Object.entries(SPLIT_MODES).map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${state.splitMode === k}">${esc(l)}</button>`).join('');
     $('#modeHint').textContent = MODE_HINT[state.splitMode];
-    if (state.splitMode === 'igual') { $('#modeDelta').innerHTML = ''; return; }
+    if (state.splitMode === 'igual' || !C.split.total) { $('#modeDelta').innerHTML = ''; return; }
     const eq = computeSplit({ ...state, splitMode: 'igual' });
     $('#modeDelta').innerHTML = `<div class="sect">Parte de cada família vs. “tudo igual”</div>` + C.split.families.map(f => {
       const d = f.owed - eq.families.find(x => x.id === f.id).owed, z = Math.abs(d) < 0.005;
@@ -2092,12 +2626,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const isSettled = t => { const s = (state.settled || {})[t.from + '_' + t.to]; return !!s && Math.abs(s.amount - t.amount) < 0.01; };
   function renderXfers() {
     const xfers = C.xfers;
+    $('#xfTitle').textContent = 'Quem paga quem · é o acerto que vale';
     $('#xferMeta').textContent = xfers.length ? `${xfers.length} ${xfers.length > 1 ? 'transferências' : 'transferência'}` : '';
     if (!xfers.length) { $('#xfers').innerHTML = `<div class="empty ok"><span class="ic">${icon('check')}</span><b>Tudo acertado</b><p>Os saldos das famílias estão zerados.</p></div>`; return; }
-    $('#xfers').innerHTML = xfers.map(t => `<div class="li xf ${isSettled(t) ? 'done' : ''}"><span class="avs">${famAv(famById(t.from))}${famAv(famById(t.to))}</span>
-      <div style="min-width:0"><div class="route"><span>${esc(shortFam(t.fromName))}</span>${icon('arrow')}<span>${esc(shortFam(t.toName))}</span></div></div>
-      <div class="amt num">${brl(t.amount)}</div>
-      <button class="chk" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${isSettled(t)}" aria-label="${isSettled(t) ? 'Desmarcar pagamento' : 'Marcar como pago'}">${icon('check')}</button></div>`).join('')
+    $('#xfers').innerHTML = xfers.map(t => { const done = isSettled(t);
+      return `<div class="xf2 ${done ? 'done' : ''}"><div class="say"><b>${esc(t.fromName)}</b> paga <span class="val num">${brl(t.amount)}</span> para <b>${esc(t.toName)}</b></div>
+        <div class="row"><span class="t2">${done ? 'Pago. Toque de novo para desmarcar.' : 'Marque quando o Pix for feito.'}</span><button class="paybtn" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${done}">${icon('check')}<span>${done ? 'Pago' : 'Marcar pago'}</span></button></div></div>`; }).join('')
       + `<div class="sub" style="margin-top:16px">Menor número possível de transferências entre as famílias.</div>`;
   }
   $('#xfers').addEventListener('click', e => {
@@ -2156,7 +2690,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function renderShare(k) { lastText = summaryText(state, C.split, C.xfers, k); $('#shareText').value = lastText; $('#waLink').href = 'https://wa.me/?text=' + encodeURIComponent(lastText); }
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(lastText); } catch (e) { $('#shareText').select(); document.execCommand('copy'); } toast('Resumo copiado'); };
   $('#shareBtn').onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Rateio da Viagem', text: lastText }); } catch (e) {} } else $('#copyBtn').click(); };
-  $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
+  $('#resetBtn').onclick = () => { if (!confirm('Restaurar os dados de exemplo? Suas alterações serão apagadas.')) return; state = normalize(example()); brief = {}; saveBrief(); demoBoot(); draft = null; stopEdit(); renderDraft(); save(); render(); toast('Exemplo restaurado'); };
 
   // ---------- MODO COZINHA ----------
   let wakeLock = null, cookCtx = null;
@@ -2165,28 +2699,50 @@ Corte as frutas e monte a mesa com pães e frios.`,
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#cookDlg').open) lockScreen(); });
   function openCook(o) {
     let day = o.day, meal = o.meal, ids;
-    if (o.recipeId) { // find the next meal that uses this recipe
-      ids = [o.recipeId]; const slot = upcomingSlots(999).find(s => cellRecipes(s.c).includes(o.recipeId)) || null;
+    if (o.recipeId) {
+      ids = [o.recipeId];
+      const slot = o.portions ? null : upcomingSlots(999).find(s => cellRecipes(s.c).includes(o.recipeId)) || null;
       if (slot) { day = slot.day; meal = slot.meal; } else { day = null; meal = null; }
     } else ids = cellRecipes(cellOf(state, day, meal));
-    cookCtx = { day, meal, ids, idx: 0, done: new Set() }; paintCook(); $('#cookDlg').showModal(); lockScreen();
+    cookCtx = { day, meal, ids, idx: 0, done: new Set(), portions: o.portions, people: o.people, timers: {} }; paintCook(); $('#cookDlg').showModal(); lockScreen();
   }
+  const fmtClock = ms => { const t = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
   function paintCook() {
     const { day, meal, ids, idx, done } = cookCtx, r = getRecipe(state, ids[idx]); if (!r) return;
-    const cp = day ? C.P.cell[day + '|' + meal] || { portions: 0, people: 0 } : null, portionsN = cp && cp.portions ? cp.portions : r.yield, f = portionsN / (r.yield || 1);
-    const rt = day && C.rota[day + '|' + meal], warns = day ? mealConflicts(state, day, meal).filter(w => w.recipe === r.title) : [];
+    const cp = day ? C.P.cell[day + '|' + meal] || { portions: 0, people: 0 } : null, portionsN = cp && cp.portions ? cp.portions : (cookCtx.portions || r.yield), f = portionsN / (r.yield || 1);
+    const rt = day && C.rota[day + '|' + meal], warns = day ? mealConflicts(state, day, meal).filter(w => w.recipe === r.title) : [], m = r.meta, fs = ui.cookFs || 0;
+    $('#cookBody').className = 'cookin' + (fs ? ' fs' + fs : '');
+    const wineRow = (id) => { const w = WINES[id]; return w ? `<div class="cwine"><b>${esc(w.name)}</b> <span class="t2">· ${esc(w.type)} · ${esc(w.country)} · ${esc(w.price)} (preço aproximado)</span>${w.award ? `<div class="t2">${esc(w.award)} · <a href="${esc(w.url)}" target="_blank" rel="noopener">fonte: ${esc(w.src)}</a></div>` : ''}</div>` : ''; };
     $('#cookBody').innerHTML = `<div class="cookhd"><div style="min-width:0"><h2 id="cookTitle">${esc(r.title)}</h2>
-        <p>${day ? `${MEALS[meal]} · ${dLabel(day)} · ${cp.people} pessoas · ` : ''}<b class="num">${fmtN(portionsN)} porções</b> (receita original: ${r.yield})</p>
+        <p>${day ? `${MEALS[meal]} · ${dLabel(day)} · ${cp.people} pessoas · ` : cookCtx.people ? `${cookCtx.people} pessoas · ` : ''}<b class="num">${fmtN(portionsN)} porções</b>${r.chef ? ' (quantidades já escaladas)' : ` (receita original: ${r.yield})`}</p>
         ${rt ? `<p>Cozinha: <b>${esc(shortFam(famById(rt.cook).name))}</b> · Limpa: <b>${esc(shortFam(famById(rt.clean).name))}</b></p>` : ''}
-        <div class="badges"><span class="badge" id="wakeBadge" hidden></span><span class="badge num">~${brl(recipeCost(state, r).perPortion * portionsN)} no total</span></div></div>
+        <div class="badges"><span class="badge" id="wakeBadge" hidden></span>${m ? `<span class="badge">${icon('clock')}${m.time} min</span><span class="badge">${m.diff}</span><span class="badge">${LEVELS[m.level]}</span>` : ''}<span class="badge num">~${brl(recipeCost(state, r).perPortion * portionsN)} no total</span></div>
+        <div class="tools"><button class="btn secondary sm" data-fs="-1" aria-label="Diminuir letra" ${fs <= 0 ? 'disabled' : ''}>A−</button><button class="btn secondary sm" data-fs="1" aria-label="Aumentar letra" ${fs >= 2 ? 'disabled' : ''}>A+</button></div></div>
         <button class="iconbtn" data-close aria-label="Fechar modo cozinha">${icon('x')}</button></div>
       ${ids.length > 1 ? `<div class="pills">${ids.map((id, i) => `<button data-ci="${i}" aria-pressed="${i === idx}">${esc((getRecipe(state, id) || {}).title)}</button>`).join('')}</div>` : ''}
+      ${m && m.ahead ? `<div class="warnline" style="font-size:16px;margin-top:8px">${icon('clock')}<span>${esc(m.ahead)}</span></div>` : ''}
+      ${m && isFreshRecipe(m) ? `<div class="warnline" style="font-size:16px;margin-top:8px">${icon('cart')}<span>Peixe e frutos do mar: comprar no dia e manter no gelo.</span></div>` : ''}
       ${warns.map(w => `<div class="warnline" style="font-size:16px;margin-top:8px">${icon('alert')}<span>${esc(w.member)}: ${esc(w.issue)}</span></div>`).join('')}
       <h3>Ingredientes</h3>${r.ingredients.map((ing, i) => `<label class="ck ${done.has('i' + i) ? 'done' : ''}"><input type="checkbox" data-ck="i${i}" ${done.has('i' + i) ? 'checked' : ''}><span><b>${ingAmount(ing, f)}</b> ${esc(ing.name)}</span></label>`).join('')}
-      ${r.steps && r.steps.length ? `<h3>Preparo</h3>${r.steps.map((s, i) => `<label class="ck ${done.has('s' + i) ? 'done' : ''}"><input type="checkbox" data-ck="s${i}" ${done.has('s' + i) ? 'checked' : ''}><span>${i + 1}. ${esc(s)}</span></label>`).join('')}` : ''}
+      ${r.steps && r.steps.length ? `<h3>Preparo</h3>${r.steps.map((s, i) => { const mm = /(\d+)\s*min\b/.exec(s), tm = cookCtx.timers[i];
+        return `<label class="ck ${done.has('s' + i) ? 'done' : ''}"><input type="checkbox" data-ck="s${i}" ${done.has('s' + i) ? 'checked' : ''}><span>${i + 1}. ${esc(s)}${mm ? `<br><button type="button" class="timer ${tm ? (tm.end <= Date.now() ? 'end' : 'run') : ''}" data-timer="${i}" data-min="${mm[1]}">${icon('clock')}<span>${tm ? fmtClock(tm.end - Date.now()) : `Timer ${mm[1]} min`}</span></button>` : ''}</span></label>`; }).join('')}` : ''}
+      ${m ? `<h3>Harmonização</h3>${m.wines.medio.length ? `<div class="t2" style="margin-top:4px">Médio custo</div>${m.wines.medio.map(wineRow).join('')}` : ''}${m.wines.alto.length ? `<div class="t2" style="margin-top:12px">Alto custo</div>${m.wines.alto.map(wineRow).join('')}` : ''}<p class="t2" style="margin-top:8px">Estilo: ${esc(m.wines.estilo)}.</p>
+        <h3>Sobras</h3><p style="margin:0">${esc(m.sobras)}</p>` : ''}
       <button class="btn secondary block" data-close style="margin-top:24px">Fechar</button>`;
     paintWake();
   }
+  $('#cookBody').addEventListener('click', e => {
+    const fz = e.target.closest('[data-fs]'); if (fz) { ui.cookFs = Math.max(0, Math.min(2, (ui.cookFs || 0) + +fz.dataset.fs)); saveUi(); paintCook(); return; }
+    const tb = e.target.closest('[data-timer]'); if (tb) { e.preventDefault(); const i = tb.dataset.timer; if (cookCtx.timers[i]) delete cookCtx.timers[i]; else cookCtx.timers[i] = { end: Date.now() + (+tb.dataset.min) * 60000 }; paintCook(); }
+  });
+  setInterval(() => {
+    if (!cookCtx || !$('#cookDlg').open) return;
+    for (const [i, t] of Object.entries(cookCtx.timers || {})) {
+      const b = $(`#cookBody [data-timer="${i}"]`); if (!b) continue; const left = t.end - Date.now();
+      if (left <= 0 && !t.rang) { t.rang = true; b.className = 'timer end'; try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch (e) {} toast(`Tempo! Passo ${+i + 1}`, 'clock'); }
+      b.querySelector('span').textContent = left > 0 ? fmtClock(left) : 'Pronto';
+    }
+  }, 1000);
   $('#cookBody').addEventListener('change', e => { const k = e.target.dataset.ck; if (!k) return; if (e.target.checked) cookCtx.done.add(k); else cookCtx.done.delete(k); e.target.closest('.ck').classList.toggle('done', e.target.checked); });
   $('#cookBody').addEventListener('click', e => {
     if (e.target.closest('[data-close]')) { $('#cookDlg').close(); return; }
@@ -2195,18 +2751,215 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#cookDlg').addEventListener('close', () => { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } });
   $('#photoDlg').addEventListener('click', e => { if (e.target === $('#photoDlg')) $('#photoDlg').close(); });
 
+  // ---------- CHEF (pré-briefing, contagem, ranking, cardápio, adega, escala) ----------
+  const BRIEF_KEY = 'rateatouille-briefing-v1'; // só neste aparelho: fora do state, do resumo, da exportação e de qualquer servidor
+  let brief = {}; try { brief = JSON.parse(localStorage.getItem(BRIEF_KEY)) || {}; } catch (e) { brief = {}; }
+  const saveBrief = () => { try { localStorage.setItem(BRIEF_KEY, JSON.stringify(brief)); } catch (e) {} };
+  const briefDone = () => state.families.filter(f => brief[f.id] && brief[f.id].done).length;
+  const affLabel = s => s >= 78 ? 'Alta afinidade' : s >= 62 ? 'Boa afinidade' : s >= 45 ? 'Afinidade média' : 'Baixa afinidade';
+  const groupPortions = () => state.families.reduce((s, f) => s + f.members.reduce((a, m) => a + weightOf(state, m), 0), 0);
+  const wineName = id => WINES[id] ? WINES[id].name : '';
+  function chefCtx() {
+    const sc = chefScores(state, brief), g = groupPrefs(state, brief);
+    return { sc, g, tier: ui.wineTier || (g.faixa === 'alto' ? 'alto' : 'medio') };
+  }
+  function renderHero() {
+    const el = $('#heroCard'), days = C.days, t = todayISO(), mc = mealCounts(state), people = C.split.persons.length;
+    let cd = '';
+    if (days.length) {
+      const diff = Math.round((dObj(days[0]) - dObj(t)) / 864e5);
+      if (diff > 1) cd = `Faltam <b>${diff}</b> dias`; else if (diff === 1) cd = 'É <b>amanhã</b>!'; else if (t <= days[days.length - 1]) cd = `Dia <b>${days.indexOf(t) + 1}</b> de ${days.length}`; else cd = 'Viagem concluída. Que tal fechar o acerto?';
+    } else cd = 'Defina as datas em Planejar';
+    el.innerHTML = `<svg class="waves" viewBox="0 0 280 120" aria-hidden="true"><path d="M0 70c35-18 70-18 105 0s70 18 105 0 50-14 70-6V120H0z" fill="currentColor"/><path d="M0 92c35-14 70-14 105 0s70 14 105 0 50-10 70-4" stroke="currentColor" stroke-width="4" fill="none"/></svg><span class="sunc" aria-hidden="true"></span>
+      <div class="kick">${days.length ? `${dLabel(days[0])} – ${dLabel(days[days.length - 1])}` : 'Rateatouille'}</div>
+      <h1>${esc(state.trip.name || 'Nossa viagem')}</h1>
+      <div class="cd">${cd}</div>
+      <div class="chips"><span class="chip">${icon('users')}${state.families.length} famílias · ${people} pessoas</span>${mc.casa ? `<span class="chip">${icon('chef')}${mc.casa} refeições em casa</span>` : ''}${mc.fora ? `<span class="chip">${icon('food')}${mc.fora} fora</span>` : ''}</div>
+      <div class="acts"><button class="hbtn a" data-go="chef">${icon('chef')}<span>Abrir o Chef</span></button><button class="hbtn b" data-brief-open>${icon('sparkle')}<span>Briefing ${briefDone()}/${state.families.length}</span></button></div>`;
+  }
+  $('#heroCard').addEventListener('click', e => { if (e.target.closest('[data-go]')) { setView('chef'); } if (e.target.closest('[data-brief-open]')) openBrief(); });
+  function renderBriefCard() {
+    const n = briefDone(), tot = state.families.length;
+    $('#briefMeta').textContent = `${n} de ${tot}`;
+    $('#briefBody').innerHTML = `<div class="progress" role="progressbar" aria-label="Pré-briefing respondido" aria-valuemin="0" aria-valuemax="${tot}" aria-valuenow="${n}"><div style="width:${tot ? n / tot * 100 : 0}%"></div></div>`
+      + state.families.map(f => { const a = brief[f.id], ok = a && a.done;
+        const sum = ok ? [LEVELS[a.nivel || 2], a.entradas === 'questao' ? 'ama entradas' : '', a.mar === 'adoram' ? 'ama frutos do mar' : a.mar === 'evitar' ? 'evita frutos do mar' : '', (a.nao || []).length || a.naoTxt ? 'tem o que não come' : ''].filter(Boolean).join(' · ') : 'Ainda não respondeu';
+        return `<div class="fstat">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(f.name)}${ok && a.demo ? ' <span class="badge" style="min-height:20px">exemplo</span>' : ''}</div><div class="t2">${ok ? `<span class="okdot">${icon('check')}Respondido</span> · ` : ''}${esc(sum)}</div></div><button class="btn ${ok ? 'text' : 'secondary'} sm" data-brief="${f.id}">${ok ? 'Editar' : 'Responder'}</button></div>`; }).join('')
+      + `<div class="lock">${icon('alert')}<span>As respostas ficam só neste aparelho. Não entram no resumo, na exportação nem em servidor. Passe o celular para cada família responder.</span></div>`;
+  }
+  $('#briefBody').addEventListener('click', e => { const b = e.target.closest('[data-brief]'); if (b) openBrief(b.dataset.brief); });
+  // Questionário
+  const BQ = [
+    { k: 'nivel', t: 'Qual o clima das refeições?', s: 'Ajuda o Chef a calibrar entre o prático e o sofisticado.', big: true, one: true, o: [[1, 'Descontraído', 'prático, sem frescura'], [2, 'Caprichado', 'bem feito, bonito na mesa'], [3, 'Gourmet', 'surpreender, em etapas']] },
+    { k: 'entradas', t: 'Entradas e petiscos', s: 'Antes do prato principal ou no fim da tarde.', one: true, o: [['questao', 'Fazemos questão'], ['gostam', 'Gostamos'], ['tanto', 'Tanto faz']] },
+    { k: 'prot', t: 'Proteínas preferidas', s: 'Pode marcar várias.', o: [['boi', 'Carne vermelha'], ['porco', 'Porco'], ['frango', 'Frango'], ['peixe', 'Peixe'], ['camarao', 'Camarão e frutos do mar'], ['veg', 'Vegetariano']] },
+    { k: 'mar', t: 'Frutos do mar', one: true, o: [['adoram', 'Adoramos'], ['ok', 'Comemos'], ['evitar', 'Preferimos evitar']] },
+    { k: 'estilos', t: 'Estilos que mais combinam', s: 'Pode marcar vários.', o: [['churrasco', 'Churrasco'], ['mar', 'Frutos do mar'], ['massa', 'Massas'], ['leve', 'Leves e saladas'], ['doce', 'Sobremesas']] },
+    { k: 'fav', t: 'Pratos preferidos', s: 'Escreva à vontade. Ex.: moqueca, risoto, lasanha.', text: 'Pratos que vocês amam' },
+    { k: 'tipos', t: 'Vinhos que vocês gostam', s: 'Pode marcar vários.', o: [['espumante', 'Espumante'], ['branco', 'Branco'], ['rose', 'Rosé'], ['tinto', 'Tinto']] },
+    { k: 'vinho', t: 'Faixa de vinho', one: true, o: [['medio', 'Médio custo'], ['alto', 'Alto custo'], ['ambos', 'Os dois'], ['nao', 'Não bebemos vinho']] },
+    { k: 'criancas', t: 'Crianças', one: true, o: [['tudo', 'Comem de tudo'], ['simples', 'Preferem pratos simples'], ['sem', 'Sem crianças']] },
+    { k: 'nao', t: 'O que vocês não comem', s: 'Não precisa dizer o motivo. Fica só neste aparelho.', o: Object.entries(BRIEF_VETO).map(([k, v]) => [k, v.label]), text2: 'Outros (separe por vírgula)' },
+  ];
+  let bFam = null, bDraft = null;
+  function openBrief(fid) {
+    const next = fid || (state.families.find(f => !(brief[f.id] && brief[f.id].done)) || state.families[0] || {}).id; if (!next) return;
+    bFam = next; bDraft = JSON.parse(JSON.stringify(brief[next] || { nivel: 2, entradas: 'gostam', prot: [], mar: 'ok', estilos: [], tipos: [], vinho: 'ambos', criancas: 'tudo', nao: [], fav: '', naoTxt: '' }));
+    paintBrief(); $('#briefDlg').showModal(); $('#briefDlg').scrollTop = 0;
+  }
+  function paintBrief() {
+    const f = famById(bFam), i = state.families.indexOf(f) + 1;
+    $('#briefDlg').innerHTML = `<form method="dialog" class="bwrap" id="briefForm"><div class="bhead"><div style="min-width:0"><h2 id="bTitle">${esc(f.name)}</h2><p>Pré-briefing das refeições · família ${i} de ${state.families.length}</p></div><button type="button" class="iconbtn" data-bclose aria-label="Fechar">${icon('x')}</button></div>
+      <div class="bbody">${BQ.map(q => `<div class="q" role="group" aria-labelledby="q_${q.k}"><h3 id="q_${q.k}">${q.t}</h3>${q.s ? `<p class="qs">${q.s}</p>` : ''}
+        ${q.o ? `<div class="opts ${q.big ? 'big' : ''}">${q.o.map(([v, l, sm]) => { const on = q.one ? bDraft[q.k] === v : (bDraft[q.k] || []).includes(v); return `<button type="button" data-q="${q.k}" data-v="${v}" aria-pressed="${on}">${on && !q.big ? icon('check') : ''}<span>${l}</span>${sm ? `<small>${sm}</small>` : ''}</button>`; }).join('')}</div>` : ''}
+        ${q.text ? `<input class="inp" data-qt="fav" value="${esc(bDraft.fav || '')}" placeholder="${q.text}" aria-label="${q.t}" maxlength="120">` : ''}
+        ${q.text2 ? `<input class="inp" style="margin-top:10px" data-qt="naoTxt" value="${esc(bDraft.naoTxt || '')}" placeholder="${q.text2}" aria-label="${q.text2}" maxlength="120">` : ''}</div>`).join('')}</div>
+      <div class="bfoot"><button type="button" class="btn primary" data-bsave>${icon('check')}<span>Salvar e ${i < state.families.length ? 'ir para a próxima' : 'ver o Chef'}</span></button><button type="button" class="btn secondary" data-bjust>Só salvar</button></div></form>`;
+  }
+  $('#briefDlg').addEventListener('click', e => {
+    const o = e.target.closest('[data-q]');
+    if (o) { const q = BQ.find(x => x.k === o.dataset.q), v = q.k === 'nivel' ? +o.dataset.v : o.dataset.v;
+      if (q.one) bDraft[q.k] = v; else { const a = bDraft[q.k] = bDraft[q.k] || []; const i = a.indexOf(v); if (i >= 0) a.splice(i, 1); else a.push(v); }
+      const y = $('#briefDlg').scrollTop; paintBrief(); $('#briefDlg').scrollTop = y; const nb = $(`#briefDlg [data-q="${o.dataset.q}"][data-v="${o.dataset.v}"]`); if (nb) nb.focus({ preventScroll: true }); return; }
+    if (e.target.closest('[data-bclose]')) { $('#briefDlg').close(); return; }
+    const sv = e.target.closest('[data-bsave],[data-bjust]');
+    if (sv) { $$('#briefDlg [data-qt]').forEach(i => { bDraft[i.dataset.qt] = i.value.trim(); }); bDraft.done = true; delete bDraft.demo; brief[bFam] = bDraft; saveBrief();
+      const idx = state.families.findIndex(f => f.id === bFam), nx = state.families[idx + 1];
+      if (sv.matches('[data-bsave]') && nx) { toast(`${shortFam(famById(bFam).name)}: respostas salvas`); openBrief(nx.id); return; }
+      $('#briefDlg').close(); render(); if (sv.matches('[data-bsave]')) { setView('chef'); } toast('Pré-briefing salvo neste aparelho'); }
+  });
+  $('#briefDlg').addEventListener('input', e => { if (e.target.dataset.qt) bDraft[e.target.dataset.qt] = e.target.value; });
+  function renderCount() {
+    const mc = mealCounts(state), S = C.shopAll || shoppingList(state), rp = restaurantPrice(state), cpp = S.costPerPortion || 0;
+    $('#countMeta').textContent = C.days.length ? `${C.days.length} dias` : '';
+    if (!C.days.length) { $('#countBody').innerHTML = `<div class="empty"><span class="ic">${icon('calendar')}</span><b>Defina as datas</b><p>Em Planejar › Cardápio.</p></div>`; return; }
+    const casaCost = S.foodTotal, foraCost = S.foraTotal, mx = Math.max(casaCost, foraCost, 1), ifFora = mc.pc * rp;
+    $('#countBody').innerHTML = `<div class="kgrid"><div class="kbox"><span>Em casa</span><b>${mc.casa}</b><small>${fmtN(mc.pc)} porções</small></div><div class="kbox"><span>Restaurante</span><b>${mc.fora}</b><small>${fmtN(mc.pf)} porções</small></div><div class="kbox"><span>Livres</span><b>${mc.livre}</b><small>cada família</small></div></div>
+      <div class="vs"><div class="vsrow"><span>Em casa</span><div class="vsbar"><div style="width:${casaCost / mx * 100}%"></div></div><b class="num">~${brl(casaCost)}</b></div>
+      <div class="vsrow"><span>Fora</span><div class="vsbar f"><div style="width:${foraCost / mx * 100}%"></div></div><b class="num">~${brl(foraCost)}</b></div></div>
+      <p class="hint" style="margin-top:10px">Em casa sai ~<b class="num">${brl(cpp)}</b> por porção; fora, ~<b class="num">${brl(rp)}</b>.${ifFora > casaCost && mc.pc ? ` Cozinhar as ${mc.casa} refeições em casa economiza ~<b class="num">${brl(ifFora - (mc.pc * cpp))}</b>.` : ''} Valores estimados.</p>
+      <details class="more" style="margin-top:12px"><summary>${icon('chev')}<span>Ver dia a dia</span></summary><div class="dayrows">${mc.days.map((x, i) => `<div class="dayrow"><span class="t2" style="color:var(--text-2);font-weight:600">${dLabel(x.day)}</span><span class="dots" aria-label="${x.casa} em casa, ${x.fora} fora, ${x.livre} livres">${C.meals.map(m => `<i class="${cellOf(state, x.day, m).mode}"></i>`).join('')}</span><span class="t2 num">${fmtN(x.pc)} casa · ${fmtN(x.pf)} fora</span></div>`).join('')}</div></details>`;
+  }
+  function renderRank(cx) {
+    const course = ui.rankCourse || 'principal', list = Object.values(cx.sc).filter(x => x.course === course && !CHEF[x.id].leftovers).sort((a, b) => b.score - a.score);
+    $('#rankSeg').innerHTML = Object.entries({ entrada: 'Entradas e petiscos', principal: 'Principais', sobremesa: 'Sobremesas' }).map(([k, l]) => `<button type="button" data-rc="${k}" aria-pressed="${k === course}">${l}</button>`).join('');
+    $('#rankMeta').textContent = cx.g.answered ? `${cx.g.answered} ${cx.g.answered > 1 ? 'famílias' : 'família'}` : 'geral';
+    $('#rankList').innerHTML = (cx.g.answered ? '' : `<p class="hint" style="margin-bottom:12px">Ranking geral. Com o pré-briefing, a afinidade passa a refletir o grupo.</p>`) + list.slice(0, 6).map((x, i) => { const c = CHEF[x.id];
+      return `<div class="rk"><span class="n">${i + 1}</span><div style="min-width:0"><div class="t1">${esc(c.title)}</div><div class="t2">${c.time} min · ${c.diff} · ${LEVELS[c.level]}${isFreshRecipe(c) ? ' · comprar no dia' : ''}</div>
+        <div class="aff"><div class="bar" role="img" aria-label="${affLabel(x.score)}: ${x.score}%"><div style="width:${x.score}%"></div></div><b>${x.score}%</b></div>
+        ${x.vetos.length ? `<div class="warnline" style="margin-top:4px">${icon('alert')}<span>Não serve para ${x.vetos.length} ${x.vetos.length > 1 ? 'famílias' : 'família'}</span></div>` : ''}${x.diet.length ? `<div class="warnline" style="margin-top:4px">${icon('alert')}<span>Conflita com a dieta de ${x.diet.length} ${x.diet.length > 1 ? 'pessoas' : 'pessoa'}</span></div>` : ''}</div>
+        <button class="btn text sm" data-rec="${x.id}">${icon('book')}<span>Receita</span></button></div>`; }).join('');
+  }
+  $('#rankSeg').onclick = e => { const b = e.target.closest('[data-rc]'); if (!b) return; ui.rankCourse = b.dataset.rc; saveUi(); renderRank(chefCtx()); };
+  $('#rankList').addEventListener('click', e => { const b = e.target.closest('[data-rec]'); if (b) openCook({ recipeId: b.dataset.rec, portions: groupPortions() }); });
+  // Sugestões: state.chef = { seed, sugg: { 'dia|refeição': { ids, label, status } } }
+  function generateMenu(keepAccepted = true) {
+    state.chef = state.chef || { seed: 0, sugg: {} };
+    const r = chefPlan(state, brief, state.chef.seed), old = state.chef.sugg || {}, nx = {};
+    for (const [k, s] of Object.entries(r.sugg)) nx[k] = keepAccepted && old[k] && old[k].status === 'accepted' ? old[k] : { ids: s.ids, label: s.label, status: 'pending' };
+    state.chef.sugg = nx; save();
+  }
+  const sugKeys = () => Object.keys((state.chef && state.chef.sugg) || {}).filter(k => C.days.includes(k.split('|')[0])).sort((a, b) => a.split('|')[0] < b.split('|')[0] ? -1 : a.split('|')[0] > b.split('|')[0] ? 1 : MEAL_ORDER.indexOf(a.split('|')[1]) - MEAL_ORDER.indexOf(b.split('|')[1]));
+  function renderMenu(cx) {
+    const keys = sugKeys(), el = $('#menuBody');
+    const pend = keys.filter(k => state.chef.sugg[k].status === 'pending').length, acc = keys.filter(k => state.chef.sugg[k].status === 'accepted').length;
+    $('#menuMeta').textContent = keys.length ? `${acc} de ${keys.length} no cardápio` : '';
+    if (!keys.length) { el.innerHTML = `<div class="empty"><span class="ic">${icon('chef')}</span><b>O Chef está pronto</b><p>Ele monta entrada, principal e sobremesa para as refeições em casa, com porções pelas pessoas de cada dia.</p></div>
+      <button class="btn primary block" data-gen style="margin-top:8px">${icon('sparkle')}<span>Sugerir cardápio</span></button>`; return; }
+    const days = [...new Set(keys.map(k => k.split('|')[0]))];
+    if (!days.includes(ui.chefDay)) ui.chefDay = days.includes(todayISO()) ? todayISO() : days[0];
+    const strip = `<div class="daystrip" role="group" aria-label="Dias">${days.map(d => { const ks = keys.filter(k => k.startsWith(d)), allOk = ks.every(k => state.chef.sugg[k].status === 'accepted'), x = dObj(d);
+      return `<button type="button" data-cday="${d}" aria-pressed="${d === ui.chefDay}" aria-label="${dLabel(d)}${allOk ? ', aceito' : ''}">${WD[x.getDay()]}<b class="num">${x.getDate()}</b>${allOk ? '<i class="ok"></i>' : ks.some(k => state.chef.sugg[k].status === 'pending') ? '<i></i>' : ''}</button>`; }).join('')}</div>`;
+    const tier = cx.tier, blocks = keys.filter(k => k.startsWith(ui.chefDay)).map(k => {
+      const s = state.chef.sugg[k], [d, meal] = k.split('|'), cp = C.P.cell[k] || { portions: 0, people: 0 }, rt = C.rota[k], special = /Natal|Réveillon/.test(s.label);
+      return `<div class="sg ${s.status} ${special ? 'special' : ''}" data-sk="${k}"><div class="sh"><b>${MEALS[meal]}</b>${s.label ? `<span class="badge ${special ? 'acc' : ''}">${special ? icon('sparkle') : ''}${esc(s.label)}</span>` : ''}${s.status === 'accepted' ? `<span class="badge ok">${icon('check')}No cardápio</span>` : s.status === 'rejected' ? '<span class="badge">Recusado</span>' : ''}</div>
+        <div class="meta2">${cp.people} pessoas · ${fmtN(cp.portions)} porções${rt ? ` · cozinha ${esc(shortFam(famById(rt.cook).name))} · limpa ${esc(shortFam(famById(rt.clean).name))}` : ''}</div>
+        ${s.ids.map((id, j) => { const c = CHEF[id]; if (!c) return ''; const sc = cx.sc[id] || { score: 0 }, ws = c.wines, w1 = ws.medio[0], w2 = ws.alto[0];
+          return `<div class="course"><div style="min-width:0"><div class="ct">${COURSES[c.course]} · ${sc.score}% afinidade</div><button class="dish" data-rec="${id}">${esc(c.title)}</button>
+            <div class="badges">${isFreshRecipe(c) ? `<span class="badge freshb">Comprar no dia</span>` : ''}${c.ahead ? `<span class="badge warn">${esc(c.ahead)}</span>` : ''}<span class="badge">${c.time} min · ${c.diff}</span></div>
+            ${w1 || w2 ? `<div class="wl">${icon('wine')}<span>${tier === 'alto' && w2 ? esc(wineName(w2)) : esc(wineName(w1 || w2))} <span class="t2">· ${esc(ws.estilo)}</span></span></div>` : ''}</div>
+            ${s.status !== 'accepted' ? `<button class="swap" data-swap="${j}" aria-label="Trocar ${COURSES[c.course].toLowerCase()}: ${esc(c.title)}">${icon('shuffle')}</button>` : '<span></span>'}</div>`; }).join('')}
+        <div class="sgacts">${s.status === 'accepted' ? `<button class="btn secondary sm" data-cookm="${k}">${icon('chef')}<span>Modo cozinha</span></button><button class="btn text sm" data-undo>Desfazer</button>`
+          : s.status === 'rejected' ? `<button class="btn secondary sm" data-acc>${icon('check')}<span>Aceitar mesmo assim</span></button><span></span>` : `<button class="btn primary sm" data-acc>${icon('check')}<span>Aceitar</span></button><button class="btn text sm" data-rej>Recusar</button>`}</div></div>`;
+    }).join('');
+    el.innerHTML = strip + `<div class="t2" style="color:var(--text-2);font-weight:600">${dLabel(ui.chefDay)}</div>` + blocks
+      + `<div class="actwrap"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><button class="btn primary" data-accall ${pend ? '' : 'disabled'}>${icon('check')}<span>Aceitar todas (${pend})</span></button><button class="btn secondary" data-regen>${icon('shuffle')}<span>Refazer sugestões</span></button></div></div>`;
+  }
+  const applySugg = k => { const s = state.chef.sugg[k], [d, meal] = k.split('|'); setCell(d, meal, { mode: 'casa', recipes: s.ids.slice() }); s.status = 'accepted'; };
+  $('#menuBody').addEventListener('click', e => {
+    const t = e.target;
+    if (t.closest('[data-gen]')) { generateMenu(); render(); toast('Cardápio sugerido. Revise e aceite.'); return; }
+    if (t.closest('[data-regen]')) { state.chef.seed = (state.chef.seed || 0) + 1; generateMenu(true); render(); toast('Novas sugestões (as aceitas foram mantidas)'); return; }
+    if (t.closest('[data-accall]')) { let n = 0; for (const k of sugKeys()) if (state.chef.sugg[k].status === 'pending') { applySugg(k); n++; } save(); render(); toast(`${n} refeições no cardápio e na lista de compras`); return; }
+    const d = t.closest('[data-cday]'); if (d) { ui.chefDay = d.dataset.cday; saveUi(); renderMenu(chefCtx()); return; }
+    const r = t.closest('[data-rec]'); if (r) { const sk = t.closest('[data-sk]'); const cp = sk && C.P.cell[sk.dataset.sk]; openCook({ recipeId: r.dataset.rec, portions: cp ? cp.portions : groupPortions(), people: cp && cp.people }); return; }
+    const box = t.closest('[data-sk]'); if (!box) return; const k = box.dataset.sk, s = state.chef.sugg[k];
+    if (t.closest('[data-cookm]')) { const [dd, mm] = k.split('|'); openCook({ day: dd, meal: mm }); return; }
+    if (t.closest('[data-acc]')) { applySugg(k); save(); render(); toast('No cardápio e na lista de compras'); return; }
+    if (t.closest('[data-rej]')) { s.status = 'rejected'; save(); render(); toast('Sugestão recusada: a refeição fica como estava'); return; }
+    if (t.closest('[data-undo]')) { const [dd, mm] = k.split('|'); const c = curCell(dd, mm); c.recipes = c.recipes.filter(x => !s.ids.includes(x)); setCell(dd, mm, c); s.status = 'pending'; save(); render(); toast('Refeição voltou para sugestão'); return; }
+    const sw = t.closest('[data-swap]'); if (sw) { const j = +sw.dataset.swap, cur = s.ids[j], course = CHEF[cur].course, sc = chefScores(state, brief);
+      const list = Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers && !x.vetos.length && !s.ids.includes(x.id)).sort((a, b) => b.score - a.score);
+      const seen = s.seen = s.seen || []; if (!seen.includes(cur)) seen.push(cur);
+      let nx = list.find(x => !seen.includes(x.id)); if (!nx) { s.seen = [cur]; nx = list[0]; } if (!nx) return;
+      s.ids[j] = nx.id; s.seen.push(nx.id); save(); renderMenu(chefCtx()); toast(`Trocado por ${CHEF[nx.id].title}`); }
+  });
+  function acceptedPlan() { const out = {}; for (const d of C.days) for (const m of C.meals) { const c = cellOf(state, d, m); if (c.mode !== 'casa') continue; const ids = cellRecipes(c).filter(id => CHEF[id]); if (ids.length) out[d + '|' + m] = { ids }; } return out; }
+  function renderWine(cx) {
+    const tier = cx.tier, list = wineList(state, acceptedPlan(), tier);
+    $('#wineSeg').innerHTML = Object.entries(WINE_TIERS).map(([k, l]) => `<button type="button" data-wt="${k}" aria-pressed="${k === tier}">${l}</button>`).join('');
+    const rows = list.length ? list : Object.entries(WINES).filter(([, w]) => w.tier === tier).map(([id]) => ({ id, bottles: 0, dishes: [] }));
+    $('#wineMeta').textContent = list.length ? `~${list.reduce((s, x) => s + x.bottles, 0)} garrafas na viagem` : 'catálogo';
+    C.wineText = ['*Adega da viagem — Rateatouille*', `${WINE_TIERS[tier]} · preços aproximados`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `🍷 ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; })).concat(['', 'Beba com moderação.']).join('\n');
+    $('#wineWa').href = 'https://wa.me/?text=' + encodeURIComponent(C.wineText);
+    $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${tier === 'alto' ? 'de alto' : 'de médio'} custo:</p>`) + rows.map(x => { const w = WINES[x.id];
+      return `<div class="wine"><span class="gl">${icon('wine')}</span><div style="min-width:0"><div class="nm">${esc(w.name)}</div><div class="t2">${esc(w.type)} · ${esc(w.grape)} · ${esc(w.country)}</div>
+        <div class="badges">${x.bottles ? `<span class="bottles">~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}</span>` : ''}<span class="price">${esc(w.price)} · preço aproximado</span></div>
+        ${w.award ? `<div class="aw">${icon('sparkle')}<span>${esc(w.award)} · <a href="${esc(w.url)}" target="_blank" rel="noopener">fonte: ${esc(w.src)}</a></span></div>` : ''}
+        ${x.dishes.length ? `<div class="t2" style="margin-top:4px">Com: ${esc(x.dishes.slice(0, 3).join(', '))}${x.dishes.length > 3 ? '…' : ''}</div>` : ''}</div></div>`; }).join('')
+      + `<p class="fine">Garrafas estimadas em ~2 taças por pessoa que bebe no prato principal e meia taça na entrada e na sobremesa. Prêmios e notas conferidos em fontes públicas em nov/2026 e valem para a safra indicada. Preços são faixas aproximadas: confira na loja. Beba com moderação; venda proibida para menores de 18 anos.</p>`;
+  }
+  $('#wineSeg').onclick = e => { const b = e.target.closest('[data-wt]'); if (!b) return; ui.wineTier = b.dataset.wt; saveUi(); render(); };
+  $('#wineCopy').onclick = async () => { try { await navigator.clipboard.writeText(C.wineText || ''); } catch (e) {} toast('Lista da adega copiada'); };
+  function renderRota() {
+    const cnt = {}; state.families.forEach(f => { cnt[f.id] = { cook: 0, clean: 0 }; });
+    Object.values(C.rota).forEach(r => { if (cnt[r.cook]) cnt[r.cook].cook++; if (cnt[r.clean]) cnt[r.clean].clean++; });
+    const mx = Math.max(1, ...Object.values(cnt).map(x => Math.max(x.cook, x.clean)));
+    $('#rotaBody').innerHTML = Object.keys(C.rota).length ? state.families.map(f => `<div class="rota">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(f.name)}</div><div class="rbars">
+      <div class="rbar"><span>Cozinha</span><div class="b"><div style="width:${cnt[f.id].cook / mx * 100}%"></div></div><b class="num">${cnt[f.id].cook}</b></div>
+      <div class="rbar cl"><span>Limpa</span><div class="b"><div style="width:${cnt[f.id].clean / mx * 100}%"></div></div><b class="num">${cnt[f.id].clean}</b></div></div></div></div>`).join('') + `<p class="fine">Distribuída pelo tamanho de cada família (porções) e por quem está presente no dia. Quem cozinha não lava. A letra no cardápio mostra quem cozinha.</p>`
+      : `<p class="hint">Aparece quando houver refeições em casa.</p>`;
+  }
+  function renderChef() { const cx = chefCtx(); renderBriefCard(); renderCount(); renderRank(cx); renderMenu(cx); renderWine(cx); renderRota(); }
+  // Exemplo: respostas fictícias de pré-briefing e cardápio do Chef já aceito, para a primeira impressão.
+  function demoBoot() {
+    if (!state.demoChef) return; delete state.demoChef;
+    const A = [
+      { nivel: 3, entradas: 'questao', prot: ['boi', 'camarao', 'peixe'], mar: 'adoram', estilos: ['churrasco', 'mar'], fav: 'risoto, moqueca', tipos: ['espumante', 'tinto'], vinho: 'ambos', criancas: 'tudo', nao: [], naoTxt: '' },
+      { nivel: 2, entradas: 'gostam', prot: ['peixe', 'frango'], mar: 'ok', estilos: ['leve', 'mar'], fav: '', tipos: ['branco', 'rose'], vinho: 'medio', criancas: 'sem', nao: [], naoTxt: '' },
+      { nivel: 2, entradas: 'questao', prot: ['veg', 'peixe'], mar: 'ok', estilos: ['massa', 'leve'], fav: 'lasanha', tipos: ['branco'], vinho: 'medio', criancas: 'simples', nao: [], naoTxt: '' },
+      { nivel: 3, entradas: 'questao', prot: ['boi', 'porco'], mar: 'adoram', estilos: ['churrasco', 'doce'], fav: '', tipos: ['tinto', 'espumante'], vinho: 'alto', criancas: 'simples', nao: [], naoTxt: '' },
+      { nivel: 2, entradas: 'gostam', prot: ['camarao', 'boi'], mar: 'adoram', estilos: ['mar', 'churrasco'], fav: 'camarão', tipos: ['espumante', 'branco'], vinho: 'ambos', criancas: 'tudo', nao: ['porco'], naoTxt: '' },
+    ];
+    if (!state.families.some(f => brief[f.id])) { state.families.forEach((f, i) => { if (A[i]) brief[f.id] = { ...A[i], done: true, demo: true }; }); saveBrief(); }
+    state.chef = { seed: 0, sugg: {} }; generateMenu(false);
+    for (const k of Object.keys(state.chef.sugg)) { const s = state.chef.sugg[k], [d, meal] = k.split('|'); setCell(d, meal, { mode: 'casa', recipes: s.ids.slice() }); s.status = 'accepted'; }
+    save();
+  }
+
   // ---------- render ----------
   function render(opts = {}) {
     C = compute();
-    renderSummary(); renderPending(); renderNext(); renderChart();
-    renderMatrix(); renderDay(); renderTrip(); renderRecipes(); renderShop();
+    renderHero(); renderSummary(); renderPending(); renderNext(); renderChart();
+    renderMatrix(); renderDay(); renderTrip(); renderRecipes(); renderShop(); renderChef();
     if (!opts.skipPeople && !$('#people').contains(document.activeElement)) renderPeople();
     renderPayers(); renderExpenses();
     renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
-    setErr($('#payer'), $('#payerErr'), !$('#payer').options.length);
+    if (!allPeople(state).length) { $('#payerErrTxt').textContent = 'Adicione pelo menos uma pessoa nas famílias.'; setErr($('#payer'), $('#payerErr'), true); }
   }
-  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, render, toast, ui: () => ui };
+  window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, openBrief, render, toast, ui: () => ui };
   hydrate(document); renderSeg(); renderProof(); renderQuick();
+  demoBoot(); updSubmit();
   render(); setView(ui.view, { keepScroll: true }); setSub(ui.sub);
 })();
 </script>
