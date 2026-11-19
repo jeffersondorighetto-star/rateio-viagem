@@ -1,7 +1,7 @@
 // Alergia e intolerância: bloqueio duro em todo lugar (inclusive Natal e réveillon), adaptação na lista, nada vaza em texto compartilhado.
 const assert = require('assert');
 const L = require('./load-logic')(['ALLERGENS', 'ITEM_ALLERGENS', 'CHEF', 'SPECIAL', 'chefPlan', 'chefRecipe', 'recipeAllergens', 'allergyHits', 'enforceAllergies', 'shoppingList', 'shoppingText',
-  'summaryText', 'computeSplit', 'settle', 'kitty', 'healthOf', 'cellBlocked', 'getRecipe', 'mesaTalk', 'BEVERAGES', 'isDrinker', 'portions', 'bevNeeds', 'tripDays']);
+  'summaryText', 'computeSplit', 'settle', 'kitty', 'healthOf', 'cellBlocked', 'getRecipe', 'mesaTalk', 'BEVERAGES', 'isDrinker', 'portions', 'bevNeeds', 'tripDays', 'presentMembers']);
 const near = (a, b, t = 1e-6) => Math.abs(a - b) <= t;
 
 // 1) Lista fechada = Anexo III da RDC 727/2022 (+ moluscos marcados como extra)
@@ -48,8 +48,22 @@ for (const seed of [0, 1, 2, 3, 4, 5, 6, 7]) {
   const blockedBefore = L.shoppingList(st); assert(!blockedBefore.rows.some(x => x.key === 'camarao'), 'lista não compra o que está bloqueado'); assert(blockedBefore.blocked.length > 0);
   const ch = L.enforceAllergies(st, { fb: brief.fb }); assert(ch.length > 0);
   for (const d of Object.values(st.plan)) for (const c of Object.values(d)) assert(!c.recipes.some(hasCrust), 'aceito ainda com camarão');
-  const days = L.tripDays(st.trip); for (const d of days) for (const m of ['almoco', 'jantar']) assert.equal(L.cellBlocked(st, d, m).filter(x => !L.getRecipe(st, x.id).builtin).length, 0);
+  const days = L.tripDays(st.trip); for (const d of days) for (const m of ['almoco', 'jantar']) assert.equal(L.cellBlocked(st, d, m).length, 0, 'nada bloqueado sobra, nem modelo padrão');
 }
+
+// 4b) R1 (Arquitas): modelo padrão ("Massa", "Café") com alergênico de quem está presente é trocado ou bloqueado, não só some o item da lista
+{ const st = base(); st.families[0].members[1].diet = { allergens: ['trigo', 'leite'] };
+  st.plan['2026-12-20'] = { cafe: { mode: 'casa', recipes: ['cafe'] }, jantar: { mode: 'casa', recipes: ['massa'] } };
+  const hits = id => L.allergyHits(st, L.getRecipe(st, id), L.presentMembers ? L.presentMembers(st, '2026-12-20', 'jantar') : null);
+  const pre = L.shoppingList(st); assert(pre.blocked.some(b => b.recipe === 'massa'), 'lista bloqueia o modelo Massa inteiro');
+  assert(!pre.rows.some(r => ['macarrao', 'queijo', 'leite', 'pao', 'manteiga'].includes(r.key) && r.toBuy > 0), 'nada do modelo bloqueado entra na lista');
+  const ch = L.enforceAllergies(st, {}); assert(ch.some(c => c.builtin && c.from), 'troca registrada para modelo padrão');
+  const j = st.plan['2026-12-20'].jantar.recipes, c = st.plan['2026-12-20'].cafe.recipes;
+  assert(!j.includes('massa'), 'Massa saiu do jantar'); for (const id of j.concat(c)) assert.equal(hits(id).length, 0, 'modelo seguro: ' + id);
+  assert.equal(L.cellBlocked(st, '2026-12-20', 'jantar').length + L.cellBlocked(st, '2026-12-20', 'cafe').length, 0); }
+// 4c) Sem alergia de ninguém, o modelo padrão fica como está
+{ const st = base(); st.families[0].members[1].diet = {}; st.plan['2026-12-20'] = { jantar: { mode: 'casa', recipes: ['massa'] } };
+  L.enforceAllergies(st, {}); assert.deepStrictEqual(st.plan['2026-12-20'].jantar.recipes, ['massa']); }
 // 5) Intolerância não bloqueia: adapta, na proporção de quem precisa
 { const st = base(); st.families = [{ id: 'fa', name: 'A', members: [{ id: 'a1', name: 'Ad' }, { id: 'a2', name: 'Ad2', diet: { intol: ['lactose'] } }] }];
   st.trip = { start: '2026-12-20', end: '2026-12-20', meals: { jantar: true } }; st.plan = { '2026-12-20': { jantar: { mode: 'casa', recipes: ['c_panna_cotta'] } } };
@@ -60,17 +74,19 @@ for (const seed of [0, 1, 2, 3, 4, 5, 6, 7]) {
   assert(L.cellBlocked(st, '2026-12-20', 'jantar').length === 0, 'intolerância não bloqueia'); }
 // 6) Álcool: menor de 18 nunca bebe nem conta garrafa
 { const st = base(); assert(!L.isDrinker(st.families[2].members[1]), 'adolescente não bebe mesmo com drinks=true');
-  const P = L.portions(st); assert.equal(P.per.c2.drinkerDays, 0);
+  const P = L.portions(st); assert.equal(P.per.c2.drinkerDays, 0); assert(!L.shoppingText(st, L.shoppingList(st)).includes('18 anos'));
   const sp = L.computeSplit({ ...st, expenses: [{ id: 'x', amount: 100, category: 'alcohol', payerId: 'a1' }] }); assert(near(sp.persons.find(p => p.id === 'c2').owed, 0), 'adolescente não paga álcool');
   st.plan = { '2026-12-15': { jantar: { mode: 'casa', recipes: ['c_churrasco'], bev: [{ id: 'catena_app' }, { id: 'z_suco_uva' }] } } };
   let need = L.bevNeeds(st, P); assert(!need.some(([k]) => k === 'bv_catena_app'), 'álcool sem aceite de adulto organizador não entra');
   assert(need.some(([k]) => k === 'bv_z_suco_uva'), 'sem álcool entra sem aceite');
   st.plan['2026-12-15'].jantar.bev[0].okBy = 'Ana'; need = L.bevNeeds(st, L.portions(st));
-  const w = need.find(([k]) => k === 'bv_catena_app'); assert(w && near(w[1], 2 * 2 / 5), 'garrafas só dos adultos que bebem (Ana e Beto)'); }
+  const w = need.find(([k]) => k === 'bv_catena_app'); assert(w && near(w[1], 2 * 2 / 5), 'garrafas só dos adultos que bebem (Ana e Beto)');
+  assert(L.shoppingText(st, L.shoppingList(st)).includes('Bebida alcoólica só para maiores de 18 anos.'), 'lista com álcool leva a frase dos 18 anos');
+  st.plan['2026-12-15'].jantar.bev = [{ id: 'z_suco_uva' }]; assert(!L.shoppingText(st, L.shoppingList(st)).includes('18 anos'), 'sem álcool, sem a frase'); }
 // 7) Texto compartilhado nunca leva dado de saúde
 { const st = base(); const sp = L.computeSplit(st), tr = L.settle(sp.families); const out = L.summaryText(st, sp, tr, L.kitty(st, sp)) + L.shoppingText(st, L.shoppingList(st));
   for (const bad of ['crustaceos', 'Crustáceos', 'alergia', 'Alergia', 'Lia:']) assert(!out.includes(bad), 'vazou ' + bad); }
 // 8) Conversa da mesa: sem criança, saúde, gestação, nem quem bebe
 { const bad = /crian|gestant|grávid|gravidez|saúde|saude|não bebe|nao bebe|quem bebe|menor|alerg|remédio|dieta/i;
   for (const id of Object.keys(L.CHEF)) for (const meal of ['almoco', 'jantar']) for (const ln of L.mesaTalk({}, '2026-12-20|' + meal, [id], null)) assert(!bad.test(ln.text), id + ': ' + ln.text); }
-console.log('ALLERGY TESTS PASSED (lista Anvisa, por ingrediente, cenário Astreia em 8 seeds + Natal/réveillon, presença, plano aceito, lista, intolerância, 18+, textos, mesa)');
+console.log('ALLERGY TESTS PASSED (modelos padrão Massa/Café trocados ou bloqueados, lista Anvisa, por ingrediente, cenário Astreia em 8 seeds + Natal/réveillon, presença, plano aceito, lista, intolerância, 18+, textos, mesa)');

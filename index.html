@@ -760,7 +760,7 @@ dialog.gate .field{margin-bottom:12px}
 
 <!-- ============ PLANEJAR ============ -->
 <section class="view" id="v-planejar" role="tabpanel" aria-labelledby="tab-planejar" hidden>
-  <p class="callout" id="localOnlyNote" hidden style="margin:0 0 16px"><span data-i="alert"></span><span>Cardápio, receitas, compras e dieta/alergia ficam <b>só neste aparelho</b> (não vão para o evento compartilhado). No evento, a divisão «por porções» usa os dias de presença e o tipo de cada pessoa.</span></p>
+  <p class="callout" id="localOnlyNote" hidden style="margin:0 0 16px"><span data-i="alert"></span><span><span data-health-note>Alergia, intolerância e dieta ficam só no aparelho onde foram digitadas: não vão para o evento compartilhado, para o servidor nem para o backup.</span> No evento, a divisão «por porções» usa os dias de presença e o tipo de cada pessoa.</span></p>
   <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
     <button role="tab" id="sub-cardapio" aria-controls="panel-cardapio" data-sub="cardapio" aria-selected="true">Cardápio</button>
     <button role="tab" id="sub-receitas" aria-controls="panel-receitas" data-sub="receitas" aria-selected="false" tabindex="-1">Receitas</button>
@@ -1369,8 +1369,8 @@ function shoppingList(state, opts) {
     const blk = new Set(cellBlocked(state, day, meal).map(x => x.id)), sh = intolShares(state, day, meal);
     for (const id of cellRecipes(c)) {
       const r = getRecipe(state, id); if (!r) continue;
-      if (blk.has(id) && !r.builtin) { blocked.push({ day, meal, recipe: id, title: r.title }); continue; } // alergia de alguém presente: não compra
-      const drop = blk.has(id) ? new Set(allergyHits(state, r, presentMembers(state, day, meal))) : null; // modelo simples: só os itens com o alergênico saem
+      if (blk.has(id)) { blocked.push({ day, meal, recipe: id, title: r.title }); continue; } // alergia de alguém presente (receita, Chef ou modelo padrão): não compra
+      const drop = null;
       const f = cp.portions / (r.yield || 1); let cost = 0;
       for (const ing of r.ingredients || []) {
         if (drop && ingAllergens(state, ing).some(a => drop.has(a))) continue;
@@ -1415,11 +1415,14 @@ function shoppingList(state, opts) {
 }
 const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
   : (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L` : `${Math.round(q)} ml`);
+const ALCOHOL_ITEMS = new Set(['cerveja', 'cachaca', 'vodka', 'gin', 'licor_cafe', 'espumante_drink']);
+const isAlcoholItem = k => ALCOHOL_ITEMS.has(k) || (String(k).startsWith('bv_') && typeof BEVERAGES !== 'undefined' && bevAlcoholic(BEVERAGES[k.slice(3)]));
 function shoppingText(state, S) {
   const L = ['*Lista de compras — Rateatouille*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
     L.push(`*${sec}*`); for (const r0 of rs) { const r = r0.adaptedOf ? { ...r0, name: `${ITEMS[r0.adaptedOf].name} (versão adaptada, detalhe no app)` } : r0; L.push(r.aGosto ? `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); } L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
+  if (S.rows.some(r => r.toBuy > 0 && isAlcoholItem(r.key))) L.push('', AGE_LINE);
   return L.join('\n');
 }
 
@@ -1620,6 +1623,7 @@ const INTOL = { lactose: { label: 'Lactose', adapt: 'sem lactose' }, gluten: { l
 // Versões adaptadas para a lista de compras (intolerância não bloqueia o prato: adapta).
 const INTOL_VARIANT = { lactose: { leite: 'leite_sl', creme_leite: 'creme_leite_sl', manteiga: 'manteiga_sl', queijo: 'queijo_sl', mussarela: 'mussarela_sl', bufala: 'mussarela_sl', coalho: 'coalho_sl', leite_cond: 'leite_cond_sl', sorvete: 'sorvete_sl', requeijao: 'requeijao_sl', frios: 'frios_sl' },
   gluten: { macarrao: 'macarrao_sg', massa_lasanha: 'massa_lasanha_sg', pao: 'pao_sg', pao_italiano: 'pao_sg', pao_alho: 'pao_sg', farinha: 'farinha_sg' } };
+const HEALTH_LOCAL_NOTE = 'Alergia, intolerância e dieta ficam só no aparelho onde foram digitadas: não vão para o evento compartilhado, para o servidor nem para o backup.'; // texto único (aviso do evento e rodapé)
 const HEALTH_RETENTION_DAYS = 15; // apagamento automático até 15 dias depois do fim da viagem
 const allergenWordHit = (txt, a) => { let t = txt; for (const n of a.not || []) t = t.split(n).join(' '); return a.words.some(w => hasPhrase(t, w)); };
 // Lê o formato novo { veg, allergens:[], intol:[], consent } e o antigo { lactose, gluten, alergia:'texto' }.
@@ -1791,7 +1795,7 @@ Object.assign(ITEM_SYNONYMS, {
 ITEM_SYNONYMS.peixe.push('robalo', 'tainha', 'linguado', 'peixe branco');
 
 // Vinhos: só rótulos reais. Prêmio/nota apenas quando conferido em fonte pública (url guardada). Preço = faixa aproximada.
-const WINE_TIERS = { medio: 'Médio custo', alto: 'Alto custo' };
+const WINE_TIERS = { medio: 'Médio-alto', alto: 'Alto', icone: 'Ícone' }; // adega premium: sem faixa de entrada
 const WINES = {
   miolo_cuvee: { name: 'Miolo Cuvée Tradition Brut', producer: 'Miolo', country: 'Brasil', type: 'Espumante', grape: 'Chardonnay e Pinot Noir', tier: 'medio', price: 'R$ 70–120',
     award: 'Medalha de Ouro no 9º Concurso do Espumante Brasileiro (2015)', src: 'Meu Vinho, 17/11/2015', url: 'https://www.meuvinho.com.br/news/583/miolo-cuvee-tradition2c-um-brinde-a-tudo-que-e-brilhante21' },
@@ -2052,12 +2056,22 @@ function safeAlt(state, sc, id, ms, taken) {
   const all = Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers && !taken.includes(x.id) && !allergyHits(state, chefRecipe(x.id), ms).length);
   return all.sort((a, b) => (a.vetos.length - b.vetos.length) || b.score - a.score)[0] || null;
 }
+// Modelo padrão seguro para quem está presente: café/lanche troca entre si; almoço/jantar entre os pratos do dia a dia.
+const TEMPLATE_GROUPS = [['cafe', 'lanches'], ['arroz_feijao', 'prato_unico', 'churrasco', 'peixe', 'massa']];
+function safeTemplate(state, id, ms, taken) {
+  const g = TEMPLATE_GROUPS.find(x => x.includes(id)) || [];
+  return g.find(t => t !== id && !taken.includes(t) && !allergyHits(state, getRecipe(state, t), ms).length) || null;
+}
 function enforceAllergies(state, brief) {
   const changes = [], sc = chefScores(state, brief), days = tripDays(state.trip), meals = activeMeals(state.trip);
   for (const d of days) for (const meal of meals) {
-    const bl = cellBlocked(state, d, meal).filter(b => { const r = getRecipe(state, b.id); return r && !r.builtin; }); if (!bl.length) continue;
+    const bl = cellBlocked(state, d, meal).filter(b => { const r = getRecipe(state, b.id); return r && (!r.builtin || TEMPLATES[b.id]); }); if (!bl.length) continue;
     const c = cellOf(state, d, meal), ids = cellRecipes(c).slice(), ms = presentMembers(state, d, meal);
-    for (const b of bl) { const j = ids.indexOf(b.id); if (j < 0) continue; const alt = safeAlt(state, sc, b.id, ms, ids);
+    for (const b of bl) { const j = ids.indexOf(b.id); if (j < 0) continue;
+      if (TEMPLATES[b.id]) { const alt = safeTemplate(state, b.id, ms, ids); // modelo padrão ("Massa", "Café"…): troca por outro modelo seguro ou sai da célula
+        if (alt) ids[j] = alt; else ids.splice(j, 1);
+        changes.push({ day: d, meal, from: b.title, to: alt ? TEMPLATES[alt].label : null, allergens: b.allergens, builtin: true }); continue; }
+      const alt = safeAlt(state, sc, b.id, ms, ids);
       if (alt) ids[j] = alt.id; else ids.splice(j, 1);
       changes.push({ day: d, meal, from: b.title, to: alt ? CHEF[alt.id].title : null, allergens: b.allergens }); }
     state.plan = state.plan || {}; state.plan[d] = state.plan[d] || {}; state.plan[d][meal] = { ...c, mode: 'casa', recipes: ids };
@@ -2084,8 +2098,9 @@ function wineList(state, plan, tier) {
     const [d, meal] = key.split('|'), days = P.days, idx = days.indexOf(d) * 4 + MEAL_ORDER.indexOf(meal);
     let drinkers = 0; for (const f of state.families) for (const m of f.members) { const [a, b] = presenceRange(state, m, f, days); if (isDrinker(m) && idx >= a && idx <= b) drinkers++; }
     if (!drinkers) continue;
-    s.ids.forEach((id, j) => { const c = CHEF[id]; if (!c) return; const opts = (c.wines[tier] || []).length ? c.wines[tier] : c.wines.medio; if (!opts.length) return;
-      const w = opts[(days.indexOf(d) + j) % opts.length], glasses = (c.course === 'principal' ? 2 : 0.6) * (meal === 'jantar' ? 1 : 0.5), x = byWine[w] = byWine[w] || { id: w, bottles: 0, dishes: new Set() };
+    s.ids.forEach((id, j) => { const c = CHEF[id]; if (!c) return; const sts = PAIRINGS.wine[pairKey(c)] || []; if (!sts.length) return;
+      const labs = styleLabels(sts[(days.indexOf(d) + j) % sts.length]), lab = labs.find(x => x.b.tier === tier) || labs[0]; if (!lab) return;
+      const w = lab.id, glasses = (c.course === 'principal' ? 2 : 0.6) * (meal === 'jantar' ? 1 : 0.5), x = byWine[w] = byWine[w] || { id: w, bottles: 0, dishes: new Set() };
       x.bottles += drinkers * glasses / 5; x.dishes.add(c.title); });
   }
   return Object.values(byWine).map(x => ({ ...x, bottles: Math.max(1, Math.ceil(x.bottles - 0.15)), dishes: [...x.dishes] })).sort((a, b) => b.bottles - a.bottles);
@@ -2251,7 +2266,10 @@ function rowsToState(rows, prev, meta) {
   const recipes = live('recipes').slice().sort(byPos).map(r => ({ ...localPart(pr[r.id], 'recipe'), id: r.id, title: r.title, yield: Number(r.yield) || 4,
     ingredients: (r.parsed && Array.isArray(r.parsed.ingredients)) ? r.parsed.ingredients : [], steps: (r.parsed && Array.isArray(r.parsed.steps)) ? r.parsed.steps : [], text: r.text || '' }));
   const plan = {};
-  for (const r of live('meal_plan')) { (plan[r.day] = plan[r.day] || {})[r.meal] = { mode: r.mode, recipes: Array.isArray(r.recipe_ids) ? r.recipe_ids.slice() : [] }; }
+  // Campos só do aparelho (escala congelada, bebidas, aceite de adulto, confirmação da família) ficam como estavam, igual a gastos e receitas.
+  for (const r of live('meal_plan')) { const old = prev.plan && prev.plan[r.day] && prev.plan[r.day][r.meal], keep = {};
+    if (old) for (const k in old) if (k !== 'mode' && k !== 'recipes' && k !== 'menu') keep[k] = old[k];
+    (plan[r.day] = plan[r.day] || {})[r.meal] = { ...keep, mode: r.mode, recipes: Array.isArray(r.recipe_ids) ? r.recipe_ids.slice() : [] }; }
   const meals = ev.meals || (prev.trip && prev.trip.meals) || { cafe: true, almoco: true, lanche: false, jantar: true };
   return { ...prev, eventName: meta.name || prev.eventName, eventLocked: !!meta.locked, families: fams, expenses, settled,
     trip: { ...(prev.trip || {}), start: ev.start_date || '', end: ev.end_date || '', meals: { ...meals } },
@@ -2617,26 +2635,31 @@ async function purgeEventPhotos(client, eventId) {
 // Regras do catálogo: IDs fixos; item aposentado ganha `retired` e nunca é apagado; nota só de crítico ou concurso independente,
 // com link e data da conferência (sem texto de resenha: só a nota, o nome e o link). Sem fonte independente: "Sem nota".
 // Preço é faixa aproximada com o mês de referência. Sem patrocínio, sem afiliado, sem link de compra.
-const CATALOG_VERSION = '2026-11-19.1';
+const CATALOG_VERSION = '2026-11-19.2'; // suba a cada mudança no catálogo (o teste compara com tests/catalog-ids.json)
 const PRICE_MONTH = 'nov/2026';
 const CHECKED = '2026-11-19';
 const DEC = 'https://www.decanter.com/wine-reviews/', DW = 'https://awards.decanter.com/DWWA/', EBS = y => `https://www.european-beer-star.com/ebs-wAssets/docs/gewinnerliste-en/Gewinner_${y}.pdf`;
 const r100 = (points, critic, url, vintage, extra) => ({ points, scale: 100, critic, url, vintage, checkedOn: CHECKED, independent: true, ...(extra || {}) });
 const medal = (medal, comp, url, vintage, extra) => ({ medal, critic: comp, url, vintage, checkedOn: CHECKED, independent: true, ...(extra || {}) });
 const BEV_TIERS = { entrada: 'Entrada', medio: 'Médio', alto: 'Alto' };
+// Adega premium (pedido do Jefferson, 19/11): vinhos só em médio-alto, alto e ícone. Entrada não aparece mais para vinho.
+const WINE_TIER_LABEL = { medio: 'Médio-alto', alto: 'Alto', icone: 'Ícone' };
+const tierLabel = b => (b.kind === 'wine' ? WINE_TIER_LABEL[b.tier] : BEV_TIERS[b.tier]) || '';
+const AGE_LINE = 'Bebida alcoólica só para maiores de 18 anos. Beba com moderação.';
 const BEV_KINDS = { wine: 'Vinho', beer: 'Cerveja', drink: 'Drinks' };
 const BEV_STYLES = {
   st_malbec: { kind: 'wine', name: 'Malbec argentino', abv: [13.5, 14.5], why: 'fruta escura e taninos macios seguram a gordura da carne na brasa' },
   st_tannat: { kind: 'wine', name: 'Tannat uruguaio', abv: [13.5, 15], why: 'taninos firmes limpam a boca entre um corte e outro' },
-  st_chablis: { kind: 'wine', name: 'Chablis (Chardonnay sem madeira)', abv: [12, 13], why: 'acidez alta e servido gelado: refresca o calor e não briga com a sobremesa gelada' },
-  st_espumante: { kind: 'wine', name: 'Espumante brut', abv: [11.5, 12.5], why: 'bolha e acidez cortam fritura e sal' },
-  st_branco_fresco: { kind: 'wine', name: 'Branco fresco (Sauvignon Blanc, Alvarinho)', abv: [12, 13.5], why: 'cítrico e mineral, acompanha limão, ervas e frutos do mar' },
-  st_rose: { kind: 'wine', name: 'Rosé seco', abv: [12, 13], why: 'leve, gelado e versátil para entradas e almoço' },
-  st_sangiovese: { kind: 'wine', name: 'Sangiovese (Chianti)', abv: [13, 14], why: 'acidez do tomate pede um tinto também ácido' },
-  st_tinto_br: { kind: 'wine', name: 'Tinto brasileiro (Syrah, Merlot)', abv: [13, 14.5], why: 'fruta madura e corpo médio para molhos e carnes' },
+  st_chablis: { kind: 'wine', name: 'Chablis 1er e Grand Cru', abv: [12, 13], why: 'acidez alta e servido gelado: refresca o calor e não briga com a sobremesa gelada' },
+  st_espumante: { kind: 'wine', name: 'Champagne e espumante de guarda', abv: [12, 12.5], why: 'bolha e acidez cortam fritura e sal' },
+  st_branco_fresco: { kind: 'wine', name: 'Branco mineral (Alvarinho, Sauvignon Blanc de guarda)', abv: [12.5, 13.5], why: 'cítrico, mineral e com textura: acompanha limão, ervas e frutos do mar' },
+  st_rose: { kind: 'wine', name: 'Rosé gastronômico (Provence)', abv: [13, 14], why: 'seco, salino e com corpo: entradas, peixe e almoço no calor' },
+  st_sangiovese: { kind: 'wine', name: 'Sangiovese (Gran Selezione, Brunello)', abv: [14, 15], why: 'acidez do tomate pede um tinto também ácido' },
+  st_tinto_br: { kind: 'wine', name: 'Tinto brasileiro de guarda (Syrah, Merlot, corte)', abv: [13.5, 14.5], why: 'fruta madura, madeira bem colocada e corpo para molhos e carnes' },
   st_chard_madeira: { kind: 'wine', name: 'Chardonnay com madeira', abv: [13, 14], why: 'textura cremosa acompanha manteiga, risoto e peixes gordos' },
-  st_moscatel: { kind: 'wine', name: 'Espumante moscatel', abv: [7, 8], why: 'doce e leve: a sobremesa não deixa o vinho amargo' },
-  st_cabernet: { kind: 'wine', name: 'Cabernet Sauvignon', abv: [13.5, 14.5], why: 'estrutura para carnes vermelhas' },
+  st_moscatel: { kind: 'wine', name: 'Vinho de sobremesa (Tokaji, Sauternes)', abv: [11.5, 14.5], why: 'doçura com acidez alta: a sobremesa não deixa o vinho amargo' },
+  st_cabernet: { kind: 'wine', name: 'Cabernet Sauvignon (Maipo)', abv: [14, 15], why: 'estrutura e taninos finos para carnes vermelhas' },
+  st_rioja: { kind: 'wine', name: 'Rioja Reserva e Gran Reserva', abv: [13.5, 15.5], why: 'barrica longa e taninos polidos para carnes assadas, cordeiro e molhos' },
   st_pilsen: { kind: 'beer', name: 'Pilsen', abv: [4.5, 5], why: 'leve e gelada, para o calor' },
   st_dark_lager: { kind: 'beer', name: 'Lager escura (Schwarzbier, Dunkel)', abv: [4.5, 5.5], why: 'malte tostado combina com a crosta do churrasco' },
   st_weiss: { kind: 'beer', name: 'Weiss (trigo)', abv: [5, 5.5], why: 'notas de banana e cravo vão bem com frutos do mar e saladas' },
@@ -2645,67 +2668,126 @@ const BEV_STYLES = {
   st_zero_vinho: { kind: 'wine', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'mesma taça, mesmo brinde' },
   st_zero_cerveja: { kind: 'beer', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'gelada como as outras' },
 };
+// Serviço do Enólogo por estilo de vinho (regra fixa, sem IA): temperatura e decantação. Na praia, tinto vai 15 min à geladeira antes.
+const WINE_SERVICE = {
+  st_malbec: { temp: '16–18 °C', decant: 'decantar 45 min a 1 h' }, st_tannat: { temp: '16–18 °C', decant: 'decantar 1 h (taninos firmes)' },
+  st_chablis: { temp: '10–12 °C', decant: 'sem decantar; o Grand Cru abre bem com 15 min na taça' }, st_espumante: { temp: '8–10 °C', decant: 'sem decantar; balde com gelo e água' },
+  st_branco_fresco: { temp: '10–12 °C', decant: 'Silex e Te Koko ganham com 20 min de decanter' }, st_rose: { temp: '10–12 °C', decant: 'Garrus pode ir ao decanter por 20 min' },
+  st_sangiovese: { temp: '16–18 °C', decant: 'decantar 1 h; Brunello e Tignanello jovens, até 2 h' }, st_tinto_br: { temp: '16–18 °C', decant: 'decantar 30–45 min' },
+  st_chard_madeira: { temp: '12–14 °C', decant: 'não gelar demais; 15 min de decanter abre a madeira' }, st_moscatel: { temp: '8–10 °C', decant: 'sem decantar; taça pequena, 60–80 ml por pessoa' },
+  st_cabernet: { temp: '16–18 °C', decant: 'decantar 1 a 2 h' }, st_rioja: { temp: '16–18 °C', decant: 'Reserva, 30 min; Gran Reserva, decantar devagar por causa do depósito' },
+};
 // kind: wine | beer | drink | zero. price em R$, faixa aproximada (mês em PRICE_MONTH). abv.basis: rotulo | concurso | tipico
 const BEVERAGES = {
   // vinhos antigos (IDs mantidos do catálogo 1)
-  miolo_cuvee: { kind: 'wine', style: 'st_espumante', tier: 'entrada', name: 'Miolo Cuvée Tradition Brut', country: 'Brasil', price: [70, 120], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+  miolo_cuvee: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_espumante', tier: 'entrada', name: 'Miolo Cuvée Tradition Brut', country: 'Brasil', price: [70, 120], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Ouro', '9º Concurso do Espumante Brasileiro', 'https://www.meuvinho.com.br/news/583/miolo-cuvee-tradition2c-um-brinde-a-tudo-que-e-brilhante21', 'NV', { via: 'Meu Vinho (imprensa)', year: 2015 })] },
-  geisse_brut: { kind: 'wine', style: 'st_espumante', tier: 'medio', name: 'Cave Geisse Brut', country: 'Brasil', price: [150, 200], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+  geisse_brut: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_espumante', tier: 'medio', name: 'Cave Geisse Brut', country: 'Brasil', price: [150, 200], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(91, 'Decanter (Steven Spurrier)', DEC + 'brazil/serra-gaucha/pinto-bandeira-cave-geisse-brut-serra-gaucha-brazil-5580/', 'NV')] },
-  geisse_terroir: { kind: 'wine', style: 'st_espumante', tier: 'alto', name: 'Cave Geisse Terroir Nature', country: 'Brasil', price: [250, 400], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+  geisse_terroir: { kind: 'wine', premium: true, style: 'st_espumante', tier: 'medio', name: 'Cave Geisse Terroir Nature', country: 'Brasil', price: [250, 400], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(95, 'Guia Descorchados 2024', 'https://exame.com/casual/melhores-espumantes-do-brasil-metodo-tradicional/', 2020, { via: 'Exame (imprensa)' })] },
-  leopoldina: { kind: 'wine', style: 'st_chard_madeira', tier: 'medio', name: 'Casa Valduga Leopoldina Chardonnay', country: 'Brasil', price: [120, 180], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  leopoldina: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_chard_madeira', tier: 'medio', name: 'Casa Valduga Leopoldina Chardonnay', country: 'Brasil', price: [120, 180], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards', DW + 'any/wines/530227', 2015)] },
-  mcc_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'medio', name: 'Marques de Casa Concha Chardonnay', country: 'Chile', price: [120, 180], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+  mcc_chard: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_chard_madeira', tier: 'medio', name: 'Marques de Casa Concha Chardonnay', country: 'Chile', price: [120, 180], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
     note: 'Nota citada só pelo produtor: fica "Sem nota".' },
-  mcc_cab: { kind: 'wine', style: 'st_cabernet', tier: 'medio', name: 'Marques de Casa Concha Cabernet Sauvignon', country: 'Chile', price: [120, 180], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+  mcc_cab: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_cabernet', tier: 'medio', name: 'Marques de Casa Concha Cabernet Sauvignon', country: 'Chile', price: [120, 180], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
     note: 'Nota citada só pelo produtor: fica "Sem nota".' },
-  catena_app: { kind: 'wine', style: 'st_malbec', tier: 'medio', name: 'Catena Appellation Lunlunta Malbec', country: 'Argentina', price: [150, 250], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  catena_app: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_malbec', tier: 'medio', name: 'Catena Appellation Lunlunta Malbec', country: 'Argentina', price: [150, 250], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Prata, 92 pontos', 'Decanter World Wine Awards', DW + 'any/wines/540015', 2017)] },
-  ruffino: { kind: 'wine', style: 'st_sangiovese', tier: 'medio', name: 'Ruffino Riserva Ducale Chianti Classico', country: 'Itália', price: [180, 280], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+  ruffino: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_sangiovese', tier: 'medio', name: 'Ruffino Riserva Ducale Chianti Classico', country: 'Itália', price: [180, 280], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
     note: 'A nota da Wine Spectator aparece só no produtor e em lojas (página do crítico fechada): fica "Sem nota".' },
-  ponto_nero: { kind: 'wine', style: 'st_moscatel', tier: 'entrada', name: 'Ponto Nero Moscatel', country: 'Brasil', price: [50, 90], abv: { value: 7.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  ponto_nero: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_moscatel', tier: 'entrada', name: 'Ponto Nero Moscatel', country: 'Brasil', price: [50, 90], abv: { value: 7.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards', DW + 'any/wines/533471', 'NV')] },
-  soalheiro: { kind: 'wine', style: 'st_branco_fresco', tier: 'medio', name: 'Soalheiro Primeiras Vinhas Alvarinho', country: 'Portugal', price: [200, 330], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  soalheiro: { kind: 'wine', premium: true, style: 'st_branco_fresco', tier: 'medio', name: 'Soalheiro Primeiras Vinhas Alvarinho', country: 'Portugal', price: [200, 330], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Ouro, 95 pontos', 'Decanter World Wine Awards', DW + 'any/wines/705502', 2020)] },
-  cloudy: { kind: 'wine', style: 'st_branco_fresco', tier: 'alto', name: 'Cloudy Bay Sauvignon Blanc', country: 'Nova Zelândia', price: [300, 450], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+  cloudy: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_branco_fresco', tier: 'alto', name: 'Cloudy Bay Sauvignon Blanc', country: 'Nova Zelândia', price: [300, 450], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(92, 'Decanter (David Williams)', DEC + 'new-zealand/marlborough/cloudy-bay-sauvignon-blanc-marlborough-new-zealand-2024-97362/', 2024)] },
-  whispering: { kind: 'wine', style: 'st_rose', tier: 'alto', name: 'Whispering Angel', country: 'França', price: [250, 350], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  whispering: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_rose', tier: 'alto', name: 'Whispering Angel', country: 'França', price: [250, 350], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Ouro', 'Decanter World Wine Awards', DW + 'any/wines/631177', 2014)] },
-  guaspari: { kind: 'wine', style: 'st_tinto_br', tier: 'medio', name: 'Guaspari Vista do Chá Syrah', country: 'Brasil', price: [250, 350], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+  guaspari: { kind: 'wine', premium: true, style: 'st_tinto_br', tier: 'alto', name: 'Guaspari Vista do Chá Syrah', country: 'Brasil', price: [250, 350], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Ouro, 95 pontos', 'Decanter World Wine Awards', 'https://results.decanter.com/DWWA/any/wines/560182', 2012)] },
-  pizzato_dna: { kind: 'wine', style: 'st_tinto_br', tier: 'alto', name: 'Pizzato DNA99 Merlot', country: 'Brasil', price: [350, 500], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+  pizzato_dna: { kind: 'wine', premium: true, style: 'st_tinto_br', tier: 'icone', name: 'Pizzato DNA99 Merlot', country: 'Brasil', price: [350, 500], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(95, 'Decanter (Steven Spurrier)', DEC + 'brazil/vale-dos-vinhedos/pizzato-dna99-vale-dos-vinhedos-serra-gaucha-brazil-5581/', null)] },
-  catena_zapata: { kind: 'wine', style: 'st_malbec', tier: 'alto', name: 'Catena Zapata Malbec Argentino', country: 'Argentina', price: [700, 1200], abv: { value: 14, basis: 'rotulo' }, unit: 'garrafa 750 ml', since: 1,
+  catena_zapata: { kind: 'wine', premium: true, style: 'st_malbec', tier: 'alto', name: 'Catena Zapata Malbec Argentino', country: 'Argentina', price: [700, 1200], abv: { value: 14, basis: 'rotulo' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(95, 'Decanter (Inés Salpico)', DEC + 'argentina/mendoza/catena-zapata-malbec-argentino-mendoza-argentina-2022-102590/', 2022)] },
   // vinhos novos (catálogo 2)
-  w_alamos_malbec: { kind: 'wine', style: 'st_malbec', tier: 'entrada', name: 'Alamos Malbec', country: 'Argentina', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_adrianna_river: { kind: 'wine', style: 'st_malbec', tier: 'icone', name: 'Catena Zapata Adrianna Vineyard River Stones Malbec', country: 'Argentina', price: [2000, 3500], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+  w_alamos_malbec: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_malbec', tier: 'entrada', name: 'Alamos Malbec', country: 'Argentina', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_adrianna_river: { kind: 'wine', premium: true, style: 'st_malbec', tier: 'icone', name: 'Catena Zapata Adrianna Vineyard River Stones Malbec', country: 'Argentina', price: [2000, 3500], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [r100(97, 'Decanter (Alejandro Iglesias)', DEC + 'argentina/mendoza/catena-zapata-adrianna-vineyard-river-malbec-uco-valley-tupungato-mendoza-argentina-2022-113784/', 2022)] },
-  w_donpascual_tannat: { kind: 'wine', style: 'st_tannat', tier: 'entrada', name: 'Don Pascual Reserve Tannat', country: 'Uruguai', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_garzon_tannat: { kind: 'wine', style: 'st_tannat', tier: 'medio', name: 'Bodega Garzón Reserva Tannat', country: 'Uruguai', price: [150, 230], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
+  w_donpascual_tannat: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_tannat', tier: 'entrada', name: 'Don Pascual Reserve Tannat', country: 'Uruguai', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_garzon_tannat: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_tannat', tier: 'medio', name: 'Bodega Garzón Reserva Tannat', country: 'Uruguai', price: [150, 230], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [medal('Ouro, 96 pontos', 'Decanter World Wine Awards', DW + 'any/wines/775513', 2023)] },
-  w_bouza_tannat: { kind: 'wine', style: 'st_tannat', tier: 'alto', name: 'Bouza Tannat', country: 'Uruguai', price: [300, 450], abv: { value: 15, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
+  w_bouza_tannat: { kind: 'wine', premium: true, style: 'st_tannat', tier: 'medio', name: 'Bouza Tannat', country: 'Uruguai', price: [300, 450], abv: { value: 15, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [medal('Prata, 91 pontos', 'Decanter World Wine Awards 2026', DW + '2026/wines/793909', 2023), r100(92, 'James Suckling', 'https://www.jamessuckling.com/wine-tasting-reports/great-value-wines-tannat-40', 2017, { label: 'Bouza Tannat (Montevideo)' })] },
-  w_bouza_b6: { kind: 'wine', style: 'st_tannat', tier: 'icone', name: 'Bouza Parcela Única B6 Tannat', country: 'Uruguai', price: [550, 900], abv: { value: 15, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+  w_bouza_b6: { kind: 'wine', premium: true, style: 'st_tannat', tier: 'alto', name: 'Bouza Parcela Única B6 Tannat', country: 'Uruguai', price: [550, 900], abv: { value: 15, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [r100(93, 'Wine Enthusiast', 'https://www.wineenthusiast.com/buying-guide/bouza-2018-b6-parcela-unica-las-violetas-tannat-canelones/', 2016)] },
-  w_aurora_chard: { kind: 'wine', style: 'st_chablis', tier: 'entrada', name: 'Aurora Reserva Chardonnay', country: 'Brasil', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_fevre_chablis: { kind: 'wine', style: 'st_chablis', tier: 'medio', name: 'William Fèvre Chablis', country: 'França', price: [280, 400], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+  w_aurora_chard: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_chablis', tier: 'entrada', name: 'Aurora Reserva Chardonnay', country: 'Brasil', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_fevre_chablis: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_chablis', tier: 'medio', name: 'William Fèvre Chablis', country: 'França', price: [280, 400], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [r100(93, 'Decanter (Andy Howard MW)', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
-  w_fevre_mdt: { kind: 'wine', style: 'st_chablis', tier: 'alto', name: 'William Fèvre Chablis 1er Cru Montée de Tonnerre', country: 'França', price: [600, 900], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+  w_fevre_mdt: { kind: 'wine', premium: true, style: 'st_chablis', tier: 'alto', name: 'William Fèvre Chablis 1er Cru Montée de Tonnerre', country: 'França', price: [600, 900], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [r100(95, 'Decanter (Andy Howard MW)', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
-  w_laroche_fourchaume: { kind: 'wine', style: 'st_chablis', tier: 'icone', name: 'Domaine Laroche Chablis 1er Cru Vieilles Vignes Fourchaume', country: 'França', price: [500, 800], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+  w_laroche_fourchaume: { kind: 'wine', premium: true, style: 'st_chablis', tier: 'medio', name: 'Domaine Laroche Chablis 1er Cru Vieilles Vignes Fourchaume', country: 'França', price: [500, 800], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
     ratings: [r100(94, 'Decanter', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
-  w_casillero_sb: { kind: 'wine', style: 'st_branco_fresco', tier: 'entrada', name: 'Casillero del Diablo Sauvignon Blanc', country: 'Chile', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_casillero_rose: { kind: 'wine', style: 'st_rose', tier: 'medio', name: 'Casillero del Diablo Rosé', country: 'Chile', price: [55, 90], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_miolo_rose: { kind: 'wine', style: 'st_rose', tier: 'entrada', name: 'Miolo Seleção Rosé', country: 'Brasil', price: [40, 70], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_ruffino_chianti: { kind: 'wine', style: 'st_sangiovese', tier: 'entrada', name: 'Ruffino Chianti', country: 'Itália', price: [90, 140], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_ducale_oro: { kind: 'wine', style: 'st_sangiovese', tier: 'alto', name: 'Ruffino Riserva Ducale Oro Gran Selezione', country: 'Itália', price: [400, 600], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_aurora_merlot: { kind: 'wine', style: 'st_tinto_br', tier: 'entrada', name: 'Aurora Reserva Merlot', country: 'Brasil', price: [50, 80], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_sc_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'entrada', name: 'Santa Carolina Reservado Chardonnay', country: 'Chile', price: [40, 70], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_catena_alta_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'alto', name: 'Catena Alta Chardonnay', country: 'Argentina', price: [400, 600], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_salton_moscatel: { kind: 'wine', style: 'st_moscatel', tier: 'medio', name: 'Salton Moscatel Espumante', country: 'Brasil', price: [45, 80], abv: { value: 7.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
-  w_nivole: { kind: 'wine', style: 'st_moscatel', tier: 'alto', name: "Michele Chiarlo Nivole Moscato d'Asti", country: 'Itália', price: [150, 250], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 375 ml', since: 2, ratings: [] },
+  w_casillero_sb: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_branco_fresco', tier: 'entrada', name: 'Casillero del Diablo Sauvignon Blanc', country: 'Chile', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_casillero_rose: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_rose', tier: 'medio', name: 'Casillero del Diablo Rosé', country: 'Chile', price: [55, 90], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_miolo_rose: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_rose', tier: 'entrada', name: 'Miolo Seleção Rosé', country: 'Brasil', price: [40, 70], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_ruffino_chianti: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_sangiovese', tier: 'entrada', name: 'Ruffino Chianti', country: 'Itália', price: [90, 140], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_ducale_oro: { kind: 'wine', premium: true, style: 'st_sangiovese', tier: 'medio', name: 'Ruffino Riserva Ducale Oro Gran Selezione', country: 'Itália', price: [400, 600], abv: { value: 15, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards 2025', DW + '2025/wines/767625', 2021)] },
+  w_aurora_merlot: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_tinto_br', tier: 'entrada', name: 'Aurora Reserva Merlot', country: 'Brasil', price: [50, 80], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_sc_chard: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_chard_madeira', tier: 'entrada', name: 'Santa Carolina Reservado Chardonnay', country: 'Chile', price: [40, 70], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_catena_alta_chard: { kind: 'wine', premium: true, style: 'st_chard_madeira', tier: 'medio', name: 'Catena Alta Chardonnay', country: 'Argentina', price: [400, 600], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_salton_moscatel: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_moscatel', tier: 'medio', name: 'Salton Moscatel Espumante', country: 'Brasil', price: [45, 80], abv: { value: 7.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_nivole: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_moscatel', tier: 'alto', name: "Michele Chiarlo Nivole Moscato d'Asti", country: 'Itália', price: [150, 250], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 375 ml', since: 2, ratings: [] },
+  // catálogo 3 (19/11, adega premium): rótulos complexos, 3 por estilo (médio-alto, alto, ícone). window = janela de consumo do crítico.
+  w_catena_alta_malbec: { kind: 'wine', premium: true, style: 'st_malbec', tier: 'medio', name: 'Catena Alta Historic Rows Malbec', country: 'Argentina', price: [450, 650], abv: { value: 13.8, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(93, 'Decanter (Julie Sheppard)', DEC + 'argentina/mendoza/catena-alta-historic-rows-malbec-uco-valley-mendoza-argentina-2018-57758/', 2018, { window: [2022, 2028] })] },
+  w_garzon_balasto: { kind: 'wine', premium: true, style: 'st_tannat', tier: 'icone', name: 'Bodega Garzón Balasto (corte de Tannat)', country: 'Uruguai', price: [900, 1400], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [medal('Prata, 94 pontos', 'Decanter World Wine Awards', DW + 'any/wines/569344', 2017)] },
+  w_fevre_les_clos: { kind: 'wine', premium: true, style: 'st_chablis', tier: 'icone', name: 'William Fèvre Chablis Grand Cru Les Clos', country: 'França', price: [1500, 2500], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(95, 'Decanter', 'https://www.decanter.com/grand-cru-chablis-2022-score-table/', 2022)] },
+  w_bollinger_sc: { kind: 'wine', premium: true, style: 'st_espumante', tier: 'alto', name: 'Bollinger Special Cuvée Brut', country: 'França', price: [500, 750], abv: { value: 12, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(95, 'Decanter', DEC + 'france/champagne/bollinger-special-cuvee-champagne-france-34585/', 'NV', { window: [2022, 2032] })] },
+  w_dom_perignon: { kind: 'wine', premium: true, style: 'st_espumante', tier: 'icone', name: 'Dom Pérignon Vintage', country: 'França', price: [1800, 2600], abv: { value: 12.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter', DEC + 'france/champagne/dom-perignon-champagne-france-2015-85035/', 2015, { window: [2024, 2035] })] },
+  w_te_koko: { kind: 'wine', premium: true, style: 'st_branco_fresco', tier: 'alto', name: 'Cloudy Bay Te Koko Sauvignon Blanc', country: 'Nova Zelândia', price: [600, 900], abv: { value: 13.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter', DEC + 'new-zealand/marlborough/cloudy-bay-te-koko-marlborough-new-zealand-2021-97363/', 2021, { window: [2025, 2040] })] },
+  w_silex: { kind: 'wine', premium: true, style: 'st_branco_fresco', tier: 'icone', name: 'Didier Dagueneau Silex (Pouilly-Fumé)', country: 'França', price: [2000, 3500], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter (Andrew Jefford)', DEC + 'france/loire/didier-dagueneau-silex-pouilly-fume-loire-france-2015-20990/', 2015, { window: [2018, 2025] })] },
+  w_rock_angel: { kind: 'wine', premium: true, style: 'st_rose', tier: 'medio', name: "Château d'Esclans Rock Angel", country: 'França', price: [350, 500], abv: { value: 13.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(91, 'Decanter (Georgina Hindle)', DEC + 'france/provence/chateau-desclans-rock-angel-rose-by-whispering-angel-2019-42208/', 2019, { window: [2020, 2023] })] },
+  w_ott_selle: { kind: 'wine', premium: true, style: 'st_rose', tier: 'alto', name: 'Domaines Ott Château de Selle Rosé', country: 'França', price: [500, 800], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 3, ratings: [],
+    note: 'Nota da Decanter citada só em loja; página do crítico não encontrada: fica "Sem nota".' },
+  w_garrus: { kind: 'wine', premium: true, style: 'st_rose', tier: 'icone', name: "Château d'Esclans Garrus", country: 'França', price: [1500, 2500], abv: { value: 14, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter', DEC + 'france/provence/chateau-desclans-garrus-cotes-de-provence-2023-94173/', 2023, { window: [2026, 2030] })] },
+  w_cdn_tenuta_nuova: { kind: 'wine', premium: true, style: 'st_sangiovese', tier: 'alto', name: 'Casanova di Neri Brunello di Montalcino Tenuta Nuova', country: 'Itália', price: [700, 1100], abv: { value: 15, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(95, 'Decanter (Michaela Morris)', DEC + 'italy/tuscany/casanova-di-neri-tenuta-nuova-brunello-di-montalcino-2020-91351/', 2020, { window: [2025, 2039] })] },
+  w_tignanello: { kind: 'wine', premium: true, style: 'st_sangiovese', tier: 'icone', name: 'Antinori Tignanello', country: 'Itália', price: [1300, 2000], abv: { value: 14.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(95, 'Decanter (James Button)', DEC + 'italy/tuscany/antinori-tignanello-toscana-tuscany-italy-2021-86795/', 2021, { window: [2024, 2046] })] },
+  w_lote43: { kind: 'wine', premium: true, style: 'st_tinto_br', tier: 'medio', name: 'Miolo Lote 43 (Cabernet Sauvignon e Merlot)', country: 'Brasil', price: [300, 450], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 3, ratings: [],
+    note: 'Sem nota de crítico com página aberta conferida: fica "Sem nota".' },
+  w_las_pizarras_chard: { kind: 'wine', premium: true, style: 'st_chard_madeira', tier: 'alto', name: 'Errázuriz Las Pizarras Chardonnay', country: 'Chile', price: [600, 900], abv: { value: 12.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(91, 'Decanter (Tina Gellie)', DEC + 'chile/aconcagua-valley/errazuriz-las-pizarras-chardonnay-aconcagua-costa-2021-78323/', 2021, { window: [2024, 2030] })] },
+  w_white_bones: { kind: 'wine', premium: true, style: 'st_chard_madeira', tier: 'icone', name: 'Catena Zapata Adrianna Vineyard White Bones Chardonnay', country: 'Argentina', price: [1500, 2500], abv: { value: 13, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(97, 'Decanter (Andy Howard MW)', DEC + 'argentina/uco-valley/catena-zapata-adrianna-vineyard-white-bones-chardonnay-uco-21549/', 2015, { window: [2019, 2030] })] },
+  w_royal_tokaji_5p: { kind: 'wine', premium: true, style: 'st_moscatel', tier: 'medio', name: 'Royal Tokaji Blue Label Aszú 5 Puttonyos', country: 'Hungria', price: [350, 550], abv: { value: 11.7, basis: 'critica' }, unit: 'garrafa 500 ml', serves: 8, since: 3,
+    ratings: [r100(92, 'Decanter', DEC + 'hungary/tokaj/royal-tokaji-blue-label-aszu-5-puttonyos-tokaj-hungary-2019-113744/', 2019, { window: [2026, 2036] })] },
+  w_suduiraut: { kind: 'wine', premium: true, style: 'st_moscatel', tier: 'alto', name: 'Château Suduiraut (Sauternes 1er Cru)', country: 'França', price: [700, 1100], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', serves: 10, since: 3,
+    ratings: [r100(96, 'Decanter (Georgina Hindle)', DEC + 'france/bordeaux/cha-teau-suduiraut-sauternes-1er-cru-classe-2019-40157/', 2019, { window: [2024, 2045] })] },
+  w_yquem: { kind: 'wine', premium: true, style: 'st_moscatel', tier: 'icone', name: "Château d'Yquem (Sauternes)", country: 'França', price: [4000, 6000], abv: { value: 14.4, basis: 'critica' }, unit: 'garrafa 750 ml', serves: 10, since: 3,
+    ratings: [r100(97, 'Decanter (Andy Howard MW)', DEC + 'france/bordeaux/chateau-dyquem-sauternes-1er-cru-classe-superieur-2019-57207/', 2019, { window: [2025, 2060] })] },
+  w_terrunyo_cab: { kind: 'wine', premium: true, style: 'st_cabernet', tier: 'medio', name: 'Concha y Toro Terrunyo Cabernet Sauvignon', country: 'Chile', price: [300, 450], abv: { value: 14.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(92, 'Decanter (Julie Sheppard)', DEC + 'chile/maipo-valley/concha-y-toro-terrunyo-cabernet-sauvignon-pirque-2017-51715/', 2017, { window: [2021, 2025] })] },
+  w_don_melchor: { kind: 'wine', premium: true, style: 'st_cabernet', tier: 'alto', name: 'Don Melchor', country: 'Chile', price: [900, 1300], abv: { value: 14.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter (Amanda Barnes)', DEC + 'chile/maipo-valley/concha-y-toro-don-melchor-puente-alto-maipo-valley-2021-87034/', 2021, { window: [2024, 2045] })] },
+  w_almaviva: { kind: 'wine', premium: true, style: 'st_cabernet', tier: 'icone', name: 'Almaviva', country: 'Chile', price: [2500, 3500], abv: { value: 15, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(97, 'Decanter', DEC + 'chile/maipo-valley/almaviva-almaviva-puente-alto-maipo-valley-chile-2021-87303/', 2021, { window: [2024, 2040] })] },
+  w_riscal_reserva: { kind: 'wine', premium: true, style: 'st_rioja', tier: 'medio', name: 'Marqués de Riscal Reserva', country: 'Espanha', price: [270, 380], priceSeen: true, abv: { value: 14.5, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(92, 'Decanter (Natalie Earl)', DEC + 'spain/rioja-1/marques-de-riscal-reserva-rioja-rioja-spain-2019-76672/', 2019, { window: [2023, 2030] })] },
+  w_riscal_gran_reserva: { kind: 'wine', premium: true, style: 'st_rioja', tier: 'alto', name: 'Marqués de Riscal Gran Reserva', country: 'Espanha', price: [1170, 1320], priceSeen: true, abv: { value: 15.3, basis: 'critica' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [r100(94, 'Decanter', DEC + 'spain/northern-spain/marques-de-riscal-gran-reserva-rioja-2019-95716/', 2019, { window: [2025, 2034] })] },
+  w_baron_chirel: { kind: 'wine', premium: true, style: 'st_rioja', tier: 'icone', name: 'Marqués de Riscal Barón de Chirel Reserva', country: 'Espanha', price: [1480, 1930], priceSeen: true, abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 3,
+    ratings: [medal('Ouro, 96 pontos', 'Decanter World Wine Awards 2023', DW + '2023/wines/742995', 2018)] },
   // cervejas (concurso: European Beer Star, lista oficial de vencedores em PDF)
   b_eisenbahn_pilsen: { kind: 'beer', style: 'st_pilsen', tier: 'entrada', name: 'Eisenbahn Pilsen', country: 'Brasil', price: [5, 8], abv: { value: 4.8, basis: 'tipico' }, unit: 'long neck 355 ml', since: 2, ratings: [] },
   b_bitburger: { kind: 'beer', style: 'st_pilsen', tier: 'medio', name: 'Bitburger Premium Pils', country: 'Alemanha', price: [8, 13], abv: { value: 4.8, basis: 'tipico' }, unit: 'long neck 330 ml', since: 2, ratings: [] },
@@ -2740,6 +2822,39 @@ const BEVERAGES = {
   z_suco_uva: { kind: 'zero', style: 'st_zero_vinho', tier: 'entrada', name: 'Suco de uva integral tinto (Aurora)', country: 'Brasil', price: [15, 25], abv: { value: 0, basis: 'rotulo' }, unit: 'garrafa 1,5 L', serves: 7, since: 2, ratings: [] },
   z_freixenet00: { kind: 'zero', style: 'st_zero_vinho', tier: 'medio', name: 'Freixenet 0,0% (espumante sem álcool)', country: 'Espanha', price: [60, 100], abv: { value: 0, basis: 'rotulo' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
 };
+// Moeda e mês de consulta do preço em cada rótulo (Praia Brava: só reais). Quem não diz, herda BRL e o mês do lote.
+for (const b of Object.values(BEVERAGES)) { if (!b.currency) b.currency = 'BRL'; if (!b.priceMonth) b.priceMonth = PRICE_MONTH; }
+// ===== RÓTULOS DO JEFFERSON (caminho fácil) =====
+// Cole aqui cada rótulo que o Jefferson mandar, com ID começando por wj_ (vinho), bj_ (cerveja) ou dj_ (drink).
+// Obrigatório: style (um st_* que existe), tier ('medio' | 'alto' | 'icone'), name, country, price [min, max] em reais, priceMonth ('mmm/aaaa'), abv.value do rótulo.
+// Nota: a palavra do Jefferson não vira nota. Entra "Sem nota" (ratings: []) até um bot conferir crítico/concurso independente com link e data.
+// fromCellar: true = a garrafa já é dele; não entra na lista de compras. Depois: suba CATALOG_VERSION e rode `node tests/catalog-freeze.js`.
+// Exemplo (não ativo):
+//   wj_riscal_150: { style: 'st_rioja', tier: 'icone', name: 'Marqués de Riscal 150 Aniversario Gran Reserva', country: 'Espanha', price: [1500, 2200], priceMonth: 'dez/2026', abv: { value: 14.5 }, fromCellar: true },
+const JEFFERSON_WINES = {
+};
+function jeffersonWineErrors(list) {
+  const errs = [];
+  for (const [id, w] of Object.entries(list)) {
+    const e = m => errs.push(`${id}: ${m}`);
+    if (!/^(wj|bj|dj)_[a-z0-9_]+$/.test(id)) e('ID precisa começar com wj_, bj_ ou dj_');
+    if (BEVERAGES[id] && BEVERAGES[id].origin !== 'jefferson') e('ID já existe no catálogo');
+    if (!BEV_STYLES[w.style]) e('estilo inexistente'); if (!WINE_TIER_LABEL[w.tier]) e('tier precisa ser medio, alto ou icone');
+    if (!w.name || !w.country) e('nome e país'); if (!Array.isArray(w.price) || w.price.length !== 2 || !(w.price[0] > 0) || w.price[1] < w.price[0]) e('preço em faixa');
+    if (!/^[a-z]{3}\/\d{4}$/.test(w.priceMonth || '')) e('priceMonth no formato mmm/aaaa');
+    if (!w.abv || typeof w.abv.value !== 'number' || w.abv.value <= 0.5) e('teor alcoólico do rótulo');
+    for (const r of w.ratings || []) if (!validRating(r)) e('nota sem fonte independente/link/data');
+  }
+  return errs;
+}
+function addJeffersonWines(list) {
+  const errs = jeffersonWineErrors(list);
+  for (const [id, w] of Object.entries(list)) { if (errs.some(x => x.startsWith(id + ':'))) continue;
+    BEVERAGES[id] = { kind: (BEV_STYLES[w.style] || {}).kind || 'wine', premium: true, unit: 'garrafa 750 ml', ...w, abv: { basis: 'rotulo', ...w.abv }, currency: 'BRL',
+      ratings: (w.ratings || []).filter(validRating), origin: 'jefferson', addedIn: CATALOG_VERSION, since: CATALOG_VERSION }; }
+  if (errs.length && typeof console !== 'undefined') console.warn('Rótulos do Jefferson ignorados:', errs);
+  return errs;
+}
 // Drinks por momento: 3 opções, sempre uma sem álcool. Receita por jarra alimenta a lista de compras.
 const DRINK_MOMENTS = { beira: 'Beira-mar', aperitivo: 'Aperitivo', pos: 'Pós-jantar' };
 const DRINKS = {
@@ -2784,11 +2899,16 @@ Object.assign(ITEMS, {
 // Rótulos viram itens da lista de compras (unidade = garrafa/lata). Preço = meio da faixa.
 for (const [id, b] of Object.entries(BEVERAGES)) ITEMS['bv_' + id] = { name: b.name, section: 'Bebidas', unit: 'un', pack: 1, packLabel: b.unit, price: Math.round((b.price[0] + b.price[1]) / 2 * 100) / 100, alcohol: b.kind !== 'zero', bev: true, noWordCheck: true };
 const bevAlcoholic = b => !!b && b.kind !== 'zero' && !b.zero && !(b.abv && b.abv.value <= 0.5);
-const priceTxt = b => `R$ ${b.price[0].toLocaleString('pt-BR')}–${b.price[1].toLocaleString('pt-BR')} · faixa aproximada, ${PRICE_MONTH}`;
+const CURRENCY_SIGN = { BRL: 'R$' };
+const priceTxt = b => `${CURRENCY_SIGN[b.currency || 'BRL']} ${b.price[0].toLocaleString('pt-BR')}–${b.price[1].toLocaleString('pt-BR')} · ${b.priceSeen ? 'faixa vista em lojas' : 'faixa aproximada'}, ${b.priceMonth || PRICE_MONTH}`;
 const ratingTxt = r => r ? (r.points ? `${r.points} pontos · ${r.critic}` : `${r.medal} · ${r.critic}`) + (r.vintage ? ` · safra ${r.vintage}` : '') : 'Sem nota';
 // Nota que vale: crítico ou concurso independente, com link e data de conferência.
 const validRating = r => !!(r && r.independent && r.url && /^https:\/\//.test(r.url) && r.checkedOn && (r.points || r.medal) && !/loja|shop|store|importadora|produtor/i.test(r.critic));
 const bestRating = b => (b.ratings || []).filter(validRating).sort((x, y) => (y.points || 90) - (x.points || 90))[0] || null;
+addJeffersonWines(JEFFERSON_WINES);
+// Janela de consumo segundo o crítico (quando a página traz) e serviço do Enólogo.
+const windowTxt = b => { const r = bestRating(b); return r && r.window ? `beber de ${r.window[0]} a ${r.window[1]} (${r.critic.replace(/ \(.*\)$/, '')}, safra ${r.vintage})` : ''; };
+const serviceTxt = b => { const sv = WINE_SERVICE[b.style]; return sv ? `${sv.temp} · ${sv.decant}` : ''; };
 // Pareamento por perfil do prato (camada 1): 3 estilos com álcool + um card sem álcool do mesmo tipo.
 function pairKey(c) {
   if (!c) return 'leve';
@@ -2801,7 +2921,7 @@ function pairKey(c) {
 }
 const PAIRINGS = {
   wine: { churrasco: ['st_malbec', 'st_tannat', 'st_chablis'], mar: ['st_chard_madeira', 'st_branco_fresco', 'st_espumante'], mar_leve: ['st_espumante', 'st_branco_fresco', 'st_chablis'],
-    leve: ['st_rose', 'st_espumante', 'st_branco_fresco'], massa: ['st_sangiovese', 'st_tinto_br', 'st_rose'], ave_porco: ['st_rose', 'st_chard_madeira', 'st_tinto_br'], doce: ['st_moscatel', 'st_espumante', 'st_rose'] },
+    leve: ['st_rose', 'st_espumante', 'st_branco_fresco'], massa: ['st_sangiovese', 'st_rioja', 'st_tinto_br'], ave_porco: ['st_rioja', 'st_chard_madeira', 'st_rose'], doce: ['st_moscatel', 'st_espumante', 'st_rose'] },
   beer: { churrasco: ['st_dark_lager', 'st_ipa', 'st_pilsen'], mar: ['st_weiss', 'st_pilsen', 'st_ipa'], mar_leve: ['st_weiss', 'st_pilsen', 'st_ipa'], leve: ['st_weiss', 'st_pilsen', 'st_ipa'],
     massa: ['st_dark_lager', 'st_pilsen', 'st_ipa'], ave_porco: ['st_pilsen', 'st_weiss', 'st_ipa'], doce: ['st_stout', 'st_weiss', 'st_dark_lager'] },
   zero: { wine: 'st_zero_vinho', beer: 'st_zero_cerveja' },
@@ -2810,13 +2930,16 @@ const PAIRINGS = {
 const mealMain = ids => { const cs = (ids || []).filter(id => CHEF[id]); return cs.find(id => CHEF[id].course === 'principal') || cs.find(id => CHEF[id].course === 'entrada') || cs[0] || null; };
 const mealDessert = ids => (ids || []).find(id => CHEF[id] && CHEF[id].course === 'sobremesa') || null;
 function pairStyles(ids, kind) { const m = mealMain(ids); return m ? PAIRINGS[kind][pairKey(CHEF[m])].slice() : []; }
-// Camada 2: até 3 rótulos do estilo, um por faixa (entrada/médio/alto), cada faixa com o de maior nota.
+// Camada 2: até 3 rótulos do estilo, um por faixa, cada faixa com o de maior nota. Vinho: adega premium (médio-alto, alto, ícone),
+// só rótulo com premium: true e não aposentado. Cerveja e sem álcool: entrada, médio e alto.
+const isWineStyle = style => !!BEV_STYLES[style] && BEV_STYLES[style].kind === 'wine' && !BEV_STYLES[style].zero;
 function styleLabels(style) {
-  const all = Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired).map(([id, b]) => ({ id, b, r: bestRating(b) }));
-  const out = []; for (const t of Object.keys(BEV_TIERS)) { const xs = all.filter(x => x.b.tier === t).sort((x, y) => ((y.r && (y.r.points || 90)) || 0) - ((x.r && (x.r.points || 90)) || 0)); if (xs[0]) out.push(xs[0]); }
+  const wine = isWineStyle(style);
+  const all = Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired && (!wine || b.premium)).map(([id, b]) => ({ id, b, r: bestRating(b) }));
+  const out = []; for (const t of (wine ? Object.keys(WINE_TIER_LABEL) : Object.keys(BEV_TIERS))) { const xs = all.filter(x => x.b.tier === t).sort((x, y) => ((y.r && (y.r.points || 90)) || 0) - ((x.r && (x.r.points || 90)) || 0)); if (xs[0]) out.push(xs[0]); }
   return out;
 }
-const styleExtras = style => Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired && b.tier === 'icone').map(([id, b]) => ({ id, b, r: bestRating(b) }));
+const styleExtras = style => isWineStyle(style) ? [] : Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired && b.tier === 'icone').map(([id, b]) => ({ id, b, r: bestRating(b) }));
 function momentFor(meal) { return meal === 'almoco' || meal === 'lanche' ? 'beira' : 'aperitivo'; }
 const drinksFor = moment => Object.entries(DRINKS).filter(([, d]) => d.moment === moment).map(([id, d]) => ({ id, d }));
 // Camada 3: o Enólogo comenta a sugestão de uma família.
@@ -2838,7 +2961,8 @@ function mesaTalk(state, key, ids, bev) {
   const mo = momentFor(meal), dr = drinksFor(mo), zero = dr.find(x => x.d.zero);
   const lines = [{ who: 'chef', text: `Hoje sai ${c.title}${des ? `, e de sobremesa ${CHEF[des].title.toLowerCase()}` : ''}. ${CHEF_TIPS[pk]}` }];
   if (bev && bev.swapped) lines.push({ who: 'enologo', text: 'O prato mudou, então revi a harmonização. Confiram as opções abaixo.' });
-  lines.push({ who: 'enologo', text: `No vinho, eu iria de ${w[0].name.toLowerCase()}: ${w[0].why}. ${w[1].name} e ${w[2].name.toLowerCase()} também funcionam${des && pk === 'churrasco' ? ', e o Chablis aguenta até a sobremesa gelada' : ''}. Na mesma taça, sem álcool: suco de uva integral ou espumante 0,0%.`.trim() });
+  const st0 = pairStyles(ids, 'wine')[0], sv = WINE_SERVICE[st0], top = styleLabels(st0).slice(-1)[0], win = top ? windowTxt(top.b) : '';
+  lines.push({ who: 'enologo', text: `No vinho, eu iria de ${w[0].name}: ${w[0].why}. ${sv ? `Sirva a ${sv.temp}, ${sv.decant}${sv.temp.startsWith('16') ? '; no calor da praia, 15 minutos de geladeira antes' : ''}.` : ''} ${top ? `${top.b.name}${win ? `: ${win}` : ''}.` : ''} Também funcionam: ${w[1].name}; ${w[2].name}${des && pk === 'churrasco' ? ' (o Chablis aguenta até a sobremesa gelada)' : ''}. Na mesma taça, sem álcool: suco de uva integral ou espumante 0,0%.`.replace(/\s+/g, ' ').trim() });
   lines.push({ who: 'bar', text: `Na cerveja, ${br[0].name.toLowerCase()} (${br[0].why}). ${DRINK_MOMENTS[mo]}: ${dr.map(x => x.d.name.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' ou $1')}. A jarra rende ${dr[0].d.jar} copos.` });
   return lines;
 }
@@ -2851,7 +2975,7 @@ function bevNeeds(state, P, only) {
     const ms = presentMembers(state, d, meal), drinkers = ms.filter(isDrinker).length, everyone = ms.filter(m => typeOf(m) !== 'bebe').length;
     for (const pk of c.bev) {
       const b = BEVERAGES[pk.id], dr = DRINKS[pk.id];
-      if (b) { const alc = bevAlcoholic(b); if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
+      if (b) { if (b.fromCellar) continue; const alc = bevAlcoholic(b); if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
         const per = b.kind === 'beer' || b.style === 'st_zero_cerveja' ? (meal === 'jantar' ? 1.5 : 2) : (b.serves ? 1 / b.serves : (meal === 'jantar' ? 2 : 1) / 5);
         out.push(['bv_' + pk.id, n * per]); }
       else if (dr) { const alc = !dr.zero; if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
@@ -2869,8 +2993,14 @@ function eventMetrics(state) {
   return { catalogVersion: CATALOG_VERSION, lancamentosPorFamiliaEDia: byFamDay, aberturasDaMesa: m.mesaOpens || 0, sugestoesPorFamilia: famMap(m.sugg), curtidasPorFamilia: famMap(m.likes), harmonizacoesAceitas: bevAccepted, refeicoesDoChef: chefMeals };
 }
 // Catálogo 1 (WINES) passa a ler nota e preço do catálogo unificado: uma fonte só.
+for (const [id, b] of Object.entries(BEVERAGES)) if (b.kind === 'wine' && !b.retired && !WINES[id]) WINES[id] = { name: b.name, country: b.country, type: (BEV_STYLES[b.style] || {}).name || '', grape: '' };
 for (const [id, w] of Object.entries(WINES)) { const b = BEVERAGES[id]; if (!b) continue; const r = bestRating(b);
-  w.award = r ? ratingTxt(r) : ''; w.src = r ? (r.via || r.critic) : ''; w.url = r ? r.url : ''; w.price = `R$ ${b.price[0]}–${b.price[1]}`; }
+  w.award = r ? ratingTxt(r) : ''; w.src = r ? (r.via || r.critic) : ''; w.url = r ? r.url : ''; w.price = priceTxt(b).split(' · ')[0]; w.tier = b.tier; w.retired = b.retired || null; w.premium = !!b.premium; w.style = b.style; }
+// Texto da Adega para o WhatsApp (sempre com a frase dos 18 anos).
+function adegaText(tier, rows) {
+  return ['*Adega da viagem — Rateatouille*', `${WINE_TIER_LABEL[tier] || ''} · preços em faixa`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `- ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; }))
+    .concat(['', AGE_LINE]).join('\n');
+}
 // Exportação: nunca leva dieta, alergia, intolerância nem fotos (ficam só no aparelho).
 function safeExportState(st) {
   const o = JSON.parse(JSON.stringify(st)); delete o.syncMode;
@@ -4162,7 +4292,6 @@ Corte as frutas e monte a mesa com pães e frios.`,
   // ---------- MESA DE ESPECIALISTAS (Chef, Enólogo e Bar) ----------
   const isMinorViewer = () => ui.viewer === 'menor';
   const mesaOn = () => !!(state.features && state.features.mesa);
-  const AGE_LINE = 'Bebida alcoólica só para maiores de 18 anos. Beba com moderação.';
   const BEACH_LINE = 'Se for dirigir ou entrar no mar, não beba.';
   const cellBev = k => { const [d, m] = k.split('|'), c = state.plan[d] && state.plan[d][m]; return c || null; };
   // Prato mudou depois de escolher bebida: o Enólogo ajusta (mesma faixa, primeiro estilo do novo prato) e guarda o anterior para Desfazer.
@@ -4181,6 +4310,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     return `<div class="bvl"><div class="t1">${esc(b.name)}</div><div class="t2">${esc(b.country)} · ${b.abv.value.toLocaleString('pt-BR')}% vol.${b.abv.basis === 'tipico' ? ' (típico)' : ''} · ${esc(b.unit)}</div>
       <div class="rt">${r ? `${icon('sparkle')}<span><b>${esc(ratingTxt(r))}</b> · <a href="${esc(r.url)}" target="_blank" rel="noopener nofollow noreferrer">fonte</a> · conferida em ${fmtDMY(r.checkedOn)}</span>` : '<span class="t2">Sem nota</span>'}</div>
       <div class="t2">${esc(priceTxt(b))}</div>
+      ${b.kind === 'wine' && serviceTxt(b) ? `<div class="t2">Serviço: ${esc(serviceTxt(b))}${windowTxt(b) ? ` · ${esc(windowTxt(b))}` : ''}</div>` : ''}${b.origin === 'jefferson' ? `<div class="t2">Da lista do Jefferson${b.fromCellar ? ' · já está na adega dele' : ''}</div>` : ''}
       <button type="button" class="btn ${chosen ? 'secondary' : 'text'} sm" data-bpick="${id}" aria-pressed="${!!chosen}">${chosen ? icon('check') + '<span>Na refeição</span>' : `<span>Escolher${alc ? '' : ''}</span>`}</button></div>`;
   }
   function mesaBlock(k, s) {
@@ -4203,7 +4333,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         const sts = pairStyles(s.ids, kind), zeroSt = PAIRINGS.zero[kind], all = [...sts, zeroSt], sel = (ui.mesaStyle && ui.mesaStyle[k + kind]) || sts[0];
         layers = `<div class="car" role="list">${all.map(st => { const x = BEV_STYLES[st];
           return `<button type="button" class="stc ${x.zero ? 'zero' : ''}" role="listitem" data-mst="${st}" aria-pressed="${st === sel}"><span class="t1">${esc(x.name)}</span><span class="t2">${x.zero ? 'mesmo brinde, sem álcool' : `${x.abv[0].toLocaleString('pt-BR')}–${x.abv[1].toLocaleString('pt-BR')}% vol. típico`}</span><span class="why">${esc(x.why)}</span></button>`; }).join('')}</div>
-          <div class="labels">${styleLabels(sel).map(({ id, b }) => `<div><div class="tier">${BEV_TIERS[b.tier]}</div>${bevCard(id, b, k, picks.some(p => p.id === id))}</div>`).join('')}</div>
+          ${(() => { const labs = styleLabels(sel); return `${isWineStyle(sel) && labs.length < 3 ? `<p class="t2" style="margin:8px 0 0">${labs.length ? `${labs.length} rótulo${labs.length > 1 ? 's' : ''} premium neste estilo por enquanto.` : 'Sem rótulo premium para este estilo ainda.'}</p>` : ''}<div class="labels">${labs.map(({ id, b }) => `<div><div class="tier">${esc(tierLabel(b))}</div>${bevCard(id, b, k, picks.some(p => p.id === id))}</div>`).join('')}</div>`; })()}
           ${styleExtras(sel).map(({ id, b, r }) => `<p class="t2" style="margin:6px 0 0">Mais um: <b>${esc(b.name)}</b> · ${r ? esc(ratingTxt(r)) : 'Sem nota'} · ${esc(priceTxt(b))}</p>`).join('')}`;
       }
       const sug = (state.bevSugg[k] || []);
@@ -4287,12 +4417,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function renderWine(cx) {
     const tier = cx.tier, list = wineList(state, acceptedPlan(), tier);
     $('#wineSeg').innerHTML = Object.entries(WINE_TIERS).map(([k, l]) => `<button type="button" data-wt="${k}" aria-pressed="${k === tier}">${l}</button>`).join('');
-    const rows = list.length ? list : Object.entries(WINES).filter(([, w]) => w.tier === tier).map(([id]) => ({ id, bottles: 0, dishes: [] }));
+    const rows = list.length ? list : Object.entries(WINES).filter(([, w]) => w.tier === tier && !w.retired && w.premium).map(([id]) => ({ id, bottles: 0, dishes: [] }));
     $('#wineMeta').textContent = list.length ? `~${list.reduce((s, x) => s + x.bottles, 0)} garrafas na viagem` : 'catálogo';
-    C.wineText = ['*Adega da viagem — Rateatouille*', `${WINE_TIERS[tier]} · preços aproximados`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `- ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; })).concat(['', 'Beba com moderação.']).join('\n');
+    C.wineText = adegaText(tier, rows);
     $('#wineWa').href = 'https://wa.me/?text=' + encodeURIComponent(C.wineText);
-    $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${tier === 'alto' ? 'de alto' : 'de médio'} custo:</p>`) + rows.map(x => { const w = WINES[x.id];
-      return `<div class="wine"><span class="gl">${icon('wine')}</span><div style="min-width:0"><div class="nm">${esc(w.name)}</div><div class="t2">${esc(w.type)} · ${esc(w.grape)} · ${esc(w.country)}</div>
+    $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${esc((WINE_TIERS[tier] || '').toLowerCase())}:</p>`) + rows.map(x => { const w = WINES[x.id];
+      return `<div class="wine"><span class="gl">${icon('wine')}</span><div style="min-width:0"><div class="nm">${esc(w.name)}</div><div class="t2">${esc([w.type, w.grape, w.country].filter(Boolean).join(' · '))}</div>
         <div class="badges">${x.bottles ? `<span class="bottles">~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}</span>` : ''}<span class="price">${esc(w.price)} · preço aproximado</span></div>
         ${w.award ? `<div class="aw">${icon('sparkle')}<span>${esc(w.award)} · <a href="${esc(w.url)}" target="_blank" rel="noopener">fonte: ${esc(w.src)}</a></span></div>` : ''}
         ${x.dishes.length ? `<div class="t2" style="margin-top:4px">Com: ${esc(x.dishes.join(', '))}</div>` : ''}</div></div>`; }).join('')
@@ -4633,7 +4763,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         ${isOrganizer() && code ? `<span>Código: <b class="codebig">${esc(fmtCode(code))}</b></span>` : ''}
         <span>Você: <b>${esc(session.me || '—')}</b>${isOrganizer() ? ' · organizador' : myStatus === 'approved' ? ' · membro aprovado' : ''}</span>
         <span>Status: <b>${esc(STATUS_TXT[lastStatus] || lastStatus)}</b>${n ? ` · ${n} pendente(s)` : ''}</span>
-        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos, configurações, receitas, cardápio e comprovantes (bucket privado). <b>Ficam só neste aparelho:</b> dieta/alergia.</span></div>`;
+        <span>Sincronizam: famílias, pessoas, gastos, confirmações, acertos, configurações, receitas, cardápio e comprovantes (bucket privado). ${esc(HEALTH_LOCAL_NOTE)}</span></div>`;
       if (isOrganizer() && code) h += `<div class="actwrap" style="margin-top:0"><div class="actions">
           <button class="btn secondary" data-d="copylink"><span data-i="copy"></span><span>Copiar link</span></button>
           <button class="btn secondary" data-d="sharelink"><span data-i="share"></span><span>Enviar link</span></button>
@@ -4740,7 +4870,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         ${row('Total', brlWrap(cur.total), brlWrap(B.total), brlWrap(A.total))}</tbody></table>
         <p class="hint">Saldos por família conferidos antes e depois da conversão: diferença máxima <b>${brlWrap(chk.maxDiff || 0)}</b> (limite R$ 0,01).</p>` : ''}
       ${shared && chk.planDiff > 0.01 ? `<p class="callout" style="margin-top:8px"><span>No evento, a divisão «por porções» não usa o cardápio deste aparelho; alguns saldos mudam até ${esc(brlWrap(chk.planDiff))}.</span></p>` : ''}
-      <p class="callout" style="margin-top:12px"><span>${shared ? 'Isto <b>substitui</b> as famílias, pessoas, gastos e acertos do evento <b>para todos</b>. Fotos, cardápio, receitas e dieta ficam só neste aparelho e não são enviados.' : 'Isto substitui os dados deste aparelho.'}</span></p>
+      <p class="callout" style="margin-top:12px"><span>${shared ? 'Isto <b>substitui</b> as famílias, pessoas, gastos e acertos do evento <b>para todos</b>. Fotos não vão. ' + esc(HEALTH_LOCAL_NOTE) + '' : 'Isto substitui os dados deste aparelho.'}</span></p>
       <div class="actions" style="margin-top:16px"><button class="btn secondary" data-imp="no">Cancelar</button><button class="btn primary" data-imp="yes" ${chk.ok ? '' : 'disabled'}>Importar</button></div>`;
     $('#importBody').onclick = ev => { const b = ev.target.closest('[data-imp]'); if (!b) return; $('#importDlg').close();
       if (b.dataset.imp !== 'yes' || !chk.ok) return;
@@ -4753,7 +4883,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   if (shared) {
     $('#resetBtn').hidden = true; $('#localOnlyNote').hidden = false;
-    $('#footNote').textContent = 'Rateatouille · evento compartilhado · fotos, cardápio, receitas e dieta ficam só neste aparelho · sem dados bancários';
+    $('#footNote').textContent = 'Rateatouille · evento compartilhado · ' + HEALTH_LOCAL_NOTE + ' · sem dados bancários';
     paintSync('idle');
   }
 

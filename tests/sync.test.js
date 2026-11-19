@@ -77,6 +77,14 @@ const settle3 = async (...ds) => { for (let i = 0; i < 3; i++) { for (const d of
   sameNets(sh, back); assert.strictEqual(back.families[0].members[1].diet.alergia, 'amendoim'); assert(back.expenses.find(e => e.id === 'e1').photo);
   assert.strictEqual(back.expenses.find(e => e.id === 'e2').confirmedBy, 'fa'); assert.strictEqual(back.weights.crianca, 0.6); assert.strictEqual(back.prices.farinha, 7.5);
   assert.strictEqual(back.recipes[0].stepsText, 'Assar', 'local-only recipe fields kept'); assert.strictEqual(shop(back), shop(sh), 'shopping list identical after round trip');
+  // Arquitas 1: ao receber do servidor, a célula mantém o que é só deste aparelho (escala congelada, bebidas aceitas, aceite de adulto, confirmação)
+  { const loc = { ...sample(), syncMode: true }; loc.plan = JSON.parse(JSON.stringify(loc.plan));
+    Object.assign(loc.plan[D1].jantar, { bev: [{ id: 'catena_zapata', okBy: 'Ana' }], cook: ['fa'], clean: ['fb'], rotaLocked: true, famOk: { fa: true }, okBy: 'Ana' });
+    const srv = asRows({ ...sample(), syncMode: true }, 'ev1'); const got = L.rowsToState(srv, loc).plan[D1].jantar;
+    assert.deepStrictEqual(got.bev, [{ id: 'catena_zapata', okBy: 'Ana' }], 'bebidas aceitas ficam'); assert.deepStrictEqual(got.cook, ['fa']); assert.deepStrictEqual(got.clean, ['fb']);
+    assert.strictEqual(got.rotaLocked, true, 'escala congelada fica'); assert.deepStrictEqual(got.famOk, { fa: true }); assert.strictEqual(got.okBy, 'Ana', 'aceite de adulto fica');
+    assert.deepStrictEqual(got.recipes, ['r1'], 'receitas vêm do servidor'); assert.strictEqual(got.mode, 'casa');
+    const dump = JSON.stringify(L.stateToRows(loc, 'ev1').meal_plan); for (const k of ['bev', 'okBy', 'rotaLocked', 'famOk', 'cook', 'clean']) assert(!dump.includes('"' + k + '"'), 'campo local não sobe: ' + k); }
   const fresh = L.rowsToState(asRows(sh, 'ev1'), null); sameNets(sh, fresh); assert(!fresh.families[0].members[1].diet); assert.strictEqual(shop(fresh), shop(sh));
   const odd = L.rowsToState({ events: {}, families: [{ id: 'f1', name: 'F', pos: 0 }], people: [{ id: 'p1', family_id: 'f1', first_name: 'X', type: 'alien', pos: 0 }],
     expenses: [{ id: 'x', amount: '10.00', category: 'zzz', proof: 'qq' }] }, null);

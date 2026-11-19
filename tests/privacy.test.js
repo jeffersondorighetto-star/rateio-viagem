@@ -56,7 +56,14 @@ for (const f of fs.readdirSync(path.join(root, 'supabase', 'migrations'))) asser
   }
   assert.deepStrictEqual(bad, [], 'sobrenome real de família em: ' + bad.join(', '));
 }
+// Hefesto: um texto só, verdadeiro, sobre onde fica a alergia (aviso do evento, rodapé e tela de dados usam a mesma frase)
+{ const NOTE = 'Alergia, intolerância e dieta ficam só no aparelho onde foram digitadas: não vão para o evento compartilhado, para o servidor nem para o backup.';
+  assert(html.includes(`const HEALTH_LOCAL_NOTE = '${NOTE}'`), 'frase única definida');
+  assert(html.includes(`<span data-health-note>${NOTE}</span>`), 'aviso do evento usa a frase');
+  assert(/footNote'\)\.textContent = [^\n]*HEALTH_LOCAL_NOTE/.test(html), 'rodapé usa a frase');
+  for (const old of ['Cardápio, receitas, compras e dieta/alergia ficam', 'fotos, cardápio, receitas e dieta ficam só neste aparelho', 'Fotos, cardápio, receitas e dieta ficam só neste aparelho', '<b>Ficam só neste aparelho:</b> dieta/alergia'])
+    assert(!html.includes(old), 'aviso antigo contraditório: ' + old); }
 // config do cliente: só URL + chave PUBLICÁVEL; nunca chave secreta/service_role/JWT de serviço
 { const m = html.match(/SUPABASE_ANON_KEY:\s*'([^']*)'/); if (m) assert(/^sb_publishable_[A-Za-z0-9_-]+$/.test(m[1]), 'chave do cliente não é publicável');
   assert(!/sb_secret_[A-Za-z0-9_-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ/.test(html), 'segredo no index.html'); }
-console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 7 dias, export sem saúde, chave de sync, consentimento, sem OCR externo, lista por id GitHub, sem sobrenomes reais)');
+console.log('PRIVACY/GOVERNANCE CHECKS PASSED (aviso único de onde fica a alergia, .gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 7 dias, export sem saúde, chave de sync, consentimento, sem OCR externo, lista por id GitHub, sem sobrenomes reais)');

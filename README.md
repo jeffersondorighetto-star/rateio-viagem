@@ -59,7 +59,8 @@ Construída sobre o `rateio-e2` (PR #1) + Chef/adega (PR #2/#3). Prioridade: **s
 - Cada família responde atrás de um **PIN de 4 dígitos** (hash no aparelho) e só vê as próprias respostas. Vetos aparecem como contagem só a partir de 2 famílias.
 - **Imprimir folha de alergias** por família (só de quem está no aparelho).
 - **Nada de saúde sai do aparelho:** nem servidor (`pickRow` não tem a coluna), nem JSON exportado/importado (`safeExportState`), nem WhatsApp (itens adaptados aparecem como «versão adaptada, detalhe no app»).
-- **Sem internet:** `sw.js` guarda o app (rede primeiro, cache depois; nunca guarda chamadas ao Supabase) e os dados ficam no `localStorage`, então alergias e cardápio do dia abrem sem rede.
+- **Onde fica a alergia (texto único, `HEALTH_LOCAL_NOTE`):** «Alergia, intolerância e dieta ficam só no aparelho onde foram digitadas: não vão para o evento compartilhado, para o servidor nem para o backup.» Usado no aviso do evento, no rodapé e na tela de dados. Receitas, cardápio e comprovantes sincronizam no modo compartilhado.
+- **Sem internet:** `sw.js` guarda o app (rede primeiro com prazo de 3 s: com sinal fraco abre a cópia do aparelho e atualiza em segundo plano; nunca guarda chamadas ao Supabase) e os dados ficam no `localStorage`, então alergias e cardápio do dia abrem sem rede.
 
 ### Integridade do rateio
 - Remover família ou pessoa **não apaga gastos**: o app pede para transferir o pagador antes; família com Pix marcado não sai.
@@ -72,10 +73,13 @@ Construída sobre o `rateio-e2` (PR #1) + Chef/adega (PR #2/#3). Prioridade: **s
 ### Álcool e mesa de especialistas
 - Interruptor «bebe» **só para adultos**; menores nunca contam. Frase 18+ nas telas de bebida e no WhatsApp. Perfil de menor (Acertos › Dados › «Quem está vendo») não vê adega, mesa nem harmonização.
 - Bebida alcoólica só entra na lista depois do **aceite de um adulto organizador**, na quantidade dos adultos que bebem.
-- Mesa (Chef, Enólogo, Bar), recolhida por padrão: balão curto + «Ver conversa». Conteúdo **por regras e catálogo curado**, sem IA externa nem API paga. Camada 1: 3 estilos com teor alcoólico e motivo + cartão **Sem álcool** com o mesmo peso. Camada 2: 3 rótulos por estilo (entrada/médio/alto) por nota, com teor, safra, crítico/concurso, link e data da conferência; sem patrocínio nem afiliado; links sem rastreio. Camada 3: sugestão da família (catálogo ou «Outro» até 80 caracteres) com selo do Enólogo e curtidas só em número.
+- Mesa (Chef, Enólogo, Bar), recolhida por padrão: balão curto + «Ver conversa». Conteúdo **por regras e catálogo curado**, sem IA externa nem API paga. Camada 1: 3 estilos com teor alcoólico e motivo + cartão **Sem álcool** com o mesmo peso. Camada 2: 3 rótulos por estilo por nota (vinho: adega premium médio-alto/alto/ícone; cerveja e sem álcool: entrada/médio/alto), com teor, safra, crítico/concurso, link e data da conferência; sem patrocínio nem afiliado; links sem rastreio. Camada 3: sugestão da família (catálogo ou «Outro» até 80 caracteres) com selo do Enólogo e curtidas só em número.
 - Drinks: 3 por momento (beira-mar, aperitivo, pós) com 1 sem álcool, receita por jarra que alimenta a lista. Na praia: «Se for dirigir ou entrar no mar, não beba».
 - Prato trocado: «rever harmonização» / «O Chef trocou o prato e o Enólogo ajustou a bebida» com Desfazer.
-- **Catálogo** (`BEVERAGES`, `CATALOG_VERSION`): IDs fixos (`tests/catalog-ids.json`); item aposentado nunca é apagado. Nota só de crítico ou concurso independente (nota, nome e link, sem texto da crítica); sem fonte = «Sem nota». Preço sempre como faixa com o mês («faixa aproximada, nov/2026»). Moeda: só reais.
+- **Catálogo** (`BEVERAGES`, `CATALOG_VERSION`): IDs fixos (`tests/catalog-ids.json`); item aposentado nunca é apagado. Nota só de crítico ou concurso independente (nota, nome e link, sem texto da crítica); sem fonte = «Sem nota». Preço sempre como faixa com moeda (`currency: 'BRL'`) e mês da consulta por rótulo (`priceMonth`); «faixa vista em lojas» quando a faixa veio de lojas conferidas.
+- **Adega premium (19/11, `CATALOG_VERSION` 2026-11-19.2):** vinhos de entrada aposentados (`retired`, `premium: false`, IDs mantidos); 12 estilos de vinho com 3 rótulos complexos cada (Reserva, Gran Reserva, Grand Cru, ícones), incluindo **Rioja** com Marqués de Riscal Reserva, Gran Reserva e Barón de Chirel. O Enólogo fala de temperatura de serviço, decantação (`WINE_SERVICE`) e janela de consumo do crítico. A Adega (cartão por faixa) e a lista do WhatsApp levam a frase dos 18 anos.
+- **Mudou o catálogo?** Suba `CATALOG_VERSION` e rode `node tests/catalog-freeze.js` (grava versão, impressão digital e IDs em `tests/catalog-ids.json`; recusa se a versão não subiu ou se um ID sumiu). O teste falha se o catálogo mudar sem isso, e também barra ID repetido.
+- **Rótulos do Jefferson:** entram em `JEFFERSON_WINES` (logo abaixo de `PRICE_MONTH` no `index.html`), com ID `wj_…`, estilo, faixa (`medio`/`alto`/`icone`), país, faixa de preço e mês, ABV. Entram com `origin: 'jefferson'`, premium e **Sem nota** até alguém conferir uma fonte independente (nota, link, data). `fromCellar: true` = já está na adega dele (não entra na lista de compras). `jeffersonWineErrors` recusa o que faltar.
 - **Métricas** sem nomes e sem saúde (Acertos › Dados › Exportar métricas): lançamentos por família por dia, aberturas da mesa, sugestões e curtidas por família, harmonizações aceitas, refeições do Chef.
 
 ### Supabase: região, backup e o que o Jefferson roda
@@ -89,7 +93,7 @@ Construída sobre o `rateio-e2` (PR #1) + Chef/adega (PR #2/#3). Prioridade: **s
 - Ainda não feito: sincronizar sugestões/curtidas e votos offline (ficam no aparelho), colunas no servidor para escala congelada e bebida escolhida (ficam no aparelho), multimoeda.
 
 ### Testes
-`npm test` (inclui `tests/allergy.test.js`: lista Anvisa, marcas por ingrediente, cenário da Astreia — criança alérgica a camarão + família que veta frutos do mar = nenhum prato com camarão em 8 sementes, inclusive réveillon — e `tests/catalog.test.js`: IDs fixos, nota sem fonte/link/data barrada, alcoólico sem teor barrado), `npm run test:e2e`, `npm run test:contrast`, `npm run test:overflow`, `npm run test:sql`.
+`npm test` (inclui `tests/allergy.test.js`: lista Anvisa, marcas por ingrediente, cenário da Astreia — criança alérgica a camarão + família que veta frutos do mar = nenhum prato com camarão em 8 sementes, inclusive réveillon — `tests/catalog.test.js`: IDs fixos e únicos, versão travada, adega premium, nota sem fonte/link/data barrada, alcoólico sem teor barrado; e `tests/sw.test.js`: prazo de 3 s da rede), `npm run test:e2e`, `npm run test:contrast`, `npm run test:overflow`, `npm run test:sql`.
 
 ## Navegação (barra inferior)
 | Aba | O que tem |
