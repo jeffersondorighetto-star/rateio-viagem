@@ -1,6 +1,6 @@
 // Catálogo de bebidas: IDs fixos (nunca apagados), nota só com fonte independente + link + data, álcool sempre com ABV, preço em faixa com mês.
 const assert = require('assert'), frozen = require('./catalog-ids.json');
-const L = require('./load-logic')(['BEVERAGES', 'DRINKS', 'BEV_STYLES', 'CATALOG_VERSION', 'validRating', 'bestRating', 'bevAlcoholic', 'styleLabels', 'PAIRINGS', 'WINES', 'CHEF', 'pairStyles', 'bevVerdict', 'priceTxt', 'WINE_TIER_LABEL', 'WINE_SERVICE', 'windowTxt', 'serviceTxt', 'adegaText', 'AGE_LINE', 'jeffersonWineErrors', 'addJeffersonWines', 'JEFFERSON_WINES', 'shoppingText', 'mesaTalk']);
+const L = require('./load-logic')(['BEVERAGES', 'DRINKS', 'BEV_STYLES', 'ITEMS', 'CATALOG_VERSION', 'validRating', 'bestRating', 'bevAlcoholic', 'styleLabels', 'PAIRINGS', 'WINES', 'CHEF', 'pairStyles', 'bevVerdict', 'priceTxt', 'WINE_TIER_LABEL', 'WINE_SERVICE', 'windowTxt', 'serviceTxt', 'adegaText', 'AGE_LINE', 'jeffersonWineErrors', 'addJeffersonWines', 'JEFFERSON_WINES', 'shoppingText', 'mesaTalk', 'styleWhy', 'dishesShort', 'pairKey']);
 // 1) IDs congelados: nenhum some (aposentar = retired, nunca apagar)
 for (const id of frozen.beverages) assert(L.BEVERAGES[id], 'ID de bebida apagado: ' + id + ' (use retired)');
 for (const id of frozen.drinks) assert(L.DRINKS[id], 'ID de drink apagado: ' + id);
@@ -95,4 +95,40 @@ assert(L.mesaTalk({}, '2026-12-20|jantar', ['c_churrasco'], null).some(l => l.wh
   assert(offenders('10–12 °C · Silex e Te Koko ganham com 20 min de decanter', 'soalheiro', 'st_branco_fresco').length >= 2, 'detector pega Silex/Te Koko');
   assert(offenders('Garrus pode ir ao decanter por 20 min', null, 'st_rose').length && offenders('Brunello e Tignanello jovens', null, 'st_sangiovese').length);
   const so = L.serviceTxt(L.BEVERAGES.soalheiro); assert(/10–12 °C/.test(so) && /Monção e Melgaço/.test(so) && !/Silex|Koko/.test(so), 'serviço próprio do Soalheiro'); }
-console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, serviço sem nome de outro rótulo, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);
+// 13) Textos da mesa: sem parênteses dentro de parênteses; as falas do Enólogo e do Drinks seguem o prato
+{ const nested = t => { let d = 0; for (const ch of t) { if (ch === '(') { d++; if (d > 1) return true; } else if (ch === ')') d = Math.max(0, d - 1); } return false; };
+  for (const id of Object.keys(L.CHEF)) for (const meal of ['almoco', 'jantar']) for (const ln of L.mesaTalk({}, '2026-12-20|' + meal, [id], null)) { assert(!nested(ln.text), `parêntese aninhado (${id}): ${ln.text}`); assert(!/\)\s*\(/.test(ln.text), `parênteses colados (${id}): ${ln.text}`); }
+  // Vocabulário de prato/ingrediente: a fala do Enólogo e a do Drinks só podem citar o que está na refeição (título + ingredientes).
+  const ITEMS = L.ITEMS || {}, dishText = id => { const c = L.CHEF[id]; return [c.title, ...(c.ing || []).map(i => { const k = Array.isArray(i) ? i[0] : i; return k + ' ' + ((ITEMS[k] && ITEMS[k].name) || ''); })].join(' ').toLowerCase(); };
+  const VOCAB = [ // [termo na fala, o que precisa existir na refeição]
+    [/peix/i, /peixe|salm|bacalhau|ceviche/], [/frutos do mar|camar|lula|polvo|mexilh/i, /camar|lula|polvo|mexilh|frutos do mar/], [/cozinha do mar/i, /peixe|salm|bacalhau|ceviche|camar|lula|polvo|mexilh/],
+    [/churrasco|brasa|picanha/i, /churrasco|brasa|picanha/], [/\bcarnes?\b|\bum corte e outro\b/i, /picanha|carne|bolonhesa|lombo|presunto|parma|frango|churrasco/], [/carnes brancas/i, /frango|lombo|porco|presunto|parma/],
+    [/frango|\bave\b/i, /frango/], [/porco|lombo/i, /lombo|porco/], [/cordeiro/i, /cordeiro/], [/fritura|frit/i, /dorê|frit|empanad/], [/risoto/i, /risoto|arborio/],
+    [/manteiga/i, /manteiga/], [/tomate/i, /tomate|molho|sugo|bolonhesa/], [/molho/i, /molho|sugo|bolonhesa|moqueca|calda/], [/queijo|gratinad/i, /queijo|coalho|búfala|mussarela|parmes/],
+    [/lim[aã]o/i, /lim[aã]o/], [/\bervas\b/i, /ervas|manjeric|cheiro|salsa|coentro|or[eé]gano/], [/salada/i, /salada|rúcula|folhas/], [/entrada/i, null], [/massa\b|macarr/i, /macarr|massa|espaguete|lasanha/],
+    [/sobremesa|doçura|\bo doce\b/i, 'des'], [/fruta(s)? (vermelha|tropical)|sobremesas? de fruta/i, /maracuj|abacaxi|frutas|manga|mel[aã]o/]];
+  const offTerms = (text, ids) => { const all = ids.map(dishText).join(' '), hasDes = ids.some(i => L.CHEF[i].course === 'sobremesa');
+    return VOCAB.filter(([term, need]) => term.test(text) && !(need === 'des' ? hasDes : need && need.test(all))).map(([t]) => String(t)); };
+  const desserts = Object.keys(L.CHEF).filter(i => L.CHEF[i].course === 'sobremesa'), mains = Object.keys(L.CHEF).filter(i => L.CHEF[i].course !== 'sobremesa');
+  const meals = [...Object.keys(L.CHEF).map(i => [i]), ...mains.flatMap(m => desserts.map(d => [m, d]))];
+  let checked = 0;
+  for (const ids of meals) for (const ln of L.mesaTalk({}, '2026-12-20|jantar', ids, null)) { if (!['enologo', 'bar'].includes(ln.who)) continue;
+    const off = offTerms(ln.text, ids); assert(!off.length, `fala do ${ln.who} cita ${off.join(', ')} fora da refeição ${ids.join('+')}: ${ln.text}`); checked++; }
+  assert(checked > 100, 'varreu as falas: ' + checked);
+  // camada 1 da mesa (cartões de estilo): o motivo de cada estilo segue o prato principal
+  for (const id of mains) { const pk = L.pairKey(L.CHEF[id]); for (const st of [...L.PAIRINGS.wine[pk], ...L.PAIRINGS.beer[pk]]) { const w = L.styleWhy(st, pk, id), off = offTerms(w, [id]);
+    assert(!off.length, `${st} em ${id}: ${w} (${off})`); } }
+  for (const d of desserts) for (const st of [...L.PAIRINGS.wine.doce, ...L.PAIRINGS.beer.doce]) { const w = L.styleWhy(st, 'doce', d); assert(!offTerms(w, [d]).length, `${st} em ${d}: ${w}`); }
+  // casos pedidos: com frango/porco o Chardonnay não fala de peixe e o rosé não fala de peixe; na sobremesa o espumante não fala de fritura e sal
+  const eno = ids => L.mesaTalk({}, '2026-12-20|jantar', ids, null).find(l => l.who === 'enologo').text;
+  for (const id of ['c_frango_limao', 'c_parma_melao']) { for (const st of ['st_chard_madeira', 'st_rose']) assert(!/peix/i.test(L.styleWhy(st, 'ave_porco', id)), st + ' com ' + id); assert(!/peix/i.test(eno([id])), eno([id])); }
+  assert(/carnes brancas/.test(L.styleWhy('st_chard_madeira', 'ave_porco', 'c_frango_limao')));
+  for (const d of desserts) { const w = L.styleWhy('st_espumante', 'doce', d); assert(!/fritura|sal\b/.test(w) && /sobremesa/.test(w), w); }
+  const sugo = L.mesaTalk({}, '2026-12-20|jantar', ['c_sugo'], null).find(l => l.who === 'bar').text;
+  assert(sugo.startsWith('Na cerveja, lager escura (schwarzbier, dunkel): malte tostado acompanha o tomate e a massa.'), sugo);
+  assert.equal(L.styleWhy('st_dark_lager', 'churrasco', 'c_churrasco'), 'malte tostado combina com a crosta da picanha na brasa');
+  assert(!/picanha|brasa|churrasco/.test(L.styleWhy('st_dark_lager', 'churrasco', 'c_lasanha')), 'lasanha não é churrasco'); }
+// 14) Folha do vinho: «Com:» mostra até 3 pratos e «+N»
+{ const six = ['A', 'B', 'C', 'D', 'E', 'F']; assert.deepStrictEqual(L.dishesShort(six), { text: 'A, B, C', rest: 3, all: 'A, B, C, D, E e F.' });
+  assert.deepStrictEqual(L.dishesShort(['A', 'B', 'C']), { text: 'A, B e C.', rest: 0, all: 'A, B e C.' }); assert.equal(L.dishesShort(['A']).text, 'A.'); }
+console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, serviço sem nome de outro rótulo, falas do Enólogo e do Drinks seguem o prato, sem parêntese aninhado, «Com:» até 3, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);

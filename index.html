@@ -648,6 +648,12 @@ dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .hojehome{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2)}
 .hojehome p{margin:0 0 4px}.hojehome p:last-child{margin:0}
 #hcPhotoPrev img{width:56px;height:72px;object-fit:cover;border-radius:8px;display:block}
+.sheetdishes{display:grid;gap:0}.sheetdishes p{margin:0}
+.sheetdishes summary{list-style:none;display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-weight:600;cursor:pointer}
+.sheetdishes summary::-webkit-details-marker{display:none}
+.sheetdishes .sd-close,.sheetdishes details[open] .sd-open{display:none}.sheetdishes details[open] .sd-close{display:inline}
+.sheetdishes details[open]{display:flex;flex-direction:column-reverse}
+.sheetdishes:has(details[open]) > p{display:none}
 
 @media(min-width:700px){dialog.brief{height:auto;max-height:92vh;margin:4vh auto;border-radius:20px;border:1px solid var(--border)}}
 .bwrap{display:flex;flex-direction:column;min-height:100%}
@@ -2730,7 +2736,7 @@ async function purgeEventPhotos(client, eventId) {
 // Regras do catálogo: IDs fixos; item aposentado ganha `retired` e nunca é apagado; nota só de crítico ou concurso independente,
 // com link e data da conferência (sem texto de resenha: só a nota, o nome e o link). Sem fonte independente: "Sem nota".
 // Preço é faixa aproximada com o mês de referência. Sem patrocínio, sem afiliado, sem link de compra.
-const CATALOG_VERSION = '2026-11-19.3'; // suba a cada mudança no catálogo (o teste compara com tests/catalog-ids.json)
+const CATALOG_VERSION = '2026-11-19.5'; // suba a cada mudança no catálogo (o teste compara com tests/catalog-ids.json)
 const PRICE_MONTH = 'nov/2026';
 const CHECKED = '2026-11-19';
 const DEC = 'https://www.decanter.com/wine-reviews/', DW = 'https://awards.decanter.com/DWWA/', EBS = y => `https://www.european-beer-star.com/ebs-wAssets/docs/gewinnerliste-en/Gewinner_${y}.pdf`;
@@ -2743,21 +2749,30 @@ const tierLabel = b => (b.kind === 'wine' ? WINE_TIER_LABEL[b.tier] : BEV_TIERS[
 const AGE_LINE = 'Bebida alcoólica só para maiores de 18 anos. Beba com moderação.';
 const BEV_KINDS = { wine: 'Vinho', beer: 'Cerveja', drink: 'Drinks' };
 const BEV_STYLES = {
-  st_malbec: { kind: 'wine', name: 'Malbec argentino', abv: [13.5, 14.5], why: 'fruta escura e taninos macios seguram a gordura da carne na brasa' },
-  st_tannat: { kind: 'wine', name: 'Tannat uruguaio', abv: [13.5, 15], why: 'taninos firmes limpam a boca entre um corte e outro' },
-  st_chablis: { kind: 'wine', name: 'Chablis 1er e Grand Cru', abv: [12, 13], why: 'acidez alta e servido gelado: refresca o calor e não briga com a sobremesa gelada' },
-  st_espumante: { kind: 'wine', name: 'Champagne e espumante de guarda', abv: [12, 12.5], why: 'bolha e acidez cortam fritura e sal' },
-  st_branco_fresco: { kind: 'wine', name: 'Branco mineral (Alvarinho, Sauvignon Blanc de guarda)', abv: [12.5, 13.5], why: 'cítrico, mineral e com textura: acompanha limão, ervas e frutos do mar' },
-  st_rose: { kind: 'wine', name: 'Rosé gastronômico (Provence)', abv: [13, 14], why: 'seco, salino e com corpo: entradas, peixe e almoço no calor' },
+  st_malbec: { kind: 'wine', name: 'Malbec argentino', abv: [13.5, 14.5], why: 'fruta escura e taninos macios seguram gordura, sal e tempero forte',
+    whyBy: { c_churrasco: 'fruta escura e taninos macios seguram a gordura da picanha na brasa' } },
+  st_tannat: { kind: 'wine', name: 'Tannat uruguaio', abv: [13.5, 15], why: 'taninos firmes limpam a boca entre uma garfada e outra',
+    whyBy: { c_churrasco: 'taninos firmes limpam a boca entre um corte e outro' } },
+  st_chablis: { kind: 'wine', name: 'Chablis 1er e Grand Cru', abv: [12, 13], why: 'acidez alta e servido gelado, refresca o calor e limpa o paladar' },
+  st_espumante: { kind: 'wine', name: 'Champagne e espumante de guarda', abv: [12, 12.5], why: 'bolha e acidez limpam o paladar a cada gole',
+    whyBy: { doce: 'bolha fina e acidez equilibram o doce da sobremesa' } },
+  st_branco_fresco: { kind: 'wine', name: 'Branco mineral (Alvarinho, Sauvignon Blanc de guarda)', abv: [12.5, 13.5], why: 'cítrico e mineral, refresca e acompanha pratos leves',
+    whyBy: { mar: 'cítrico, mineral e com textura, acompanha a cozinha do mar', mar_leve: 'cítrico e mineral, acompanha a cozinha do mar' } },
+  st_rose: { kind: 'wine', name: 'Rosé gastronômico (Provence)', abv: [13, 14], why: 'seco, salino e com corpo, bom no almoço e no calor',
+    whyBy: { doce: 'seco e fresco, equilibra a doçura da sobremesa' } },
   st_sangiovese: { kind: 'wine', name: 'Sangiovese (Gran Selezione, Brunello)', abv: [14, 15], why: 'acidez do tomate pede um tinto também ácido' },
-  st_tinto_br: { kind: 'wine', name: 'Tinto brasileiro de guarda (Syrah, Merlot, corte)', abv: [13.5, 14.5], why: 'fruta madura, madeira bem colocada e corpo para molhos e carnes' },
-  st_chard_madeira: { kind: 'wine', name: 'Chardonnay com madeira', abv: [13, 14], why: 'textura cremosa acompanha manteiga, risoto e peixes gordos' },
+  st_tinto_br: { kind: 'wine', name: 'Tinto brasileiro de guarda (Syrah, Merlot, corte)', abv: [13.5, 14.5], why: 'fruta madura e madeira bem colocada, com corpo sem pesar' },
+  st_chard_madeira: { kind: 'wine', name: 'Chardonnay com madeira', abv: [13, 14], why: 'textura cremosa e madeira dão corpo a pratos de sabor amplo',
+    whyBy: { mar: 'textura cremosa e madeira acompanham a cozinha do mar', ave_porco: 'textura cremosa e madeira acompanham carnes brancas' } },
   st_moscatel: { kind: 'wine', name: 'Vinho de sobremesa (Tokaji, Sauternes)', abv: [11.5, 14.5], why: 'doçura com acidez alta: a sobremesa não deixa o vinho amargo' },
   st_cabernet: { kind: 'wine', name: 'Cabernet Sauvignon (Maipo)', abv: [14, 15], why: 'estrutura e taninos finos para carnes vermelhas' },
-  st_rioja: { kind: 'wine', name: 'Rioja Reserva e Gran Reserva', abv: [13.5, 15.5], why: 'barrica longa e taninos polidos para carnes assadas, cordeiro e molhos' },
+  st_rioja: { kind: 'wine', name: 'Rioja Reserva e Gran Reserva', abv: [13.5, 15.5], why: 'barrica longa e taninos polidos, macio e versátil à mesa',
+    whyBy: { ave_porco: 'barrica longa e taninos polidos acompanham carnes brancas' } },
   st_pilsen: { kind: 'beer', name: 'Pilsen', abv: [4.5, 5], why: 'leve e gelada, para o calor' },
-  st_dark_lager: { kind: 'beer', name: 'Lager escura (Schwarzbier, Dunkel)', abv: [4.5, 5.5], why: 'malte tostado combina com a crosta do churrasco' },
-  st_weiss: { kind: 'beer', name: 'Weiss (trigo)', abv: [5, 5.5], why: 'notas de banana e cravo vão bem com frutos do mar e saladas' },
+  st_dark_lager: { kind: 'beer', name: 'Lager escura (Schwarzbier, Dunkel)', abv: [4.5, 5.5], why: 'malte tostado acompanha sabores intensos e tostados',
+    whyBy: { c_churrasco: 'malte tostado combina com a crosta da picanha na brasa', massa: 'malte tostado acompanha o tomate e a massa', doce: 'malte tostado e caramelo acompanham sobremesas' } },
+  st_weiss: { kind: 'beer', name: 'Weiss (trigo)', abv: [5, 5.5], why: 'leve e aromática, com notas de banana e cravo, vai bem com pratos frescos',
+    whyBy: { mar: 'notas de banana e cravo vão bem com a cozinha do mar', mar_leve: 'notas de banana e cravo vão bem com a cozinha do mar', ave_porco: 'notas de banana e cravo vão bem com carnes brancas', doce: 'leve e frutada, alivia a doçura da sobremesa' } },
   st_ipa: { kind: 'beer', name: 'IPA e Session IPA', abv: [4.5, 7], why: 'amargor e lúpulo cítrico cortam gordura e tempero' },
   st_stout: { kind: 'beer', name: 'Stout', abv: [4, 6], why: 'café e chocolate conversam com sobremesas' },
   st_zero_vinho: { kind: 'wine', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'mesma taça, mesmo brinde' },
@@ -3053,6 +3068,14 @@ function bevVerdict(bevId, ids) {
 const CHEF_TIPS = { churrasco: 'Tire a carne da geladeira 30 minutos antes e sal grosso só na hora de ir para a brasa.', mar: 'Peixe e frutos do mar vêm do mercado no dia e ficam no gelo até a panela.',
   mar_leve: 'Tudo bem gelado até a hora de servir.', massa: 'Água bem salgada e a massa sai um minuto antes do ponto, termina no molho.', ave_porco: 'Deixe a carne descansar 5 minutos antes de fatiar.',
   leve: 'Tempere só na hora de servir, para as folhas não murcharem.', doce: 'Sobremesa gelada pede pelo menos 4 horas de geladeira.' };
+// Motivo do estilo para este prato: o texto próprio do tipo de prato (whyBy) vale sobre o genérico.
+// Lista de pratos curta: até 3 nomes e «+N»; «a, b e c».
+const joinE = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : (a[0] || '');
+const dishesShort = (dishes, max = 3) => { const a = dishes || [], shown = a.slice(0, max), rest = a.length - shown.length;
+  return { text: rest ? shown.join(', ') : joinE(shown) + '.', rest, all: joinE(a) + '.' }; };
+// Motivo do estilo: texto do prato (whyBy[id do Chef]), depois do tipo de prato (whyBy[pk]), depois o genérico,
+// que não cita prato nem ingrediente. O teste barra fala que cite o que não está na refeição.
+const styleWhy = (st, pk, main) => { const x = BEV_STYLES[st] || {}, by = x.whyBy || {}; return (main && by[main]) || by[pk] || x.why || ''; };
 function mesaTalk(state, key, ids, bev) {
   const main = mealMain(ids), des = mealDessert(ids); if (!main) return [];
   const c = CHEF[main], pk = pairKey(c), meal = key.split('|')[1], w = pairStyles(ids, 'wine').map(s => BEV_STYLES[s]), br = pairStyles(ids, 'beer').map(s => BEV_STYLES[s]);
@@ -3060,8 +3083,8 @@ function mesaTalk(state, key, ids, bev) {
   const lines = [{ who: 'chef', text: `Hoje sai ${c.title}${des ? `, e de sobremesa ${CHEF[des].title.toLowerCase()}` : ''}. ${CHEF_TIPS[pk]}` }];
   if (bev && bev.swapped) lines.push({ who: 'enologo', text: 'O prato mudou, então revi a harmonização. Confiram as opções abaixo.' });
   const st0 = pairStyles(ids, 'wine')[0], sv = WINE_SERVICE[st0], top = styleLabels(st0).slice(-1)[0], win = top ? windowTxt(top.b) : '';
-  lines.push({ who: 'enologo', text: `No vinho, eu iria de ${w[0].name}: ${w[0].why}. ${sv ? `Sirva a ${sv.temp}, ${sv.decant}${sv.temp.startsWith('16') ? '; no calor da praia, 15 minutos de geladeira antes' : ''}.` : ''} ${top ? `${top.b.name}${win ? `: ${win}` : ''}.` : ''} Também funcionam: ${w[1].name}; ${w[2].name}${des && pk === 'churrasco' ? ' (o Chablis aguenta até a sobremesa gelada)' : ''}. Na mesma taça, sem álcool: suco de uva integral ou espumante 0,0%.`.replace(/\s+/g, ' ').trim() });
-  lines.push({ who: 'bar', text: `Na cerveja, ${br[0].name.toLowerCase()} (${br[0].why}). ${DRINK_MOMENTS[mo]}: ${dr.map(x => x.d.name.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' ou $1')}. A jarra rende ${dr[0].d.jar} copos.` });
+  lines.push({ who: 'enologo', text: `No vinho, eu iria de ${w[0].name}: ${styleWhy(st0, pk, main)}. ${sv ? `Sirva a ${sv.temp}, ${sv.decant}${sv.temp.startsWith('16') ? '; no calor da praia, 15 minutos de geladeira antes' : ''}.` : ''} ${top ? `${top.b.name}${win ? `: ${win}` : ''}.` : ''} Também funcionam: ${w[1].name}; ${w[2].name}${des && pk === 'churrasco' ? ' (o Chablis aguenta até a sobremesa gelada)' : ''}. Na mesma taça, sem álcool: suco de uva integral ou espumante 0,0%.`.replace(/\s+/g, ' ').trim() });
+  lines.push({ who: 'bar', text: `Na cerveja, ${br[0].name.toLowerCase()}: ${styleWhy(pairStyles(ids, 'beer')[0], pk, main)}. ${DRINK_MOMENTS[mo]}: ${dr.map(x => x.d.name.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' ou $1')}. A jarra rende ${dr[0].d.jar} copos.` });
   return lines;
 }
 // Lista de compras das bebidas aceitas. Álcool só com aceite de adulto organizador (okBy) e só para adultos que bebem.
@@ -3200,7 +3223,7 @@ function safeExportState(st) {
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
   module.exports = {  genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF ,  CHEF, WINES, chefRecipe, chefScores, chefPlan, groupPrefs, mealCounts, wineList, famAffinity, safeExportState,
     ALLERGENS, ALLERGEN_SRC, ITEM_ALLERGENS, INTOL, healthOf, ingAllergens, recipeAllergens, allergyHits, presentMembers, cellBlocked, enforceAllergies, groupHealth, intolShares, isDrinker,
-    CATALOG_VERSION, BEVERAGES, BEV_STYLES, DRINKS, PAIRINGS, pairStyles, styleLabels, bestRating, validRating, bevVerdict, mesaTalk, bevNeeds, bevAlcoholic, eventMetrics, matchCellarLabel, cellarInfo, cellarPlan, cellarSlots, cellarToday, cellarHomeRows, adegaText, SULFITE_LINE, AGE_LINE, GLASSES_PER_BOTTLE, ITEMS, SPECIAL, BRIEF_VETO, HEALTH_RETENTION_DAYS };
+    CATALOG_VERSION, BEVERAGES, BEV_STYLES, DRINKS, PAIRINGS, pairStyles, styleLabels, bestRating, validRating, bevVerdict, mesaTalk, bevNeeds, bevAlcoholic, eventMetrics, styleWhy, dishesShort, matchCellarLabel, cellarInfo, cellarPlan, cellarSlots, cellarToday, cellarHomeRows, adegaText, SULFITE_LINE, AGE_LINE, GLASSES_PER_BOTTLE, ITEMS, SPECIAL, BRIEF_VETO, HEALTH_RETENTION_DAYS };
 }
 </script>
 <script>
@@ -4559,6 +4582,11 @@ Corte as frutas e monte a mesa com pães e frios.`,
     return bits.join(' · ');
   }
   function priceShort(b) { const sign = (CURRENCY_SIGN[b.currency || 'BRL']) || 'R$'; return `${sign} ${b.price[0].toLocaleString('pt-BR')}–${b.price[1].toLocaleString('pt-BR')}`; }
+  // «Com:» da folha: até 3 pratos; o resto abre em «+N · ver todos» (sem script, com alvo de 44 px).
+  function sheetDishes(dishes) {
+    const d = dishesShort(dishes);
+    return `<div class="sheetdishes"><p>Com: ${esc(d.text)}</p>${d.rest ? `<details><summary><span class="sd-open">+${d.rest} · ver todos</span><span class="sd-close">ver menos</span></summary><p>Com: ${esc(d.all)}</p></details>` : ''}</div>`;
+  }
   function etiquetaCard(id, opt) {
     const b = BEVERAGES[id]; if (!b) return '';
     opt = opt || {};
@@ -4607,7 +4635,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#wineSheetBody').innerHTML = `<div class="sheetfacts"><p class="t2">${[b.country, abv, b.unit].filter(Boolean).map(esc).join(' · ')}</p>
       <p class="num">${esc(priceTxt(b))}</p></div>${rate}
       ${svc ? `<p>${esc(svc)}</p>` : ''}${jeff ? `<p class="t2">${esc(jeff)}</p>` : ''}
-      ${dishes.length ? `<p>Com: ${esc(dishes.join(', '))}</p>` : ''}
+      ${dishes.length ? sheetDishes(dishes) : ''}
       ${meal ? `<button type="button" class="btn ${chosen ? 'secondary' : 'primary'}" data-sheet-pick="${esc(id)}" data-meal="${esc(meal)}" aria-pressed="${chosen}">${chosen ? icon('check') + '<span>Na refeição</span>' : '<span>Escolher</span>'}</button>` : ''}`;
     const dlg = $('#wineSheet'); if (!dlg.open) dlg.showModal();
     const close = dlg.querySelector('[data-sheet-close]'); if (close) close.focus();
@@ -4670,7 +4698,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
       } else {
         const sts = pairStyles(s.ids, kind), zeroSt = PAIRINGS.zero[kind], all = [...sts, zeroSt], sel = (ui.mesaStyle && ui.mesaStyle[k + kind]) || sts[0];
         layers = `<div class="car" role="list">${all.map(st => { const x = BEV_STYLES[st];
-          return `<button type="button" class="stc ${x.zero ? 'zero' : ''}" role="listitem" data-mst="${st}" aria-pressed="${st === sel}"><span class="t1">${esc(x.name)}</span><span class="t2">${x.zero ? 'mesmo brinde, sem álcool' : `${x.abv[0].toLocaleString('pt-BR')}–${x.abv[1].toLocaleString('pt-BR')}% vol. típico`}</span><span class="why">${esc(x.why)}</span></button>`; }).join('')}</div>
+          return `<button type="button" class="stc ${x.zero ? 'zero' : ''}" role="listitem" data-mst="${st}" aria-pressed="${st === sel}"><span class="t1">${esc(x.name)}</span><span class="t2">${x.zero ? 'mesmo brinde, sem álcool' : `${x.abv[0].toLocaleString('pt-BR')}–${x.abv[1].toLocaleString('pt-BR')}% vol. típico`}</span><span class="why">${esc(styleWhy(st, mealMain(s.ids) ? pairKey(CHEF[mealMain(s.ids)]) : '', mealMain(s.ids)))}</span></button>`; }).join('')}</div>
           ${(() => { const labs = styleLabels(sel); return `${isWineStyle(sel) && labs.length < 3 ? `<p class="t2" style="margin:8px 0 0">${labs.length ? `${labs.length} rótulo${labs.length > 1 ? 's' : ''} premium neste estilo por enquanto.` : 'Sem rótulo premium para este estilo ainda.'}</p>` : ''}<div class="labels">${labs.map(({ id, b }) => `<div><div class="tier">${esc(tierLabel(b))}</div>${bevCard(id, b, k, picks.some(p => p.id === id))}</div>`).join('')}</div>`; })()}
           ${styleExtras(sel).map(({ id, b, r }) => `<p class="t2" style="margin:6px 0 0">Mais um: <b>${esc(b.name)}</b> · ${r ? esc(ratingTxt(r)) : 'Sem nota'} · ${esc(priceTxt(b))}</p>`).join('')}`;
       }
