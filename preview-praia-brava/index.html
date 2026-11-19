@@ -395,9 +395,9 @@ svg.i{stroke-width:2}
 .iconbtn,.del,.xf .chk{width:44px;height:44px}
 .btn.sm,.btn.text,.subnav button,.inp.sm,.pills button{min-height:44px}
 .inp.sm{height:44px;font-size:16px}.inp[type=date]{font-size:16px}
-.pills.sm button{min-height:40px;position:relative}
-.pills.sm button::after,.sugg button::after,button.badge::after{content:"";position:absolute;inset:-4px 0}
-.sugg button{position:relative;height:36px}button.badge{position:relative}
+.pills.sm button{min-height:44px;position:relative}
+.pills.sm button::after,.sugg button::after,button.badge::after{content:"";position:absolute;inset:0}
+.sugg button{position:relative;height:44px;min-height:44px}button.badge{position:relative;min-height:44px}
 .thumb{width:44px;height:44px}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .exp{grid-template-columns:auto minmax(0,1fr) auto 44px;column-gap:12px}
@@ -581,12 +581,16 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .hoje{display:grid;gap:12px}
 .hoje .when{font-size:13px;font-weight:600;color:var(--text-2)}
 .hoje .dish{font-size:17px;font-weight:650;line-height:1.3;margin-top:4px}
+.hojeacts{display:grid;gap:8px}
+@media(min-width:720px){.hojeacts{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+#wineCard{scroll-margin-top:72px}
+#wineCard:focus{outline:2px solid var(--accent);outline-offset:2px}
 :root{--wine-tinto:#8B2942;--wine-branco:#6B5428;--wine-rose:#9A3E56;--wine-espumante:#2F5E45;--wine-zero:#1B5A46;--wine-cerveja:#8A4B10;--wine-gold:#7A5A12}
-[data-theme="dark"]{--wine-tinto:#F0B3BE;--wine-branco:#F0D7A4;--wine-rose:#F3B7C6;--wine-espumante:#B7DCC8;--wine-zero:#A9D8C8;--wine-cerveja:#F0C27A;--wine-gold:#E0A106}
+[data-theme="dark"]{--wine-tinto:#F0B3BE;--wine-branco:#E4DFCF;--wine-rose:#F3B7C6;--wine-espumante:#B7DCC8;--wine-zero:#A9D8C8;--wine-cerveja:#F0C27A;--wine-gold:#E0A106}
 .etiqueta{position:relative;display:grid;grid-template-columns:6px minmax(0,1fr);background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:0;max-width:100%}
 .etiqueta .stripe{background:var(--stripe,var(--wine-tinto))}
 .etiqueta.hue-tinto{--stripe:var(--wine-tinto)}.etiqueta.hue-branco{--stripe:var(--wine-branco)}.etiqueta.hue-rose{--stripe:var(--wine-rose)}.etiqueta.hue-espumante{--stripe:var(--wine-espumante)}.etiqueta.hue-zero{--stripe:var(--wine-zero)}.etiqueta.hue-cerveja{--stripe:var(--wine-cerveja)}
-.etiqueta.icone{box-shadow:inset 0 2px 0 var(--wine-gold)}
+.etiqueta.icone{box-shadow:inset 0 3px 0 var(--wine-gold)}
 .etq{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-height:44px;margin:0;padding:12px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
 .etq-name{font-size:17px;font-weight:600;line-height:1.3}
 .etq-meta{font-size:13px;line-height:1.4;color:var(--text-2)}
@@ -612,10 +616,17 @@ dialog.sheet::backdrop,dialog.pop::backdrop{background:rgba(0,0,0,.5)}
 .sheethead h2{margin:8px 0 0;font-size:17px;font-weight:600;line-height:1.3;flex:1;min-width:0}
 .sheethead .iconbtn{width:44px;height:44px}
 .sheetbody{display:grid;gap:16px;padding:8px 16px calc(24px + var(--sab))}
+.sheetbody > *{margin:0}
+.sheetfacts{display:grid;gap:8px}
+.sheetfacts > *{margin:0}
+.sheetbody > .sheetfacts{margin-bottom:-8px}
 .sheetline{display:flex;gap:8px;align-items:flex-start}
-.sheetnote{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
-.sheetnote b{line-height:1.4}
-.sheet a.src,.pop a.src{color:var(--accent);font-weight:600;min-height:44px;min-width:44px;margin:0;padding:8px 8px 8px 0;display:inline-flex;align-items:center;text-underline-offset:3px}
+.sheetnote{display:flex;flex-flow:row wrap;column-gap:8px;row-gap:0;align-items:center;min-width:0}
+.sheetnote b{flex:1 0 100%;line-height:1.4}
+.sheetnote .sheetcritic{flex:0 1 auto;line-height:1.4;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.pop a.src{color:var(--accent);font-weight:600;min-height:44px;min-width:44px;margin:0;padding:8px 8px 8px 0;display:inline-flex;align-items:center;text-underline-offset:3px}
+.sheet a.src{position:relative;z-index:1;flex:0 1 auto;color:var(--accent);font-weight:600;margin:0;padding:0;min-height:0;min-width:0;max-width:100%;line-height:1.4;text-underline-offset:3px;overflow-wrap:anywhere;white-space:normal}
+.sheet a.src::after{content:"";position:absolute;left:0;top:50%;width:100%;min-width:44px;height:44px;transform:translateY(-50%)}
 #wineSeg.pills.sm button{min-height:44px}
 dialog.pop{width:min(420px,calc(100vw - 32px));border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);padding:16px}
 dialog.pop h2{margin:0 0 8px;font-size:17px;font-weight:600}
@@ -718,21 +729,21 @@ textarea.inp,#recPaste,#dSteps{font-size:16px!important;line-height:1.5!importan
 .mx{gap:4px}
 /* ---- evento compartilhado ---- */
 [hidden]{display:none!important}
-.syncpill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.syncpill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:44px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
 .syncpill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--text-3);flex:none}
 .syncpill[data-s="synced"]::before{background:var(--pos)}
 .syncpill[data-s="saving"]::before,.syncpill[data-s="pending"]::before{background:var(--warn)}
 .syncpill[data-s="offline"],.syncpill[data-s="error"]{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 40%,var(--border))}
 .syncpill[data-s="offline"]::before,.syncpill[data-s="error"]::before{background:var(--neg)}
 .syncpill + .toptotal{margin-left:12px}
-@media(max-width:480px){.syncpill{font-size:0;gap:0;width:32px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
+@media(max-width:480px){.syncpill{font-size:0;gap:0;width:44px;height:44px;padding:0;justify-content:center}.syncpill::before{width:10px;height:10px}}
 .syncbanner{max-width:1120px;margin:8px auto 0;padding:0 16px}
 .syncbanner .callout{overflow-wrap:anywhere;align-items:center}
 .warnhint b{color:var(--ink)}
 .noticebox{position:fixed;left:0;right:0;top:calc(64px + var(--sat));z-index:45;max-width:560px;margin:0 auto;padding:0 12px}
 
 .noticebox .callout{align-items:flex-start;border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);box-shadow:0 6px 24px rgba(0,0,0,.18)}.noticebox .callout>div{flex:1;min-width:0}.noticebox ul{margin:4px 0 0 18px;padding:0}.noticebox li{margin:2px 0}
-.noticebox .btn.text{min-height:32px;padding:0 8px;flex:none;color:inherit}
+.noticebox .btn.text{min-height:44px;padding:0 12px;flex:none;color:inherit}
 .memlist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .memlist li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
 .memlist .mname{display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere}.memlist .mname small{color:var(--text-2);font-size:13px}
@@ -4482,9 +4493,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const svc = b.kind === 'wine' && serviceTxt(b) ? `Serviço: ${serviceTxt(b)}${windowTxt(b) ? ` · ${windowTxt(b)}` : ''}` : '';
     const jeff = b.origin === 'jefferson' ? `Da lista do Jefferson${b.fromCellar ? ' · já está na adega dele' : ''}` : '';
     const dishes = hit && hit.dishes ? hit.dishes : [];
-    const rate = r ? `<div class="sheetline">${icon('sparkle')}<div class="sheetnote"><b>${esc(ratingTxt(r))}</b><a class="src" href="${esc(r.url)}" target="_blank" rel="noopener nofollow noreferrer">fonte</a><span class="t2">conferida em ${fmtDMY(r.checkedOn)}</span></div></div>` : '<p class="t2">Sem nota</p>';
-    $('#wineSheetBody').innerHTML = `<p class="t2">${[b.country, abv, b.unit].filter(Boolean).map(esc).join(' · ')}</p>
-      <p class="num">${esc(priceTxt(b))}</p>${rate}
+    const score = r ? (r.points ? `${r.points} pontos` : r.medal) + (r.vintage ? ` · safra ${r.vintage}` : '') : '';
+    const rate = r ? `<div class="sheetline">${icon('sparkle')}<div class="sheetnote"><b>${esc(score)}</b><span class="sheetcritic">${esc(r.critic)}</span><a class="src" href="${esc(r.url)}" target="_blank" rel="noopener nofollow noreferrer">Ver fonte: ${esc(r.critic)}</a><span class="t2">conferida em ${fmtDMY(r.checkedOn)}</span></div></div>` : '<p class="t2">Sem nota</p>';
+    $('#wineSheetBody').innerHTML = `<div class="sheetfacts"><p class="t2">${[b.country, abv, b.unit].filter(Boolean).map(esc).join(' · ')}</p>
+      <p class="num">${esc(priceTxt(b))}</p></div>${rate}
       ${svc ? `<p>${esc(svc)}</p>` : ''}${jeff ? `<p class="t2">${esc(jeff)}</p>` : ''}
       ${dishes.length ? `<p>Com: ${esc(dishes.join(', '))}</p>` : ''}
       ${meal ? `<button type="button" class="btn ${chosen ? 'secondary' : 'primary'}" data-sheet-pick="${esc(id)}" data-meal="${esc(meal)}" aria-pressed="${chosen}">${chosen ? icon('check') + '<span>Na refeição</span>' : '<span>Escolher</span>'}</button>` : ''}`;
@@ -4520,6 +4532,15 @@ Corte as frutas e monte a mesa com pães e frios.`,
   function bevCard(id, b, k, chosen) {
     const hit = dishIndex[id];
     return etiquetaCard(id, { mealKey: k, chosen: !!chosen, bottles: hit ? hit.bottles : 0, dishes: hit ? hit.dishes : [] });
+  }
+  function chefVisible(text, title) {
+    const prefix = title ? `Hoje sai ${title}` : '';
+    if (!prefix || !String(text || '').startsWith(prefix)) return text || '';
+    let rest = text.slice(prefix.length).replace(/^,\s*/, '');
+    if (rest.startsWith('. ')) rest = rest.slice(2);
+    else if (rest.startsWith('.')) rest = rest.slice(1).replace(/^\s*/, '');
+    if (rest.startsWith('e de sobremesa ')) rest = 'De sobremesa, ' + rest.slice('e de sobremesa '.length);
+    return rest.trim();
   }
   function mesaBlock(k, s) {
     if (!mesaOn()) return '';
@@ -4564,17 +4585,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
       const sugId = 'sug-' + k.replace('|', '-'), sugOpen = ui.suggOpen === k;
       body += `<button type="button" class="btn text sm msug" data-msug="${esc(k)}" aria-expanded="${sugOpen ? 'true' : 'false'}" aria-controls="${sugId}">${icon('chev')}<span>Sugestões das famílias (${sug.length})</span></button><div id="${sugId}" class="sugpanel" ${sugOpen ? '' : 'hidden'}>${layer3}</div>`;
     }
-    const chefLine = lines[0], head = chefLine.text.includes('. ') ? chefLine.text.slice(0, chefLine.text.indexOf('. ') + 1) : chefLine.text;
-    const tail = chefLine.text.slice(head.length).trim();
+    const chefLine = lines[0];
+    const mainId = mealMain(s.ids), mainTitle = mainId && CHEF[mainId] ? CHEF[mainId].title : '';
+    const lead = chefVisible(chefLine.text, mainTitle);
     const verdict = lines.filter(l => l.who === 'enologo' && !/revi a harmonização/.test(l.text)).pop();
     const verdictTxt = verdict ? (verdict.text.includes('. ') ? verdict.text.slice(0, verdict.text.indexOf('. ') + 1) : verdict.text) : '';
     const conv = [];
-    if (tail) conv.push({ who: 'chef', text: tail });
     for (const l of lines.slice(1)) { if (l === verdict || (verdictTxt && l.text === verdictTxt)) continue; conv.push(l); }
     const convId = 'conv-' + k.replace('|', '-');
     return `<div class="mesa" data-mesa="${k}"><div class="mhead"><div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div></div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : ''}
-      <p class="mbal">${esc(head)}</p>
+      ${lead ? `<p class="mbal">${esc(lead)}</p>` : ''}
       <button type="button" class="btn text sm mconv" data-mconv="${k}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="${convId}">${icon('chev')}<span>Ver conversa (${conv.length})</span></button>
       <div id="${convId}" ${open ? '' : 'hidden'}><div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}:</b> ${esc(l.text)}</p>`).join('')}</div></div>
       ${body}
@@ -4667,6 +4688,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
     for (const s of upcomingSlots(99)) { const k = s.day + '|' + s.meal; if (state.chef && state.chef.sugg && state.chef.sugg[k]) return k; }
     return keys[0];
   }
+  function showAdega() {
+    const el = $('#wineCard'); if (!el || el.hidden) return;
+    if (document.body.dataset.view !== 'chef') setView('chef', { keepScroll: true });
+    el.tabIndex = -1;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const root = document.documentElement, prevPad = root.style.scrollPaddingTop;
+    root.style.scrollPaddingTop = '0px';
+    el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    root.style.scrollPaddingTop = prevPad;
+    el.focus({ preventScroll: true });
+  }
   function showMesa(k) {
     if (!k) return;
     ui.chefDay = k.split('|')[0]; saveUi();
@@ -4690,13 +4722,18 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const verdict = talk.filter(l => l.who === 'enologo' && !/revi a harmonização/.test(l.text)).pop();
     const verdictTxt = verdict ? (verdict.text.includes('. ') ? verdict.text.slice(0, verdict.text.indexOf('. ') + 1) : verdict.text) : '';
     const main = mealMain(s.ids), title = main && CHEF[main] ? CHEF[main].title : MEALS[meal];
+    const nAdega = Object.values(BEVERAGES).filter(b => b.kind === 'wine' && b.premium && !b.retired).length;
+    const lead = talk[0] ? chefVisible(talk[0].text, title) : '';
     $('#hojeMeta').textContent = MEALS[meal];
     el.innerHTML = `<div class="hoje"><div><div class="when">${esc(dLabel(d))} · ${esc(MEALS[meal])}</div><div class="dish">${esc(title)}</div></div>
       <div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div>
-      ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : (talk[0] ? `<p class="mbal">${esc(talk[0].text.includes('. ') ? talk[0].text.slice(0, talk[0].text.indexOf('. ') + 1) : talk[0].text)}</p>` : '')}
-      <button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button></div>`;
+      ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : (lead ? `<p class="mbal">${esc(lead)}</p>` : '')}
+      <div class="hojeacts"><button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button>${minor ? '' : `<button type="button" class="btn secondary" data-ver-adega>${icon('wine')}<span>Adega (${nAdega} rótulo${nAdega === 1 ? '' : 's'})</span></button>`}</div></div>`;
   }
-  $('#hojeBody').addEventListener('click', e => { const b = e.target.closest('[data-ver-mesa]'); if (b) showMesa(b.dataset.verMesa); });
+  $('#hojeBody').addEventListener('click', e => {
+    const b = e.target.closest('[data-ver-mesa]'); if (b) { showMesa(b.dataset.verMesa); return; }
+    if (e.target.closest('[data-ver-adega]')) showAdega();
+  });
   function renderChef() { indexBottles(); const wc = $('#wineCard'); if (wc) wc.hidden = isMinorViewer(); const cx = chefCtx(); renderHoje(); renderBriefCard(); renderCount(); renderRank(cx); renderMenu(cx); renderWine(cx); renderRota(); }
   // Exemplo: cardápio do Chef já aceito, para a primeira impressão. Não grava respostas fictícias de pré-briefing.
   function demoBoot() {
