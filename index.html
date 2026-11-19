@@ -2692,7 +2692,7 @@ async function purgeEventPhotos(client, eventId) {
 // Regras do catálogo: IDs fixos; item aposentado ganha `retired` e nunca é apagado; nota só de crítico ou concurso independente,
 // com link e data da conferência (sem texto de resenha: só a nota, o nome e o link). Sem fonte independente: "Sem nota".
 // Preço é faixa aproximada com o mês de referência. Sem patrocínio, sem afiliado, sem link de compra.
-const CATALOG_VERSION = '2026-11-19.2'; // suba a cada mudança no catálogo (o teste compara com tests/catalog-ids.json)
+const CATALOG_VERSION = '2026-11-19.3'; // suba a cada mudança no catálogo (o teste compara com tests/catalog-ids.json)
 const PRICE_MONTH = 'nov/2026';
 const CHECKED = '2026-11-19';
 const DEC = 'https://www.decanter.com/wine-reviews/', DW = 'https://awards.decanter.com/DWWA/', EBS = y => `https://www.european-beer-star.com/ebs-wAssets/docs/gewinnerliste-en/Gewinner_${y}.pdf`;
@@ -2726,11 +2726,12 @@ const BEV_STYLES = {
   st_zero_cerveja: { kind: 'beer', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'gelada como as outras' },
 };
 // Serviço do Enólogo por estilo de vinho (regra fixa, sem IA): temperatura e decantação. Na praia, tinto vai 15 min à geladeira antes.
+// Serviço por estilo: texto genérico, nunca com nome de rótulo (o teste barra). Orientação de um rótulo só vai no próprio rótulo, em `service`.
 const WINE_SERVICE = {
   st_malbec: { temp: '16–18 °C', decant: 'decantar 45 min a 1 h' }, st_tannat: { temp: '16–18 °C', decant: 'decantar 1 h (taninos firmes)' },
   st_chablis: { temp: '10–12 °C', decant: 'sem decantar; o Grand Cru abre bem com 15 min na taça' }, st_espumante: { temp: '8–10 °C', decant: 'sem decantar; balde com gelo e água' },
-  st_branco_fresco: { temp: '10–12 °C', decant: 'Silex e Te Koko ganham com 20 min de decanter' }, st_rose: { temp: '10–12 °C', decant: 'Garrus pode ir ao decanter por 20 min' },
-  st_sangiovese: { temp: '16–18 °C', decant: 'decantar 1 h; Brunello e Tignanello jovens, até 2 h' }, st_tinto_br: { temp: '16–18 °C', decant: 'decantar 30–45 min' },
+  st_branco_fresco: { temp: '10–12 °C', decant: 'em geral sem decantar; os brancos de guarda ganham com 20 min de decanter' }, st_rose: { temp: '10–12 °C', decant: 'em geral sem decantar; os rosés de guarda, com madeira, abrem com 20 min de decanter' },
+  st_sangiovese: { temp: '16–18 °C', decant: 'decantar 1 h; Brunello e Gran Selezione jovens, até 2 h' }, st_tinto_br: { temp: '16–18 °C', decant: 'decantar 30–45 min' },
   st_chard_madeira: { temp: '12–14 °C', decant: 'não gelar demais; 15 min de decanter abre a madeira' }, st_moscatel: { temp: '8–10 °C', decant: 'sem decantar; taça pequena, 60–80 ml por pessoa' },
   st_cabernet: { temp: '16–18 °C', decant: 'decantar 1 a 2 h' }, st_rioja: { temp: '16–18 °C', decant: 'Reserva, 30 min; Gran Reserva, decantar devagar por causa do depósito' },
 };
@@ -2756,6 +2757,8 @@ const BEVERAGES = {
   ponto_nero: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_moscatel', tier: 'entrada', name: 'Ponto Nero Moscatel', country: 'Brasil', price: [50, 90], abv: { value: 7.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards', DW + 'any/wines/533471', 'NV')] },
   soalheiro: { kind: 'wine', premium: true, style: 'st_branco_fresco', tier: 'medio', name: 'Soalheiro Primeiras Vinhas Alvarinho', country: 'Portugal', price: [200, 330], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    service: { temp: '10–12 °C', decant: 'sem decantar; tire da geladeira uns 10 min antes, para aparecer o lado amanteigado (vinhas velhas de Monção e Melgaço, 15% fermentado em carvalho, borras finas)',
+      guard: 'guarda: o produtor fala em «muito boa capacidade de envelhecimento em garrafa», sem janela em anos', src: 'https://soalheiro.com/pages/soalheiro-primeiras-vinhas-alvarinho' },
     ratings: [medal('Ouro, 95 pontos', 'Decanter World Wine Awards', DW + 'any/wines/705502', 2020)] },
   cloudy: { kind: 'wine', retired: '2026-11-19.2', premium: false, style: 'st_branco_fresco', tier: 'alto', name: 'Cloudy Bay Sauvignon Blanc', country: 'Nova Zelândia', price: [300, 450], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
     ratings: [r100(92, 'Decanter (David Williams)', DEC + 'new-zealand/marlborough/cloudy-bay-sauvignon-blanc-marlborough-new-zealand-2024-97362/', 2024)] },
@@ -2965,7 +2968,7 @@ const bestRating = b => (b.ratings || []).filter(validRating).sort((x, y) => (y.
 addJeffersonWines(JEFFERSON_WINES);
 // Janela de consumo segundo o crítico (quando a página traz) e serviço do Enólogo.
 const windowTxt = b => { const r = bestRating(b); return r && r.window ? `beber de ${r.window[0]} a ${r.window[1]} (${r.critic.replace(/ \(.*\)$/, '')}, safra ${r.vintage})` : ''; };
-const serviceTxt = b => { const sv = WINE_SERVICE[b.style]; return sv ? `${sv.temp} · ${sv.decant}` : ''; };
+const serviceTxt = b => { const sv = b.service || WINE_SERVICE[b.style]; return sv ? [sv.temp, sv.decant, !windowTxt(b) && sv.guard].filter(Boolean).join(' · ') : ''; };
 // Pareamento por perfil do prato (camada 1): 3 estilos com álcool + um card sem álcool do mesmo tipo.
 function pairKey(c) {
   if (!c) return 'leve';

@@ -81,4 +81,18 @@ assert.deepStrictEqual(Object.keys(L.JEFFERSON_WINES), [], 'lista do Jefferson c
   assert(b && b.origin === 'jefferson' && b.premium && !b.retired && b.currency === 'BRL'); assert.equal(L2.bestRating(b), null, 'Sem nota por padrão'); }
 // 11) Enólogo fala de serviço (temperatura, decantação) no churrasco
 assert(L.mesaTalk({}, '2026-12-20|jantar', ['c_churrasco'], null).some(l => l.who === 'enologo' && /°C/.test(l.text)), 'Enólogo com temperatura de serviço');
-console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);
+// 12) Linha de serviço nunca cita outro rótulo do catálogo (ex.: a do Soalheiro citava «Silex e Te Koko»)
+{ const GENERIC = new Set(('reserva gran grand cru premier vieilles vignes brut nature vintage cuvée special blanc rouge rosé rose sauvignon chardonnay malbec tannat cabernet merlot syrah alvarinho moscatel moscato '
+    + 'sangiovese chianti classico brunello montalcino rioja chablis sauternes tokaji champagne espumante château chateau domaine domaines bodega casa vineyard vinhas vinho selezione riserva parcela única unica '
+    + 'historic rows argentino mendoza blue label aszú aszu puttonyos tradition seleção selecao reservado reserve appellation corte terroir').split(' '));
+  const words = t => (t.toLowerCase().normalize('NFC').match(/[\p{L}]{4,}/gu) || []);
+  const all = Object.entries(L.BEVERAGES).filter(([, b]) => b.kind === 'wine');
+  const offenders = (text, ownId, style) => { const tw = new Set(words(text)), own = new Set([...(ownId ? words(L.BEVERAGES[ownId].name) : []), ...words((L.BEV_STYLES[style] || {}).name || '')]);
+    const out = []; for (const [oid, o] of all) { if (oid === ownId) continue; for (const w of words(o.name)) if (!GENERIC.has(w) && !own.has(w) && tw.has(w)) out.push(`${w} (${o.name})`); } return [...new Set(out)]; };
+  for (const [st, sv] of Object.entries(L.WINE_SERVICE)) assert.deepStrictEqual(offenders(`${sv.temp} ${sv.decant} ${sv.guard || ''}`, null, st), [], 'serviço do estilo cita rótulo: ' + st);
+  for (const [id, b] of all) assert.deepStrictEqual(offenders(L.serviceTxt(b), id, b.style), [], 'serviço de ' + id + ' cita outro rótulo');
+  // o próprio teste pega o erro antigo
+  assert(offenders('10–12 °C · Silex e Te Koko ganham com 20 min de decanter', 'soalheiro', 'st_branco_fresco').length >= 2, 'detector pega Silex/Te Koko');
+  assert(offenders('Garrus pode ir ao decanter por 20 min', null, 'st_rose').length && offenders('Brunello e Tignanello jovens', null, 'st_sangiovese').length);
+  const so = L.serviceTxt(L.BEVERAGES.soalheiro); assert(/10–12 °C/.test(so) && /Monção e Melgaço/.test(so) && !/Silex|Koko/.test(so), 'serviço próprio do Soalheiro'); }
+console.log(`CATALOG TESTS PASSED (${Object.keys(L.BEVERAGES).length} rótulos, ${Object.keys(L.DRINKS).length} drinks, versão ${L.CATALOG_VERSION}: adega premium 12 estilos × 3, serviço sem nome de outro rótulo, 23 aposentados, Riscal, BRL + mês, IDs únicos, versão travada, caminho wj_, IDs fixos, notas com fonte/link/data, ABV, faixas, pareamentos)`);
