@@ -63,9 +63,9 @@ assert.equal(L.matchCellarLabel('marques de riscal baron de chirel'), 'w_baron_c
 
 // 7) Hoje à mesa e WhatsApp
 { const st = base(); st.cellar = [riscal, velho]; const cp = L.cellarPlan(st); const k = Object.keys(cp.slots).find(k => cp.slots[k].id === 'hc_r1'), t = L.cellarToday(st, k, cp);
-  assert.equal(t.title, 'Hoje sai da adega de Família A: Riscal Reserva 2019'); assert(/Abrir para respirar: às \d+h/.test(t.prep) && /16–18 °C/.test(t.prep), t.prep);
+  assert.equal(t.title, 'Família A traz: Riscal Reserva 2019'); assert(/^Abrir para respirar às \d+h\d{0,2} · /.test(t.prep) && / · servir a 16–18 °C/.test(t.prep) && /Reserva, 30 min/.test(t.prep) && !/\n/.test(t.prep), t.prep);
   assert(/taças de 150 ml, ~[\d,]+ por adulto que bebe/.test(t.yield), t.yield);
-  const tb = L.cellarToday(st, '2026-12-24|jantar', cp); assert(/^Gelar: às 18h/.test(tb.prep), tb.prep);
+  const tb = L.cellarToday(st, '2026-12-24|jantar', cp); assert(/^Gelar às 18h · servir a /.test(tb.prep) && !/\n/.test(tb.prep), tb.prep);
   assert.equal(L.cellarToday(st, '2026-12-26|jantar', cp), null);
   const txt = L.adegaText('alto', [], L.cellarHomeRows(st, cp)); assert(/Riscal Reserva 2019 — 2 garrafas · trazida por Família A/.test(txt), txt); assert(/custo zero, fora do rateio/.test(txt));
   assert(txt.includes(L.SULFITE_LINE) && txt.endsWith(L.AGE_LINE), 'sulfito e 18+ no WhatsApp'); }

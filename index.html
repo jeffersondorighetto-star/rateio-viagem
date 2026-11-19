@@ -658,7 +658,8 @@ dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .hojehome p{margin:0 0 4px}.hojehome p:last-child{margin:0}
 .hojehome .fine,.hojehome .t1,.hojehome .t2,.hojehome .hojelabel{overflow-wrap:anywhere}
 .hojehome .hojelabel{margin:0 0 4px;font-size:13px;font-weight:650;line-height:1.35;color:var(--text-2)}
-.hojeserv,.hcsvc{justify-content:flex-start;white-space:nowrap;min-height:44px;min-width:44px}
+.hojeserv,.hcsvc{justify-content:flex-start;white-space:nowrap;min-height:44px;min-width:44px;padding-left:0}
+.btn.text.hojeserv,.btn.text.hcsvc{padding-left:0}
 .hojehome [aria-expanded="true"] svg,.hcitem [aria-expanded="true"] svg{transform:rotate(90deg)}
 @media (prefers-reduced-motion: no-preference){
   .hojeserv svg,.hcsvc svg{transition:transform .15s var(--ease)}
@@ -3221,10 +3222,10 @@ function cellarToday(state, key, cp) {
   cp = cp || cellarPlan(state); const a = cp.slots[key]; if (!a) return null; const x = cp.items[a.id], meal = key.split('|')[1];
   const slot = cellarSlots(state).find(s => s.key === key), drinkers = slot ? slot.drinkers : 0, t0 = (MEAL_HOUR[meal] || 20) * 60;
   const tNum = Number((x.temp.match(/\d+/) || [16])[0]), cold = tNum <= 12, lm = leadMin(x.decant);
-  const prep = cold ? `Gelar: às ${hhmm(t0 - 120)} na geladeira (ou 30 min antes em balde com gelo e água) para servir a ${x.temp}.`
-    : `Abrir para respirar: às ${hhmm(t0 - Math.max(lm, 30))} (${x.decant}); servir a ${x.temp}${tNum >= 16 ? ', com 15 min de geladeira antes no calor' : ''}.`;
+  const prep = (cold ? [`Gelar às ${hhmm(t0 - 120)}`, `servir a ${x.temp}`]
+    : [`Abrir para respirar às ${hhmm(t0 - Math.max(lm, 30))}`, x.decant, `servir a ${x.temp}`, tNum >= 16 ? 'com 15 min de geladeira antes no calor' : ''].filter(Boolean)).join(' · ');
   const glasses = a.n * GLASSES_PER_BOTTLE, per = drinkers ? Math.round(glasses / drinkers * 2) / 2 : 0;
-  return { title: `Hoje sai da adega de ${x.famName}: ${cellarLabel(x)}`, prep, n: a.n,
+  return { title: `${x.famName} traz: ${cellarLabel(x)}`, prep, n: a.n,
     yield: `${a.n} garrafa${a.n > 1 ? 's' : ''} = ${glasses} taças de ${GLASS_ML} ml${per ? `, ~${per.toLocaleString('pt-BR')} por adulto que bebe` : ''}.`, item: x, manual: a.manual };
 }
 // Exportação: nunca leva dieta, alergia, intolerância nem fotos (ficam só no aparelho).
@@ -4879,7 +4880,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
           ? `<button type="button" class="btn text sm hcsvc" id="${esc(svcBtn)}" data-hc-svc="${esc(x.id)}" aria-expanded="${svcOpen ? 'true' : 'false'}" aria-controls="${esc(svcId)}">${icon('chev')}<span>Serviço: ${esc(svcTemp)}</span></button><div id="${esc(svcId)}" class="hcsvcbox" role="region" aria-labelledby="${esc(svcBtn)}" ${svcOpen ? '' : 'hidden'}><p class="t2">${esc(svcDetail)}</p></div>`
           : `<p class="t2">Serviço: ${esc(svcTemp)}</p>`;
         return `<div class="hcitem"><div class="ph" data-hc-ph="${esc(x.id)}" aria-hidden="true">${hcPhotos[x.id] ? `<img src="${hcPhotos[x.id]}" alt="">` : icon('wine')}</div>
-          <div class="hctitle t1">${esc(cellarLabel(x))}</div>
+          <div class="hctitle t1">${esc(x.famName)} traz: ${esc(cellarLabel(x))}</div>
           <div class="hcbody">
           <div class="hcwarn"><p class="fine hojewarn" data-aviso="sulfitos">${esc(SULFITE_LINE)}</p><p class="fine hojewarn" data-aviso="18">${esc(AGE_LINE)}</p></div>
           <div class="t2">${esc(x.styleName || 'Estilo a definir')} · ${x.bottles} garrafa${x.bottles > 1 ? 's' : ''} · trazida por ${esc(x.famName)}</div>
