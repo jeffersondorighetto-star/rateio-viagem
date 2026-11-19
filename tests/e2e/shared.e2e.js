@@ -1,6 +1,8 @@
 // Ponta a ponta do modo compartilhado: 2 celulares (contextos separados), backend falso, 375 px.
 // Uso: node tests/e2e/shared.e2e.js   (precisa do Chrome em /usr/bin/google-chrome ou CHROME_PATH)
 const { chromium } = require('playwright-core'), fs = require('fs'), path = require('path'), assert = require('assert');
+// PR #3: o formulário não pré-seleciona quem pagou; escolhe o primeiro se estiver vazio
+const pickPayer = async p => { if (!(await p.inputValue('#payer'))) await p.selectOption('#payer', { index: 1 }); };
 const { start } = require('./fake-backend');
 const PORT = 54400, BASE = `http://localhost:${PORT}/`, OUT = path.join(__dirname, '..', '..', 'shots', 'e2e');
 fs.mkdirSync(OUT, { recursive: true });
@@ -62,9 +64,9 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   const impTxt = await A.p.textContent('#importBody'); assert(/diferença máxima/.test(impTxt)); assert(/substitui/.test(impTxt));
   await A.p.screenshot({ path: path.join(OUT, '02-import-375.png') }); await checkContrast(A.p, '#importBody', 'importar (claro)');
   await A.p.click('[data-imp="yes"]'); await A.p.waitForTimeout(600); await waitSynced(A.p);
-  assert.strictEqual(be.db.expenses.length, 10); assert.strictEqual(be.db.families.length, 4); assert.strictEqual(be.db.people.length, 14);
-  assert(!JSON.stringify(be.db).match(/amendoim|camarão|kiwi|abacaxi|"veg"|data:image/), 'nenhum dado de saúde/foto no servidor');
-  step('importou 4 famílias, 14 pessoas, 10 gastos; nada de dieta/foto no servidor');
+  assert.strictEqual(be.db.expenses.length, 11); assert.strictEqual(be.db.families.length, 5); assert.strictEqual(be.db.people.length, 17);
+  assert(!JSON.stringify(be.db).match(/amendoim|camarão|kiwi|"diet"|"allergens"|"intol"|"consent"|"veg"|data:image/), 'nenhum dado de saúde/foto no servidor (id de prato no cardápio pode ir: c_abacaxi_grelhado não é dado de saúde)');
+  step('importou 5 famílias, 17 pessoas, 11 gastos; nada de dieta/foto no servidor');
   const aNets = await nets(A.p); for (const k in localNets) assert(Math.abs(localNets[k] - aNets[k]) <= 0.01, 'saldo ' + k);
   step('saldos antes/depois da importação batem (R$ 0,01)');
   assert.strictEqual(await A.p.evaluate(() => App.sync().pendingCount()), 0, 'nada pendente depois do eco');
@@ -88,9 +90,9 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await A.p.$eval('#dataCard', e => e.scrollIntoView()); await A.p.screenshot({ path: path.join(OUT, '04-membros-375.png') });
   await checkContrast(A.p, '#dataCard', 'painel do organizador (claro)');
   await A.p.click('[data-m="approve"]'); step('organizador vê «1 aguardando» e aprova');
-  await B.p.waitForFunction(() => App.getState().expenses.length === 10, null, { timeout: 12000 }); await waitSynced(B.p);
-  assert.deepStrictEqual(await nets(B.p), aNets); step('B aprovado: vê os mesmos 10 gastos e saldos');
-  assert(!(await B.p.evaluate(() => JSON.stringify(App.getState()))).match(/amendoim|kiwi|abacaxi|data:image/), 'B não recebe dieta/foto');
+  await B.p.waitForFunction(() => App.getState().expenses.length === 11, null, { timeout: 12000 }); await waitSynced(B.p);
+  assert.deepStrictEqual(await nets(B.p), aNets); step('B aprovado: vê os mesmos 11 gastos e saldos');
+  assert(!(await B.p.evaluate(() => JSON.stringify(App.getState()))).match(/amendoim|kiwi|"diet"|"allergens"|"consent"|data:image/), 'B não recebe dieta/foto');
   assert(await B.p.isDisabled('[data-d="import"]')); assert(await B.p.isHidden('[data-d="sharelink"]').catch(() => true)); step('B não importa nem vê o código (só o organizador)');
 
   // ---- configurações só do organizador; papéis; família do membro
@@ -129,11 +131,11 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   const exifJpg = path.join(OUT, 'exif-teste.jpg'); fs.writeFileSync(exifJpg, Buffer.concat([raw.subarray(0, 2), app1, raw.subarray(2)]));
   assert(fs.readFileSync(exifJpg).includes('Exif'), 'arquivo de teste tem EXIF');
   await B.p.click('#tabbar [data-view="gastos"]'); await B.p.fill('#amt', '33'); await B.p.fill('#desc', 'Feira com foto');
-  await B.p.click('#proofSeg [data-proof="none"]'); await B.p.setInputFiles('#photo', exifJpg); await B.p.waitForSelector('#photoPrev img');
+  await B.p.evaluate(() => { document.getElementById('moreBox').open = true; }); await B.p.click('#proofSeg [data-proof="none"]'); await B.p.setInputFiles('#photo', exifJpg); await B.p.waitForSelector('#photoPrev img');
   assert(await B.p.isVisible('#photoCpfHint') && /Cubra CPF e nome antes de fotografar/.test(await B.p.textContent('#photoCpfHint')), 'aviso de CPF junto à foto');
   assert(await B.p.evaluate(() => { const h = document.getElementById('photoCpfHint'), f = document.getElementById('photo'); return h.closest('.field') === f.closest('.field'); }), 'aviso no mesmo campo da foto');
   assert(/dado de saúde/.test(await B.p.textContent('#recPrivHint')) && await B.p.evaluate(() => document.getElementById('recPrivHint').closest('.field').contains(document.getElementById('recPaste'))), 'aviso de saúde no campo de colar receita');
-  await B.p.click('#submitBtn');
+  await pickPayer(B.p); await B.p.click('#submitBtn');
   await B.p.waitForFunction(() => App.getState().expenses.some(e => e.description === 'Feira com foto' && e.photoPath), null, { timeout: 8000 });
   const ph = await B.p.evaluate(() => App.getState().expenses.find(e => e.description === 'Feira com foto').photoPath);
   const up = Buffer.from(be.db.storage[ph].data, 'base64');
@@ -147,8 +149,8 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   assert(exp - Date.now() <= 300 * 1000 + 2000, 'URL assinada de no máximo 5 min'); await A.p.keyboard.press('Escape');
   step('outro aparelho vê o comprovante por URL assinada (5 min)');
   await B.ctx.setOffline(true);
-  await B.p.fill('#amt', '21'); await B.p.fill('#desc', 'Foto offline'); await B.p.click('#proofSeg [data-proof="none"]'); await B.p.setInputFiles('#photo', exifJpg); await B.p.waitForSelector('#photoPrev img');
-  await B.p.click('#submitBtn'); await B.p.waitForTimeout(800);
+  await B.p.fill('#amt', '21'); await B.p.fill('#desc', 'Foto offline'); await B.p.evaluate(() => { document.getElementById('moreBox').open = true; }); await B.p.click('#proofSeg [data-proof="none"]'); await B.p.setInputFiles('#photo', exifJpg); await B.p.waitForSelector('#photoPrev img');
+  await pickPayer(B.p); await B.p.click('#submitBtn'); await B.p.waitForTimeout(800);
   assert.strictEqual(Object.keys(be.db.storage).length, 1, 'offline: nada enviado ainda');
   assert.strictEqual(await B.p.evaluate(() => new Promise(r => { const q = indexedDB.open('rateio-fotos', 1); q.onsuccess = () => { const t = q.result.transaction('fila').objectStore('fila').count(); t.onsuccess = () => r(t.result); }; })), 1, 'foto na fila do IndexedDB');
   await B.ctx.setOffline(false); await B.p.evaluate(() => dispatchEvent(new Event('online')));
@@ -159,13 +161,13 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   assert(/só o organizador troca/.test(await B.p.textContent('#photoPrev'))); assert(!(await B.p.$('#rmPhoto'))); await B.p.click('#cancelEdit');
   step('membro não troca nem apaga comprovante enviado');
   await A.p.waitForSelector(`#expList .exp[data-id="${feiraId}"]`); await A.p.click(`#expList .exp[data-id="${feiraId}"] .t1`);
-  await A.p.waitForSelector('#rmPhoto'); await A.p.click('#rmPhoto'); await A.p.click('#submitBtn'); await A.p.waitForTimeout(1000);
+  await A.p.waitForSelector('#rmPhoto'); await A.p.click('#rmPhoto'); await pickPayer(A.p); await A.p.click('#submitBtn'); await A.p.waitForTimeout(1000);
   assert(!be.db.storage[ph], 'organizador apagou o comprovante'); await B.p.waitForFunction(id => !App.getState().expenses.find(e => e.id === id).photoPath, feiraId, { timeout: 6000 });
   step('organizador apaga o comprovante (some do bucket e do gasto)');
 
   // ---- B lança um gasto pela tela; A recebe ao vivo
   await B.p.click('#tabbar [data-view="gastos"]'); await B.p.fill('#amt', '87,50'); await B.p.fill('#desc', 'Pão e leite');
-  await B.p.click('#submitBtn'); await B.p.waitForTimeout(1200);
+  await pickPayer(B.p); await B.p.click('#submitBtn'); await B.p.waitForTimeout(1200);
   await A.p.waitForFunction(() => App.getState().expenses.some(e => e.description === 'Pão e leite'), null, { timeout: 5000 });
   assert.deepStrictEqual(await nets(A.p), await nets(B.p)); step('gasto lançado no B aparece no A ao vivo; saldos iguais');
   await A.p.click('#tabbar [data-view="acertos"]'); await A.p.click('#xfers [data-settle]'); await A.p.waitForTimeout(1200);
@@ -173,7 +175,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
 
   // ---- offline no A: banner + pendente; B muda o MESMO campo; A volta: vale o servidor + aviso
   await A.ctx.setOffline(true);
-  await A.p.click('#tabbar [data-view="gastos"]'); await A.p.fill('#amt', '12'); await A.p.fill('#desc', 'Gelo offline'); await A.p.click('#submitBtn');
+  await A.p.click('#tabbar [data-view="gastos"]'); await A.p.fill('#amt', '12'); await A.p.fill('#desc', 'Gelo offline'); await pickPayer(A.p); await A.p.click('#submitBtn');
   await A.p.waitForFunction(() => document.getElementById('syncPill').textContent === 'Offline', null, { timeout: 6000 });
   assert(!(await A.p.isHidden('#syncBanner'))); assert(/só neste aparelho/.test(await A.p.textContent('#syncBannerText')));
   await A.p.screenshot({ path: path.join(OUT, '05-offline-375.png') }); await checkContrast(A.p, '#syncBanner, #syncPill', 'aviso offline (claro)'); step('sem internet: pílula Offline + aviso de alteração pendente');
@@ -201,9 +203,9 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   step('travar deixa o evento só leitura para todos; destravar libera');
 
   // ---- recarregar mantém o evento; ?offline=1 abre o modo local intacto
-  await B.p.reload(); await waitSynced(B.p); assert.strictEqual(await B.p.evaluate(() => App.getState().expenses.length), 14); step('recarregar mantém o evento');
+  await B.p.reload(); await waitSynced(B.p); assert.strictEqual(await B.p.evaluate(() => App.getState().expenses.length), 15); step('recarregar mantém o evento');
   const A2 = await A.ctx.newPage(); await A2.goto(BASE + '?offline=1'); await A2.waitForTimeout(400);
-  assert(await A2.isHidden('#syncPill')); assert.strictEqual(await A2.evaluate(() => App.getState().expenses.length), 10, 'cópia local intacta'); step('?offline=1 abre a versão local intacta'); await A2.close();
+  assert(await A2.isHidden('#syncPill')); assert.strictEqual(await A2.evaluate(() => App.getState().expenses.length), 11, 'cópia local intacta'); step('?offline=1 abre a versão local intacta'); await A2.close();
 
   // ---- overflow 375 nas telas novas
   for (const [p, n] of [[A.p, 'A'], [B.p, 'B']]) {
@@ -225,7 +227,7 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   await C.p.fill('#gName', 'Caio'); await C.p.click('#joinForm button[type=submit]');
   await C.p.waitForFunction(() => !document.getElementById('joinErr').hidden); step('link antigo não entra mais');
   await A.p.waitForSelector('[data-m="approve"]'); await A.p.click('[data-m="approve"]');
-  await B.p.waitForFunction(() => App.getState().expenses.length === 14 && !document.getElementById('gateDlg').open, null, { timeout: 12000 });
+  await B.p.waitForFunction(() => App.getState().expenses.length === 15 && !document.getElementById('gateDlg').open, null, { timeout: 12000 });
   await A.p.waitForSelector(`[data-m="revoke"][data-u="${bId}"]`); await A.p.click(`[data-m="revoke"][data-u="${bId}"]`);
   await B.p.waitForFunction(() => /Acesso removido/.test((document.getElementById('gateTitle') || {}).textContent || ''), null, { timeout: 8000 });
   await B.p.screenshot({ path: path.join(OUT, '09-removido-375.png') }); await checkContrast(B.p, '#gateBody', 'acesso removido (escuro)');
@@ -239,8 +241,8 @@ const FAKE = fs.readFileSync(path.join(__dirname, 'fake-supabase.mjs'), 'utf8');
   assert(await A.p.isHidden('#photoPurgeBanner'), 'sem lembrete antes do fim');
   await A.p.click('#tabbar [data-view="planejar"]'); await A.p.fill('#tStart', '2025-02-01'); await A.p.fill('#tEnd', '2025-02-03'); await A.p.dispatchEvent('#tEnd', 'change');
   await A.p.waitForFunction(() => !document.getElementById('photoPurgeBanner').hidden, null, { timeout: 8000 });
-  assert(/apague os comprovantes até 05\/03/.test(await A.p.textContent('#photoPurgeText')), await A.p.textContent('#photoPurgeText'));
-  await A.p.click('#tabbar [data-view="acertos"]'); assert(/até 30 dias depois do fim/.test(await A.p.textContent('#photoRule')), 'regra no painel do organizador');
+  assert(/apague os comprovantes até 10\/02/.test(await A.p.textContent('#photoPurgeText')), await A.p.textContent('#photoPurgeText'));
+  await A.p.click('#tabbar [data-view="acertos"]'); assert(/até 7 dias depois do fim/.test(await A.p.textContent('#photoRule')), 'regra no painel do organizador');
   await checkContrast(A.p, '#photoPurgeBanner', 'lembrete dos comprovantes');
   await A.p.screenshot({ path: path.join(OUT, '10-apagar-comprovantes-375.png') });
   await A.p.click('[data-purge]');

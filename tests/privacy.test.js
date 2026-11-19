@@ -23,7 +23,12 @@ const ph = html.indexOf('id="photo"'), cpf = html.indexOf('Cubra CPF e nome ante
 assert(ph > 0 && cpf > ph && cpf - ph < 300, 'aviso de CPF junto ao campo de foto');
 const rp = html.indexOf('id="recPaste"'), rh = html.indexOf('id="recPrivHint"');
 assert(rp > 0 && rh > rp && rh - rp < 600 && /dado de saúde/.test(html.slice(rh, rh + 300)), 'aviso de saúde no campo de colar receita');
-assert(/PHOTO_RETENTION_DAYS = 30/.test(html) && /apague os comprovantes até/.test(html), 'lembrete de 30 dias');
+assert(/PHOTO_RETENTION_DAYS = 7\b/.test(html) && /apague os comprovantes até/.test(html), 'lembrete de 7 dias');
+// Praia Brava: exportação sem saúde e sem foto; sync só com a chave do RLS real; consentimento e aviso fixo
+assert(/function safeExportState/.test(html) && /delete m\.diet/.test(html) && /delete e\.photo/.test(html), 'export sem saúde/foto');
+assert(/SYNC_ENABLED: false/.test(html) && /CFG\.SYNC_ENABLED === true/.test(html), 'sync desligado até o RLS real passar');
+assert(/Retirar autorização/.test(html) && /O app ajuda a lembrar\. Quem confirma o ingrediente/.test(html), 'consentimento e aviso fixo');
+assert(!/getPublicUrl|tesseract|ocr\.space|vision\.googleapis|openai/i.test(html), 'sem OCR/IA externa');
 assert(/purge_event_photos/.test(sql) && /github_id bigint primary key/.test(sql) && /i\.provider_id = a\.github_id::text/.test(sql), 'retenção e lista por id no build');
 assert(!/user_name/.test(sql.slice(sql.indexOf('_may_organize'), sql.indexOf('_may_organize') + 600)), 'lista não usa login');
 for (const f of ['README.md', 'SETUP-CELULAR.md', 'docs/VALIDACAO.md']) assert(!/^\s*delete from storage\.objects/mi.test(fs.readFileSync(path.join(root, f), 'utf8')), f + ': delete direto em storage.objects (bloqueado no Supabase)');
@@ -54,4 +59,4 @@ for (const f of fs.readdirSync(path.join(root, 'supabase', 'migrations'))) asser
 // config do cliente: só URL + chave PUBLICÁVEL; nunca chave secreta/service_role/JWT de serviço
 { const m = html.match(/SUPABASE_ANON_KEY:\s*'([^']*)'/); if (m) assert(/^sb_publishable_[A-Za-z0-9_-]+$/.test(m[1]), 'chave do cliente não é publicável');
   assert(!/sb_secret_[A-Za-z0-9_-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ/.test(html), 'segredo no index.html'); }
-console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 30 dias, lista por id GitHub, sem sobrenomes reais)');
+console.log('PRIVACY/GOVERNANCE CHECKS PASSED (.gitignore, datas fictícias, URL assinada ≤ 300 s, sem getPublicUrl, sem person_diet/cron, grants por coluna, aviso CPF/saúde, retenção 7 dias, export sem saúde, chave de sync, consentimento, sem OCR externo, lista por id GitHub, sem sobrenomes reais)');

@@ -342,5 +342,5 @@ select pg_temp.ok(pg_temp.n(format($$select * from storage.objects where name = 
 select pg_temp.ok((select photo_path is not null from public.expenses where event_id = :'ev2' and id = 'k1'), 'referência do outro evento intacta');
 select pg_temp.u(:'O', false);
 select public.update_event_settings(:'ev', format('{"start_date":"%s","end_date":"%s"}', current_date - 12, current_date - 10)::jsonb, (select version from public.events where id = :'ev')) is not null as x \gset
-select pg_temp.ok((public.event_photo_status(:'ev') ->> 'due') = 'true' and (public.event_photo_status(:'ev') ->> 'purge_by')::date = current_date + 20, 'prazo = fim + 30 dias; lembrete devido depois do fim');
+select pg_temp.ok((public.event_photo_status(:'ev') ->> 'due') = 'true' and (public.event_photo_status(:'ev') ->> 'purge_by')::date = current_date - 3, 'prazo = fim + 7 dias (0015); lembrete devido depois do fim');
 

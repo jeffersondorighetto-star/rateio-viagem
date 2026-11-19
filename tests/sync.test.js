@@ -257,8 +257,8 @@ const settle3 = async (...ds) => { for (let i = 0; i < 3; i++) { for (const d of
   assert.strictEqual(pr.remaining, 0); assert(pr.found >= 2 && pr.removed === pr.found); assert(pr.clearedRefs >= 1);
   assert(!Object.keys(core.db.storage).some(p => p.startsWith(ev + '/')), 'no photos left for the event'); assert(core.db.storage[`${ev2}/k1.jpg`], 'other event untouched');
   await tick(); assert(!DA2.state.expenses.some(e => e.photoPath), 'photo refs cleared on every device');
-  assert.strictEqual(L.photoPurgeBy('2031-03-05'), '2031-04-04');
-  console.log('PHOTO TESTS PASSED (offline queue, upload, 5-min signed URL, member no replace/delete, organizer replace/delete, size, outsider, lost reply, 30-day purge: organizer only, other event untouched)');
+  assert.strictEqual(L.photoPurgeBy('2031-03-05'), '2031-03-12');
+  console.log('PHOTO TESTS PASSED (offline queue, upload, 5-min signed URL, member no replace/delete, organizer replace/delete, size, outsider, lost reply, 7-day purge: organizer only, other event untouched)');
 
   // 9) lock, revoke, rotate
   core.rpc(O, 'lock_event', { p_event: ev, p_locked: true }); await tick();

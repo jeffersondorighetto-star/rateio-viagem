@@ -4,6 +4,7 @@ Protótipo clicável para **planejar e dividir** uma viagem de N famílias (o ex
 
 ## Como abrir
 - Online: https://jeffersondorighetto-star.github.io/rateio-viagem/
+- Prévia da branch `praia-brava`: https://jeffersondorighetto-star.github.io/rateio-viagem/preview-praia-brava/ (só no aparelho, chaves próprias de armazenamento, sem sync)
 - Local: dê dois cliques em `index.html`, ou rode `python3 -m http.server 8080` e abra `http://localhost:8080`.
 - Testes da lógica: `npm test` (ou `node tests/test.js`) na raiz do repositório, sem dependências. São 4 blocos: divisão, lançamento rápido/comprovantes, planejamento e receitas.
 
@@ -25,7 +26,8 @@ Opcional. Com `SUPABASE_URL` e `SUPABASE_ANON_KEY` em `null` (padrão), o app fu
 | `0010_recipes_meal_plan` | `recipes` e `meal_plan` compartilhados, com versão (aprovados editam) |
 | `0011_delta_sync` | `updated_at` em tudo que sincroniza (reconexão busca só o que mudou) |
 | `0013_hardening` | revisão de governança: remove `person_diet` e o expurgo de bancos antigos; **INSERT/UPDATE por coluna** (a mesma lista do `apply_ops`) em todas as tabelas; `event_members` sem UPDATE de cliente; `set_member_family` (organizador) |
-| `0014_photo_retention` | `purge_event_photos(evento)` (só organizador: tira a foto dos gastos e devolve a lista de arquivos; o app apaga pela Storage API, porque o Supabase bloqueia `delete` direto em `storage.objects`) e `event_photo_status` (fotos restantes e prazo = fim + 30 dias) |
+| `0014_photo_retention` | `purge_event_photos(evento)` (só organizador: tira a foto dos gastos e devolve a lista de arquivos; o app apaga pela Storage API, porque o Supabase bloqueia `delete` direto em `storage.objects`) e `event_photo_status` (fotos restantes e prazo) |
+| `0015_photo_retention_7d` | Praia Brava: `event_photo_status` passa a devolver prazo = fim + **7** dias (antes 30) |
 
 Privilégios: INSERT/UPDATE são concedidos **por coluna** (pelo PostgREST direto ninguém troca `event_id`, `id`, `created_by`, `version` no INSERT, `confirmed_*` ou a família de um membro). SELECT é por tabela, filtrado pela RLS (só aprovado do evento). Não há DELETE para clientes. `0007` e `0012` (dieta e expurgo) foram **retiradas do build**: a dieta fica só no aparelho no piloto; o modelo aprovado para o futuro está em [`docs/FUTURO-DIETA.md`](docs/FUTURO-DIETA.md) (o expurgo agendado volta junto com ele; pg_cron não roda com o projeto pausado).
 
@@ -35,10 +37,59 @@ Privilégios: INSERT/UPDATE são concedidos **por coluna** (pelo PostgREST diret
 - **Gravação com versão:** cada aparelho manda só os campos que mudou, com a versão que conhecia (`apply_ops`). Campos diferentes: as duas edições ficam. **Mesmo campo: vale o servidor** + aviso. Repetir a mesma operação (resposta perdida) não duplica (`op_id`). Reconexão busca só as linhas com `updated_at` novo (5 s de folga).
 - **Sincroniza:** evento e configurações, pesos/preços/quantidades, famílias, pessoas (só primeiro nome, tipo, bebe, chegada/saída), gastos, confirmações, acertos, **receitas e cardápio**. A lista de compras é calculada em cada aparelho a partir disso. Exclusão é lógica (`deleted_at`).
 - **Comprovantes (fotos):** no evento, a foto é redesenhada no canvas (sem EXIF/GPS) e enviada como JPEG ≤ 150 KB para `<evento>/<gasto>.jpg`; sem internet fica numa fila no IndexedDB e sobe quando a conexão volta. Ver: URL assinada de **5 min** (nunca URL pública). Membro envia; só o organizador troca ou apaga. No modo local nada muda.
-- **Retenção dos comprovantes:** regra de 30 dias. Junto ao botão Foto: «Cubra CPF e nome antes de fotografar». Depois da data de fim, o organizador vê «apague os comprovantes até DD/MM» com **Apagar agora** (também em Acertos › Dados, com a regra escrita no painel); apaga só as fotos daquele evento. Na colagem de receita, aviso para tirar nomes e dado de saúde.
-- **Fica só no aparelho:** **dieta/alergia**.
+- **Retenção dos comprovantes:** regra de 7 dias depois do fim (Praia Brava; antes 30). Além disso, a foto local é apagada assim que o gasto é confirmado. Junto ao botão Foto: «Cubra CPF e nome antes de fotografar». Depois da data de fim, o organizador vê «apague os comprovantes até DD/MM» com **Apagar agora** (também em Acertos › Dados, com a regra escrita no painel); apaga só as fotos daquele evento. Na colagem de receita, aviso para tirar nomes e dado de saúde.
+- **Fica só no aparelho:** **dieta, alergia, intolerância e consentimento**, respostas do pré-briefing, chaves da mesa (`features`), métricas, sugestões e curtidas de bebida, aceite do álcool, acerto fechado (o servidor recebe o `lock_event`).
 - **Sem internet:** pílula «Offline» + aviso; o que for lançado fica pendente e é enviado quando a conexão volta, mesclando campo a campo.
 - **Dados:** Exportar JSON, Importar JSON (só organizador, com prévia e tolerância R$ 0,01) e «Trazer os dados deste aparelho». `?offline=1` abre a versão local intacta. Validação com a viagem real: [`docs/VALIDACAO.md`](docs/VALIDACAO.md).
+
+## Praia Brava (branch `praia-brava`, viagem a partir de 15/12)
+Construída sobre o `rateio-e2` (PR #1) + Chef/adega (PR #2/#3). Prioridade: **segurança e alergia → integridade do rateio → mesa de especialistas**.
+
+### Interruptores
+- `SYNC_ENABLED: false` (config no `index.html`): o app roda **só no aparelho** mesmo com URL e chave publishable preenchidas. Só vire para `true` depois que o Jefferson rodar `supabase/test/real_rls_matrix.sql` no Supabase real e receber `RESULTADO: PASS … / FAIL 0`.
+- `SUGG_SYNC_ENABLED: false`: sugestões e curtidas de bebida ficam no aparelho do organizador. **Ainda não existe tabela** para sincronizá-las; a chave só libera o interruptor na tela.
+- Por evento (Acertos › Dados): **Mesa de especialistas** (ligada no exemplo da Praia Brava; eventos novos começam desligados, como Orlando e NY) e **Sugestões e curtidas sincronizadas** (desligado; travado enquanto a chave acima estiver `false`).
+
+### Alergia, intolerância e consentimento
+- Lista **fechada** da Anvisa (RDC 727/2022, Anexo III: crustáceos, peixes, leite, ovos, amendoim, castanhas, soja, trigo/cevada/centeio/aveia) + moluscos (citados pela Anvisa fora do Anexo). Cada ingrediente de cada receita é marcado (`ingAllergens`); exceções como leite de coco e noz-moscada são tratadas.
+- Alergia é **bloqueio duro** em todo lugar: sugestão do Chef, ranking, troca de prato, Natal e réveillon (o Chef troca e marca «trocado»), pratos já aceitos (`enforceAllergies`) e lista de compras. Aviso de contaminação cruzada no modo cozinha.
+- Intolerância (lactose, glúten, alho/cebola): o prato **é adaptado**; a lista de compras leva a versão adaptada (sem lactose, sem glúten) na quantidade de quem precisa.
+- Registro só com a **caixa de consentimento** (desmarcada, destacada, marcada por um adulto da família) com o texto da Themis, preenchido com o nome e a data da viagem do estado. **Retirar autorização** apaga na hora. Apagamento automático **15 dias depois do fim** da viagem.
+- Aviso fixo: «O app ajuda a lembrar. Quem confirma o ingrediente é o adulto que cozinha e o responsável pela criança.» Natal e réveillon pedem confirmação explícita; «Aceitar tudo» não aceita ceias quando há alergia.
+- Cada família responde atrás de um **PIN de 4 dígitos** (hash no aparelho) e só vê as próprias respostas. Vetos aparecem como contagem só a partir de 2 famílias.
+- **Imprimir folha de alergias** por família (só de quem está no aparelho).
+- **Nada de saúde sai do aparelho:** nem servidor (`pickRow` não tem a coluna), nem JSON exportado/importado (`safeExportState`), nem WhatsApp (itens adaptados aparecem como «versão adaptada, detalhe no app»).
+- **Sem internet:** `sw.js` guarda o app (rede primeiro, cache depois; nunca guarda chamadas ao Supabase) e os dados ficam no `localStorage`, então alergias e cardápio do dia abrem sem rede.
+
+### Integridade do rateio
+- Remover família ou pessoa **não apaga gastos**: o app pede para transferir o pagador antes; família com Pix marcado não sai.
+- A escala da cozinha **congela** quando o cardápio é aceito.
+- **Fechar acerto** congela os valores e trava lançamentos (no modo compartilhado chama `lock_event`); Pix marcado nunca some (só desmarca com o acerto aberto e confirmação).
+
+### Fotos
+- Aviso «Cubra CPF e nome antes de fotografar». A foto é reduzida no envio (lado máx. 1024 px, JPEG ≤ 100 KB, sem EXIF), pensando no limite de 1 GB do Storage gratuito. Apagada ao confirmar o gasto ou até 7 dias depois do fim. **Sem OCR nem IA externa.**
+
+### Álcool e mesa de especialistas
+- Interruptor «bebe» **só para adultos**; menores nunca contam. Frase 18+ nas telas de bebida e no WhatsApp. Perfil de menor (Acertos › Dados › «Quem está vendo») não vê adega, mesa nem harmonização.
+- Bebida alcoólica só entra na lista depois do **aceite de um adulto organizador**, na quantidade dos adultos que bebem.
+- Mesa (Chef, Enólogo, Bar), recolhida por padrão: balão curto + «Ver conversa». Conteúdo **por regras e catálogo curado**, sem IA externa nem API paga. Camada 1: 3 estilos com teor alcoólico e motivo + cartão **Sem álcool** com o mesmo peso. Camada 2: 3 rótulos por estilo (entrada/médio/alto) por nota, com teor, safra, crítico/concurso, link e data da conferência; sem patrocínio nem afiliado; links sem rastreio. Camada 3: sugestão da família (catálogo ou «Outro» até 80 caracteres) com selo do Enólogo e curtidas só em número.
+- Drinks: 3 por momento (beira-mar, aperitivo, pós) com 1 sem álcool, receita por jarra que alimenta a lista. Na praia: «Se for dirigir ou entrar no mar, não beba».
+- Prato trocado: «rever harmonização» / «O Chef trocou o prato e o Enólogo ajustou a bebida» com Desfazer.
+- **Catálogo** (`BEVERAGES`, `CATALOG_VERSION`): IDs fixos (`tests/catalog-ids.json`); item aposentado nunca é apagado. Nota só de crítico ou concurso independente (nota, nome e link, sem texto da crítica); sem fonte = «Sem nota». Preço sempre como faixa com o mês («faixa aproximada, nov/2026»). Moeda: só reais.
+- **Métricas** sem nomes e sem saúde (Acertos › Dados › Exportar métricas): lançamentos por família por dia, aberturas da mesa, sugestões e curtidas por família, harmonizações aceitas, refeições do Chef.
+
+### Supabase: região, backup e o que o Jefferson roda
+- Região do projeto: **sa-east-1 (São Paulo)**.
+- Ordem: (1) colar `supabase/supabase.sql` no SQL Editor (inclui a `0015`); (2) rodar `supabase/test/real_rls_matrix.sql` e conferir `FAIL 0`; (3) só então `SYNC_ENABLED: true` num PR revisado.
+- **Backup com `supabase db dump`** (CLI, no computador do Jefferson, com a senha do banco digitada lá e nunca no repositório):
+  - **antes** da viagem: `supabase db dump --linked -f antes.sql` e `supabase db dump --linked --data-only -f antes-dados.sql`;
+  - **durante**, uma vez por dia: `supabase db dump --linked --data-only -f dia-AAAA-MM-DD.sql`;
+  - **depois** do acerto fechado: um último dump completo.
+  - O dump **não inclui as fotos** do Storage (só o banco). Guarde as cópias **criptografadas fora do Supabase** (por exemplo, um arquivo `.zip` com senha ou um cofre do 1Password) e apague-as quando não forem mais necessárias.
+- Ainda não feito: sincronizar sugestões/curtidas e votos offline (ficam no aparelho), colunas no servidor para escala congelada e bebida escolhida (ficam no aparelho), multimoeda.
+
+### Testes
+`npm test` (inclui `tests/allergy.test.js`: lista Anvisa, marcas por ingrediente, cenário da Astreia — criança alérgica a camarão + família que veta frutos do mar = nenhum prato com camarão em 8 sementes, inclusive réveillon — e `tests/catalog.test.js`: IDs fixos, nota sem fonte/link/data barrada, alcoólico sem teor barrado), `npm run test:e2e`, `npm run test:contrast`, `npm run test:overflow`, `npm run test:sql`.
 
 ## Navegação (barra inferior)
 | Aba | O que tem |
@@ -90,17 +141,17 @@ Em todos os modos, **saldo = pago − parte**. A soma dos saldos é zero. **Quem
 - O resumo do WhatsApp agrupa por tipo de comprovante e lista os itens não confirmados e os estimados.
 
 ## Dados de exemplo
-Tudo inventado: famílias, nomes e dietas são fictícios.
+Tudo inventado: famílias e nomes são fictícios. **O exemplo não traz nenhuma dieta, alergia ou resposta de pré-briefing** (Restaurar exemplo não grava respostas fictícias).
 
 | Família | Membros (✓ = bebe) | Observações |
 |---|---|---|
 | Família A | Carlos ✓, Ana ✓, Pedro (adolescente), Lia (criança) | |
 | Família B | Marcos ✓, Júlia, Rafa ✓ | |
-| Família C | Beto ✓, Clara ✓ (vegetariana, fictício), Davi (criança, alergia a kiwi, fictício), Nina (bebê) | |
-| Família D | Tiago ✓, Bia (alergia a abacaxi, fictício), Leo (criança) | chegam no jantar de 23/12 |
+| Família C | Beto ✓, Clara ✓, Davi (criança), Nina (bebê) | |
+| Família D | Tiago ✓, Bia, Leo (criança) | chegam no jantar de 23/12 |
 | Família E | Rui ✓, Sofia ✓, Tom (criança) | |
 
-Viagem de 20/12/2026 a 02/01/2027 (14 dias, datas de exemplo; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 10 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. O exemplo já vem com respostas fictícias de pré-briefing e o cardápio do Chef aceito (marcado como exemplo; somem quando uma família responde). **Restaurar exemplo** (no rodapé) volta tudo ao início.
+Viagem de 20/12/2026 a 02/01/2027 (14 dias, datas de exemplo; café, almoço e jantar), com refeições em casa, fora e livres. Há 4 receitas cadastradas (Churrasco completo, Arroz carreteiro, Macarrão à bolonhesa e Café da manhã completo) já distribuídas no cardápio, incluindo o churrasco do réveillon. São 11 gastos: 2 sem nota aguardando confirmação, 1 sem nota já confirmado e 1 estimado. A caixinha é de R$ 1.200 por família. O exemplo vem com o cardápio do Chef aceito e a escala congelada, **sem** respostas de pré-briefing. **Começar viagem real** (no card do pré-briefing) apaga o exemplo. **Restaurar exemplo** (no rodapé) volta tudo ao início.
 
 ## Armazenamento
 Tudo fica só no `localStorage` do navegador. Nada vai para servidor nenhum. Cada aparelho tem a própria cópia; para alinhar entre as famílias, use os textos para WhatsApp. (Para editar juntos em tempo real no futuro, dá para plugar um backend usando a ponte `window.App`.)
