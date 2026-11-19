@@ -635,19 +635,34 @@ dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .homecellar{display:grid;gap:12px;margin:0 0 16px}
 .hchead{display:grid;gap:8px}
 .hchead .btn{justify-self:start}
-.hcitem{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:start;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);min-width:0}
-.hcitem .ph{width:56px;height:72px;border-radius:8px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;color:var(--text-3)}
+.hcitem{display:grid;grid-template-columns:56px minmax(0,1fr);grid-template-areas:"ph title" "ph body";column-gap:12px;row-gap:0;align-items:start;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);min-width:0}
+.hcitem .ph{grid-area:ph;width:56px;height:72px;border-radius:8px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;color:var(--text-3)}
 .hcitem .ph img{width:100%;height:100%;object-fit:cover;display:block}
-.hcitem .t2{overflow-wrap:anywhere}
+.hcitem .hctitle{grid-area:title;align-self:center;min-width:0}
+.hcitem .hcbody{grid-area:body;min-width:0}
+.hcitem .t2,.hcsvcbox{overflow-wrap:anywhere}
+.hcsvcbox{margin-top:4px}.hcsvcbox p{margin:0}
+.hcacts{display:flex;flex-flow:row nowrap;align-items:center;gap:8px;margin-top:8px}
+.hcacts .btn{flex:0 0 auto;white-space:nowrap;min-height:44px;min-width:44px}
+@media (max-width:699px){
+  .hcitem{grid-template-areas:"ph title" "body body";column-gap:8px;row-gap:8px}
+  .hcitem .ph,.hcitem .hctitle{align-self:center}
+}
 .hcwhen{display:grid;gap:10px;margin-top:8px}
 .hcslot{display:grid;gap:6px;padding-top:8px;border-top:1px solid var(--border)}
 .hcslot .ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .hcslot select{min-height:44px}
-.hcslot .btn.text,.hcitem .actions .btn{min-height:44px}
+.hcslot .btn.text,.hcitem .hcacts .btn,.hcsvc,.hojeserv{min-height:44px}
 .hctag{display:inline-flex;align-items:center;margin-top:8px;font-size:12px;font-weight:600;padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--text-2);white-space:nowrap;max-width:100%}
 .hojehome{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2)}
 .hojehome p{margin:0 0 4px}.hojehome p:last-child{margin:0}
-.hojehome .fine,.hojehome .t1,.hojehome .t2{overflow-wrap:anywhere}
+.hojehome .fine,.hojehome .t1,.hojehome .t2,.hojehome .hojelabel{overflow-wrap:anywhere}
+.hojehome .hojelabel{margin:0 0 4px;font-size:13px;font-weight:650;line-height:1.35;color:var(--text-2)}
+.hojeserv,.hcsvc{justify-content:flex-start;white-space:nowrap;min-height:44px;min-width:44px}
+.hojehome [aria-expanded="true"] svg,.hcitem [aria-expanded="true"] svg{transform:rotate(90deg)}
+@media (prefers-reduced-motion: no-preference){
+  .hojeserv svg,.hcsvc svg{transition:transform .15s var(--ease)}
+}
 #hcPhotoPrev img{width:56px;height:72px;object-fit:cover;border-radius:8px;display:block}
 .sheetdishes{display:grid;gap:0}.sheetdishes p{margin:0}
 .sheetdishes summary{list-style:none;display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-weight:600;cursor:pointer}
@@ -4734,7 +4749,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     return `<div class="mesa" data-mesa="${k}"><div class="mhead"><div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div></div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : ''}
       ${lead ? `<p class="mbal"><b>Chef.</b> ${esc(lead)}</p>` : ''}
-      ${conv.length >= 2 ? `<button type="button" class="btn text sm mconv" data-mconv="${k}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="${convId}">${icon('chev')}<span>Ver conversa (${conv.length})</span></button><div id="${convId}" ${open ? '' : 'hidden'}><div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}:</b> ${esc(l.text)}</p>`).join('')}</div></div>` : conv.length === 1 ? `<div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}:</b> ${esc(l.text)}</p>`).join('')}</div>` : ''}
+      ${conv.length >= 2 ? `<button type="button" class="btn text sm mconv" data-mconv="${k}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="${convId}">${icon('chev')}<span>Ver conversa (${conv.length})</span></button><div id="${convId}" ${open ? '' : 'hidden'}><div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}.</b> ${esc(l.text)}</p>`).join('')}</div></div>` : conv.length === 1 ? `<div class="talk">${conv.map(l => `<p><b>${WHO[l.who][0]}.</b> ${esc(l.text)}</p>`).join('')}</div>` : ''}
       ${body}
       <p class="fine" style="margin:8px 0 0">Conteúdo automático do app, por regras e catálogo curado. Sem IA externa.</p></div>`;
   }
@@ -4858,14 +4873,20 @@ Corte as frutas e monte a mesa com pães e frios.`,
     box.innerHTML = `<div class="hchead"><div><div class="t1">Da nossa adega</div><div class="t2">${list.length ? `${total} garrafa${total > 1 ? 's' : ''} de casa · custo zero: fora do rateio e da lista de compras` : 'Garrafas que vêm de casa: custo zero, fora do rateio e da lista de compras. Ganham dia no cardápio pelo prato.'}</div></div>
       <button type="button" class="btn secondary" data-hc-add>${icon('camera')}<span>Levar da nossa adega</span></button></div>`
       + list.map(x => { const un = cp.unplaced.find(u => u.id === x.id), sl = by[x.id] || [];
-        return `<div class="hcitem"><div class="ph" data-hc-ph="${esc(x.id)}" aria-hidden="true">${hcPhotos[x.id] ? `<img src="${hcPhotos[x.id]}" alt="">` : icon('wine')}</div><div style="min-width:0">
-          <div class="t1">${esc(cellarLabel(x))}</div>
+        const svcTemp = x.temp || '', svcFull = x.service || '', svcDetail = svcTemp && svcFull.startsWith(svcTemp) ? svcFull.slice(svcTemp.length).replace(/^\s*·\s*/, '') : '';
+        const svcId = 'hcsvc-' + x.id, svcBtn = 'hcsvcbtn-' + x.id, svcOpen = !!(ui.hcSvc && ui.hcSvc[x.id]);
+        const svc = !svcTemp ? '' : svcDetail
+          ? `<button type="button" class="btn text sm hcsvc" id="${esc(svcBtn)}" data-hc-svc="${esc(x.id)}" aria-expanded="${svcOpen ? 'true' : 'false'}" aria-controls="${esc(svcId)}">${icon('chev')}<span>Serviço: ${esc(svcTemp)}</span></button><div id="${esc(svcId)}" class="hcsvcbox" role="region" aria-labelledby="${esc(svcBtn)}" ${svcOpen ? '' : 'hidden'}><p class="t2">${esc(svcDetail)}</p></div>`
+          : `<p class="t2">Serviço: ${esc(svcTemp)}</p>`;
+        return `<div class="hcitem"><div class="ph" data-hc-ph="${esc(x.id)}" aria-hidden="true">${hcPhotos[x.id] ? `<img src="${hcPhotos[x.id]}" alt="">` : icon('wine')}</div>
+          <div class="hctitle t1">${esc(cellarLabel(x))}</div>
+          <div class="hcbody">
           <div class="t2">${esc(x.styleName || 'Estilo a definir')} · ${x.bottles} garrafa${x.bottles > 1 ? 's' : ''} · trazida por ${esc(x.famName)}</div>
           ${x.rating ? `<div class="t2">${esc(ratingTxt(x.rating))} · ficha do catálogo</div>` : (x.matchId ? '<div class="t2">Ficha do catálogo: Sem nota</div>' : '')}
-          ${x.service ? `<div class="t2">Serviço: ${esc(x.service)}</div>` : ''}${x.note ? `<div class="t2">Obs.: ${esc(x.note)}</div>` : ''}
-          ${x.special ? `<span class="hctag">${x.old ? 'Safra antiga' : 'Ícone'} · vai para noite de destaque</span>` : ''}
+          ${svc}${x.note ? `<div class="t2">Obs.: ${esc(x.note)}</div>` : ''}
+          ${x.special ? `<span class="hctag">${x.old ? 'Safra antiga · noite de destaque' : 'Ícone · vai para noite de destaque'}</span>` : ''}
           <div class="hcwhen">${sl.map(([k, a]) => hcSlotRow(k, a, x, list)).join('')}${un ? `<p class="hint" style="margin:0">${un.n} garrafa${un.n > 1 ? 's' : ''} ainda sem refeição: aceite no Chef pratos que combinem com ${esc((x.styleName || 'o estilo').toLowerCase())}.</p>` : ''}</div>
-          <div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:8px"><button type="button" class="btn text sm" data-hc-edit="${esc(x.id)}">${icon('edit')}<span>Editar</span></button><button type="button" class="btn text sm" data-hc-del="${esc(x.id)}">${icon('trash')}<span>Tirar da lista</span></button></div>
+          <div class="hcacts"><button type="button" class="btn text sm" data-hc-edit="${esc(x.id)}">${icon('edit')}<span>Editar</span></button><button type="button" class="btn text sm" data-hc-del="${esc(x.id)}">${icon('trash')}<span>Tirar da lista</span></button></div>
         </div></div>`; }).join('')
       + (touched ? `<button type="button" class="btn text sm" data-hc-reset style="justify-self:start;min-height:44px">Refazer sugestões das garrafas de casa</button>` : '');
     for (const x of list) if (!(x.id in hcPhotos) && (state.cellar.find(i => i.id === x.id) || {}).photo) { hcPhotos[x.id] = null;
@@ -4926,6 +4947,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   $('#homeCellar').addEventListener('click', e => {
     if (isMinorViewer()) return;
+    const svcBtn = e.target.closest('[data-hc-svc]');
+    if (svcBtn) { const open = svcBtn.getAttribute('aria-expanded') !== 'true'; svcBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const panel = document.getElementById(svcBtn.getAttribute('aria-controls')); if (panel) panel.hidden = !open;
+      ui.hcSvc = ui.hcSvc || {}; ui.hcSvc[svcBtn.dataset.hcSvc] = open; saveUi(); return; }
     if (e.target.closest('[data-hc-add]')) { openCellarForm(null); return; }
     const ed = e.target.closest('[data-hc-edit]'); if (ed) { openCellarForm(ed.dataset.hcEdit); return; }
     const del = e.target.closest('[data-hc-del]'); if (del) { const id = del.dataset.hcDel, it = (state.cellar || []).find(x => x.id === id); if (!it || !confirm(`Tirar “${it.name}” da adega de casa?`)) return;
@@ -4975,13 +5000,17 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const lead = talk[0] ? chefVisible(talk[0].text, title) : '';
     const hc = minor ? null : cellarToday(state, k);
     $('#hojeMeta').textContent = MEALS[meal];
+    const servOpen = !!ui.hojeServ;
     el.innerHTML = `<div class="hoje"><div><div class="when">${esc(dLabel(d))} · ${esc(MEALS[meal])}</div><div class="dish">${esc(title)}</div></div>
       <div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : (lead ? `<p class="mbal"><b>Chef.</b> ${esc(lead)}</p>` : '')}
-      ${hc ? `<div class="hojehome">${icon('wine')}<div style="min-width:0"><p class="t1"><b>${esc(hc.title)}</b></p><p class="t2">${esc(hc.prep)}</p><p class="t2">${esc(hc.yield)}</p><p class="fine">${esc(SULFITE_LINE)} ${esc(AGE_LINE)}</p></div></div>` : ''}
-      <div class="hojeacts"><button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button>${minor ? '' : `<button type="button" class="btn secondary" data-ver-adega>${icon('wine')}<span>Adega (${nAdega} rótulo${nAdega === 1 ? '' : 's'})</span></button>`}</div></div>`;
+      <div class="hojeacts"><button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button>${minor ? '' : `<button type="button" class="btn secondary" data-ver-adega>${icon('wine')}<span>Adega (${nAdega} rótulo${nAdega === 1 ? '' : 's'})</span></button>`}</div>
+      ${hc ? `<div class="hojehome">${icon('wine')}<div style="min-width:0"><p class="hojelabel">Da adega de casa, no lugar da compra</p><p class="t1"><b>${esc(hc.title)}</b></p><p class="t2">${esc(hc.prep)}</p><button type="button" class="btn text sm hojeserv" id="hojeServBtn" data-hoje-serv aria-expanded="${servOpen ? 'true' : 'false'}" aria-controls="hojeServ">${icon('chev')}<span>Como servir</span></button><div id="hojeServ" role="region" aria-labelledby="hojeServBtn" ${servOpen ? '' : 'hidden'}><p class="t2">${esc(hc.yield)}</p><p class="fine">${esc(SULFITE_LINE)} ${esc(AGE_LINE)}</p></div></div></div>` : ''}</div>`;
   }
   $('#hojeBody').addEventListener('click', e => {
+    const serv = e.target.closest('[data-hoje-serv]');
+    if (serv) { const open = serv.getAttribute('aria-expanded') !== 'true'; serv.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const panel = document.getElementById(serv.getAttribute('aria-controls')); if (panel) panel.hidden = !open; ui.hojeServ = open; saveUi(); return; }
     const b = e.target.closest('[data-ver-mesa]'); if (b) { showMesa(b.dataset.verMesa); return; }
     if (e.target.closest('[data-ver-adega]')) showAdega();
   });
