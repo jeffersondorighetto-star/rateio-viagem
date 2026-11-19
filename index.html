@@ -578,6 +578,40 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .hoje{display:grid;gap:12px}
 .hoje .when{font-size:13px;font-weight:600;color:var(--text-2)}
 .hoje .dish{font-size:17px;font-weight:650;line-height:1.3;margin-top:4px}
+:root{--wine-tinto:#8B2942;--wine-branco:#6B5428;--wine-rose:#9A3E56;--wine-espumante:#2F5E45;--wine-zero:#1B5A46;--wine-cerveja:#8A4B10;--wine-gold:#7A5A12}
+[data-theme="dark"]{--wine-tinto:#F0B3BE;--wine-branco:#F0D7A4;--wine-rose:#F3B7C6;--wine-espumante:#B7DCC8;--wine-zero:#A9D8C8;--wine-cerveja:#F0C27A;--wine-gold:#F0D48A}
+.etiqueta{position:relative;display:grid;grid-template-columns:6px minmax(0,1fr);background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:0;max-width:100%}
+.etiqueta .stripe{background:var(--stripe,var(--wine-tinto))}
+.etiqueta.hue-tinto{--stripe:var(--wine-tinto)}.etiqueta.hue-branco{--stripe:var(--wine-branco)}.etiqueta.hue-rose{--stripe:var(--wine-rose)}.etiqueta.hue-espumante{--stripe:var(--wine-espumante)}.etiqueta.hue-zero{--stripe:var(--wine-zero)}.etiqueta.hue-cerveja{--stripe:var(--wine-cerveja)}
+.etiqueta.icone{box-shadow:inset 0 2px 0 var(--wine-gold)}
+.etq{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-height:44px;margin:0;padding:12px;border:0;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.etq-name{font-size:17px;font-weight:600;line-height:1.3}
+.etq-meta{font-size:13px;line-height:1.4;color:var(--text-2)}
+.etq-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;min-width:0}
+.etq-val{font-size:14px;font-weight:600}
+.seal{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font:650 13px/1.2 inherit;white-space:nowrap}
+.seal.ghost{visibility:hidden;pointer-events:none}
+.etiqueta .seal.live{position:absolute;right:12px;bottom:12px}
+.labels>div{min-width:0}
+dialog.sheet{width:min(560px,100%);max-height:min(85vh,720px);margin:auto auto 0;border:0;border-radius:16px 16px 0 0;padding:0;background:var(--surface);color:var(--text);overflow:auto}
+dialog.sheet::backdrop,dialog.pop::backdrop{background:rgba(0,0,0,.5)}
+@media (prefers-reduced-motion: no-preference){
+  dialog.sheet{animation:sheetIn .18s var(--ease)}
+  dialog.sheet::backdrop,dialog.pop,dialog.pop::backdrop{animation:fade .18s var(--ease)}
+}
+@keyframes sheetIn{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheethead{display:flex;align-items:flex-start;gap:8px;padding:16px 8px 8px 16px;position:sticky;top:0;background:var(--surface);z-index:1}
+.sheethead h2{margin:8px 0 0;font-size:17px;font-weight:600;line-height:1.3;flex:1;min-width:0}
+.sheetbody{display:grid;gap:12px;padding:8px 16px calc(16px + var(--sab))}
+.sheetline{display:flex;gap:8px;align-items:flex-start}
+.sheetnote{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.sheetnote b{line-height:1.4}
+.sheet a.src,.pop a.src{color:var(--accent);font-weight:600;min-height:44px;min-width:44px;padding:8px 12px;display:inline-flex;align-items:center;text-underline-offset:3px}
+#wineSeg.pills.sm button{min-height:44px}
+dialog.pop{width:min(420px,calc(100vw - 32px));border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);padding:16px}
+dialog.pop h2{margin:0 0 8px;font-size:17px;font-weight:600}
+dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .fine{font-size:12px;color:var(--text-2);line-height:1.45}
 
 @media(min-width:700px){dialog.brief{height:auto;max-height:92vh;margin:4vh auto;border-radius:20px;border:1px solid var(--border)}}
@@ -4338,13 +4372,136 @@ Corte as frutas e monte a mesa com pães e frios.`,
       return alt ? { ...p, id: alt.id, forMain: main } : { ...p, forMain: main }; });
     c.bevReview = { prev, at: Date.now() }; save();
   }
+  const CLASS_RULES = { rioja: {
+    crianza: 'Crianza — pelo menos 2 anos, com no mínimo 1 ano em barrica de carvalho de 225 litros.',
+    reserva: 'Reserva — pelo menos 36 meses entre barrica e garrafa, com no mínimo 12 meses em barrica e 6 em garrafa.',
+    granReserva: 'Gran Reserva — pelo menos 60 meses, com no mínimo 24 em barrica e 24 em garrafa.',
+    source: 'Consejo Regulador DOCa Rioja',
+    url: 'https://riojawine.com/es/doca-rioja/denominacion-de-origen-calificada/',
+    checkedOn: '2026-11-19' } };
+  let dishIndex = {}, sheetOpener = null, popOpener = null;
+  function indexBottles() {
+    dishIndex = {}; const plan = acceptedPlan();
+    for (const tier of Object.keys(WINE_TIERS)) for (const x of wineList(state, plan, tier)) dishIndex[x.id] = x;
+  }
+  function wineHue(b) {
+    if (!b) return 'zero';
+    if (b.kind === 'beer') return 'cerveja';
+    if (b.kind === 'zero' || b.style === 'st_zero_vinho' || (b.abv && b.abv.value <= 0.5)) return 'zero';
+    if (b.style === 'st_rose') return 'rose';
+    if (b.style === 'st_espumante') return 'espumante';
+    if (['st_chablis', 'st_branco_fresco', 'st_chard_madeira', 'st_moscatel'].includes(b.style)) return 'branco';
+    return 'tinto';
+  }
+  function wineClass(b) {
+    if (!b || b.kind !== 'wine') return null;
+    const raw = String(b.class || b.classification || '');
+    if (/^gran reserva$/i.test(raw)) return 'Gran Reserva';
+    if (/^crianza$/i.test(raw)) return 'Crianza';
+    if (/^reserva$/i.test(raw)) return 'Reserva';
+    const n = b.name || '';
+    if (/gran reserva/i.test(n)) return 'Gran Reserva';
+    if (/\bcrianza\b/i.test(n)) return 'Crianza';
+    if (/\breserva\b/i.test(n)) return 'Reserva';
+    return null;
+  }
+  function classKeyOf(label) { return label === 'Gran Reserva' ? 'granReserva' : label === 'Crianza' ? 'crianza' : label === 'Reserva' ? 'reserva' : null; }
+  function criticShort(c) { let s = String(c || '').replace(/ \(.*\)$/, '').replace(/ \d{4}$/, ''); if (/^Decanter World Wine Awards/.test(s)) s = 'Decanter'; return s; }
+  function sealInfo(b) {
+    const cls = wineClass(b);
+    if (cls) return { text: cls, pop: wineHue(b) === 'tinto' && b.style === 'st_rioja' ? classKeyOf(cls) : null };
+    const r = bestRating(b); if (!r) return { text: 'Sem nota', pop: null };
+    const note = r.points ? `${r.points} pts` : String(r.medal || 'Nota').split(' · ')[0];
+    return { text: `${note} · ${criticShort(r.critic)}`, pop: null };
+  }
+  function vintageOf(b) { const r = bestRating(b); if (!r || r.vintage == null || r.vintage === '' || r.vintage === 'NV') return null; return r.vintage; }
+  function metaHtml(id, b) {
+    const w = WINES[id] || {}, bits = [];
+    if (b.region || w.region) bits.push(esc(b.region || w.region));
+    if (b.grape || w.grape) bits.push(esc(b.grape || w.grape));
+    const v = vintageOf(b); if (v != null) bits.push(`safra <span class="num">${esc(v)}</span>`);
+    return bits.join(' · ');
+  }
+  function priceShort(b) { const sign = (CURRENCY_SIGN[b.currency || 'BRL']) || 'R$'; return `${sign} ${b.price[0].toLocaleString('pt-BR')}–${b.price[1].toLocaleString('pt-BR')}`; }
+  function etiquetaCard(id, opt) {
+    const b = BEVERAGES[id]; if (!b) return '';
+    opt = opt || {};
+    const seal = sealInfo(b), meta = metaHtml(id, b), plain = meta.replace(/<[^>]+>/g, '');
+    const bottles = opt.bottles || 0;
+    const val = bottles > 0 ? `~${bottles} garrafa${bottles > 1 ? 's' : ''}` : priceShort(b);
+    const label = [b.name, plain, val, seal.text].filter(Boolean).join(', ');
+    const innerSeal = seal.pop ? `<span class="seal ghost" aria-hidden="true">${esc(seal.text)}</span>` : `<span class="seal">${esc(seal.text)}</span>`;
+    const outer = seal.pop ? `<button type="button" class="seal live" data-classpop="${seal.pop}" aria-haspopup="dialog" aria-expanded="false" aria-controls="classPop">${esc(seal.text)}</button>` : '';
+    return `<div class="etiqueta hue-${wineHue(b)}${b.tier === 'icone' ? ' icone' : ''}"><span class="stripe" aria-hidden="true"></span>
+      <button type="button" class="etq" data-sheet="${esc(id)}" data-meal="${esc(opt.mealKey || '')}" data-chosen="${opt.chosen ? '1' : '0'}" aria-label="${esc(label)}">
+        <span class="etq-name">${esc(b.name)}</span>
+        ${meta ? `<span class="etq-meta">${meta}</span>` : ''}
+        <span class="etq-row"><span class="etq-val num">${esc(val)}</span>${innerSeal}</span>
+      </button>${outer}</div>`;
+  }
+  function ensureWineUi() {
+    if ($('#wineSheet')) return;
+    const sheet = document.createElement('dialog'); sheet.id = 'wineSheet'; sheet.className = 'sheet'; sheet.setAttribute('aria-labelledby', 'wineSheetTitle');
+    sheet.innerHTML = `<div class="sheetin"><div class="sheethead"><h2 id="wineSheetTitle"></h2><button type="button" class="iconbtn" data-sheet-close aria-label="Fechar">${icon('x')}</button></div><div id="wineSheetBody" class="sheetbody"></div></div>`;
+    const pop = document.createElement('dialog'); pop.id = 'classPop'; pop.className = 'pop'; pop.setAttribute('aria-labelledby', 'classPopTitle');
+    pop.innerHTML = `<h2 id="classPopTitle"></h2><p id="classPopText"></p><p><a class="src" id="classPopLink" target="_blank" rel="noopener noreferrer"></a></p><p class="t2" id="classPopWhen"></p><button type="button" class="btn secondary" data-pop-close>Fechar</button>`;
+    document.body.append(sheet, pop);
+    sheet.addEventListener('click', e => {
+      if (e.target.closest('[data-sheet-close]')) { sheet.close(); return; }
+      const pick = e.target.closest('[data-sheet-pick]'); if (!pick) return;
+      const id = pick.dataset.sheetPick, meal = pick.dataset.meal; sheet.close(); toggleBev(id, meal);
+    });
+    sheet.addEventListener('close', () => { if (sheetOpener && sheetOpener.isConnected) sheetOpener.focus(); sheetOpener = null; });
+    pop.addEventListener('click', e => { if (e.target.closest('[data-pop-close]')) pop.close(); });
+    pop.addEventListener('close', () => { if (popOpener) { popOpener.setAttribute('aria-expanded', 'false'); if (popOpener.isConnected) popOpener.focus(); popOpener = null; } });
+  }
+  function openWineSheet(btn) {
+    const id = btn.dataset.sheet, b = BEVERAGES[id]; if (!b) return;
+    ensureWineUi(); sheetOpener = btn;
+    const r = bestRating(b), hit = dishIndex[id], meal = btn.dataset.meal || '', chosen = btn.dataset.chosen === '1';
+    $('#wineSheetTitle').textContent = b.name;
+    const abv = b.abv ? `${b.abv.value.toLocaleString('pt-BR')}% vol.${b.abv.basis === 'tipico' ? ' (típico)' : ''}` : '';
+    const svc = b.kind === 'wine' && serviceTxt(b) ? `Serviço: ${serviceTxt(b)}${windowTxt(b) ? ` · ${windowTxt(b)}` : ''}` : '';
+    const jeff = b.origin === 'jefferson' ? `Da lista do Jefferson${b.fromCellar ? ' · já está na adega dele' : ''}` : '';
+    const dishes = hit && hit.dishes ? hit.dishes : [];
+    const rate = r ? `<div class="sheetline">${icon('sparkle')}<div class="sheetnote"><b>${esc(ratingTxt(r))}</b><a class="src" href="${esc(r.url)}" target="_blank" rel="noopener nofollow noreferrer">fonte</a><span class="t2">conferida em ${fmtDMY(r.checkedOn)}</span></div></div>` : '<p class="t2">Sem nota</p>';
+    $('#wineSheetBody').innerHTML = `<p class="t2">${[b.country, abv, b.unit].filter(Boolean).map(esc).join(' · ')}</p>
+      <p class="num">${esc(priceTxt(b))}</p>${rate}
+      ${svc ? `<p>${esc(svc)}</p>` : ''}${jeff ? `<p class="t2">${esc(jeff)}</p>` : ''}
+      ${dishes.length ? `<p>Com: ${esc(dishes.join(', '))}</p>` : ''}
+      ${meal ? `<button type="button" class="btn ${chosen ? 'secondary' : 'primary'}" data-sheet-pick="${esc(id)}" data-meal="${esc(meal)}" aria-pressed="${chosen}">${chosen ? icon('check') + '<span>Na refeição</span>' : '<span>Escolher</span>'}</button>` : ''}`;
+    const dlg = $('#wineSheet'); if (!dlg.open) dlg.showModal();
+    const close = dlg.querySelector('[data-sheet-close]'); if (close) close.focus();
+  }
+  function openClassPop(key, opener) {
+    const rule = CLASS_RULES.rioja[key]; if (!rule) return;
+    ensureWineUi(); popOpener = opener; opener.setAttribute('aria-expanded', 'true');
+    const title = key === 'granReserva' ? 'Gran Reserva' : key === 'crianza' ? 'Crianza' : 'Reserva';
+    $('#classPopTitle').textContent = `${title} · tintos da DOCa Rioja`;
+    $('#classPopText').textContent = rule;
+    const a = $('#classPopLink'); a.href = CLASS_RULES.rioja.url; a.textContent = CLASS_RULES.rioja.source;
+    $('#classPopWhen').textContent = `Fonte conferida em ${fmtDMY(CLASS_RULES.rioja.checkedOn)}.`;
+    const dlg = $('#classPop'); if (!dlg.open) dlg.showModal();
+    dlg.querySelector('[data-pop-close]').focus();
+  }
+  document.addEventListener('click', e => {
+    const pop = e.target.closest('[data-classpop]');
+    if (pop) { e.stopPropagation(); openClassPop(pop.dataset.classpop, pop); return; }
+    const card = e.target.closest('[data-sheet]');
+    if (card) openWineSheet(card);
+  });
+  function toggleBev(id, k) {
+    const s = state.chef.sugg[k]; if (!s) return;
+    const [md, mm2] = k.split('|');
+    state.plan[md] = state.plan[md] || {};
+    const c = state.plan[md][mm2] = state.plan[md][mm2] || { ...cellOf(state, md, mm2) };
+    c.bev = c.bev || []; const j = c.bev.findIndex(p => p.id === id);
+    if (j >= 0) c.bev.splice(j, 1); else c.bev.push({ id, forMain: mealMain(s.ids), at: Date.now() });
+    ui.mesaOpen = k; save(); render(); toast(j >= 0 ? 'Bebida retirada da refeição' : 'Bebida na refeição');
+  }
   function bevCard(id, b, k, chosen) {
-    const r = bestRating(b), alc = bevAlcoholic(b);
-    return `<div class="bvl"><div class="t1">${esc(b.name)}</div><div class="t2">${esc(b.country)} · ${b.abv.value.toLocaleString('pt-BR')}% vol.${b.abv.basis === 'tipico' ? ' (típico)' : ''} · ${esc(b.unit)}</div>
-      <div class="rt">${r ? `${icon('sparkle')}<span><b>${esc(ratingTxt(r))}</b> · <a href="${esc(r.url)}" target="_blank" rel="noopener nofollow noreferrer">fonte</a> · conferida em ${fmtDMY(r.checkedOn)}</span>` : '<span class="t2">Sem nota</span>'}</div>
-      <div class="t2">${esc(priceTxt(b))}</div>
-      ${b.kind === 'wine' && serviceTxt(b) ? `<div class="t2">Serviço: ${esc(serviceTxt(b))}${windowTxt(b) ? ` · ${esc(windowTxt(b))}` : ''}</div>` : ''}${b.origin === 'jefferson' ? `<div class="t2">Da lista do Jefferson${b.fromCellar ? ' · já está na adega dele' : ''}</div>` : ''}
-      <button type="button" class="btn ${chosen ? 'secondary' : 'text'} sm" data-bpick="${id}" aria-pressed="${!!chosen}">${chosen ? icon('check') + '<span>Na refeição</span>' : `<span>Escolher${alc ? '' : ''}</span>`}</button></div>`;
+    const hit = dishIndex[id];
+    return etiquetaCard(id, { mealKey: k, chosen: !!chosen, bottles: hit ? hit.bottles : 0, dishes: hit ? hit.dishes : [] });
   }
   function mesaBlock(k, s) {
     if (!mesaOn()) return '';
@@ -4443,9 +4600,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     const [md, mm2] = k.split('|');
     if (t.closest('[data-mk]')) { ui.mesaKind = t.closest('[data-mk]').dataset.mk; ui.mesaOpen = k; saveUi(); renderMenu(chefCtx()); return; }
     if (t.closest('[data-mst]')) { ui.mesaStyle = ui.mesaStyle || {}; ui.mesaStyle[k + (ui.mesaKind || 'wine')] = t.closest('[data-mst]').dataset.mst; ui.mesaOpen = k; saveUi(); renderMenu(chefCtx()); return; }
-    if (t.closest('[data-bpick]')) { const id = t.closest('[data-bpick]').dataset.bpick; state.plan[md] = state.plan[md] || {}; const c = state.plan[md][mm2] = state.plan[md][mm2] || { ...cellOf(state, md, mm2) };
-      c.bev = c.bev || []; const j = c.bev.findIndex(p => p.id === id); if (j >= 0) c.bev.splice(j, 1); else c.bev.push({ id, forMain: mealMain(s.ids), at: Date.now() });
-      ui.mesaOpen = k; save(); render(); toast(j >= 0 ? 'Bebida retirada da refeição' : 'Bebida na refeição'); return; }
+    if (t.closest('[data-bpick]')) { toggleBev(t.closest('[data-bpick]').dataset.bpick, k); return; }
     if (t.closest('[data-bundo]')) { const c = cellBev(k); if (c && c.bevReview) { c.bev = c.bevReview.prev; delete c.bevReview; c.bev.forEach(p => { p.forMain = mealMain(s.ids); }); save(); render(); toast('Bebida anterior de volta'); } return; }
     if (t.closest('[data-bok]')) { okAlcohol(k); return; }
     if (t.closest('[data-like]')) { const x = (state.bevSugg[k] || [])[+t.closest('[data-like]').dataset.like]; if (!x) return; const fid = ui.suggFam || (state.families[0] || {}).id; x.likes = x.likes || {};
@@ -4468,11 +4623,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#wineMeta').textContent = list.length ? `~${list.reduce((s, x) => s + x.bottles, 0)} garrafas na viagem` : 'catálogo';
     C.wineText = adegaText(tier, rows);
     $('#wineWa').href = 'https://wa.me/?text=' + encodeURIComponent(C.wineText);
-    $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${esc((WINE_TIERS[tier] || '').toLowerCase())}:</p>`) + rows.map(x => { const w = WINES[x.id];
-      return `<div class="wine"><span class="gl">${icon('wine')}</span><div style="min-width:0"><div class="nm">${esc(w.name)}</div><div class="t2">${esc([w.type, w.grape, w.country].filter(Boolean).join(' · '))}</div>
-        <div class="badges">${x.bottles ? `<span class="bottles">~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}</span>` : ''}<span class="price">${esc(w.price)} · preço aproximado</span></div>
-        ${w.award ? `<div class="aw">${icon('sparkle')}<span>${esc(w.award)} · <a href="${esc(w.url)}" target="_blank" rel="noopener">fonte: ${esc(w.src)}</a></span></div>` : ''}
-        ${x.dishes.length ? `<div class="t2" style="margin-top:4px">Com: ${esc(x.dishes.join(', '))}</div>` : ''}</div></div>`; }).join('')
+    $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${esc((WINE_TIERS[tier] || '').toLowerCase())}:</p>`) + rows.map(x => etiquetaCard(x.id, { bottles: x.bottles, dishes: x.dishes })).join('')
       + `<p class="fine">Garrafas estimadas em ~2 taças por pessoa que bebe no prato principal e meia taça na entrada e na sobremesa. Prêmios e notas conferidos em fontes públicas em nov/2026 e valem para a safra indicada. Preços são faixas aproximadas: confira na loja. Beba com moderação; venda proibida para menores de 18 anos.</p>`;
   }
   $('#wineSeg').onclick = e => { const b = e.target.closest('[data-wt]'); if (!b) return; ui.wineTier = b.dataset.wt; saveUi(); render(); };
@@ -4517,7 +4668,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
       <button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button></div>`;
   }
   $('#hojeBody').addEventListener('click', e => { const b = e.target.closest('[data-ver-mesa]'); if (b) showMesa(b.dataset.verMesa); });
-  function renderChef() { const wc = $('#wineCard'); if (wc) wc.hidden = isMinorViewer(); const cx = chefCtx(); renderHoje(); renderBriefCard(); renderCount(); renderRank(cx); renderMenu(cx); renderWine(cx); renderRota(); }
+  function renderChef() { indexBottles(); const wc = $('#wineCard'); if (wc) wc.hidden = isMinorViewer(); const cx = chefCtx(); renderHoje(); renderBriefCard(); renderCount(); renderRank(cx); renderMenu(cx); renderWine(cx); renderRota(); }
   // Exemplo: cardápio do Chef já aceito, para a primeira impressão. Não grava respostas fictícias de pré-briefing.
   function demoBoot() {
     if (!state.demoChef) return; delete state.demoChef;
