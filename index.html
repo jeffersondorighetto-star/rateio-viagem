@@ -82,7 +82,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 /* summary */
 .summary .lbl{font-size:13px;color:var(--text-2);font-weight:500}
 .summary{container-type:inline-size}
-.summary .big{font-size:clamp(28px,13cqi,40px);font-weight:650;letter-spacing:-.025em;line-height:1.1;margin:8px 0 24px}
+.summary .big{font-size:clamp(28px,13cqi,40px);font-weight:650;letter-spacing:-.025em;line-height:1.1;margin:8px 0 8px}
 @media(min-width:520px){.summary .big{font-size:clamp(28px,13cqi,48px)}}
 .stats{display:flex;flex-wrap:wrap;row-gap:12px;border-top:1px solid var(--border);padding-top:16px}
 .stats>div{flex:1 1 0;min-width:max-content;padding-right:12px}
@@ -335,7 +335,8 @@ select.inp.sm{padding-right:36px;background-position:right 12px center}
 .rchip button{width:28px;height:28px;border-radius:999px;border:0;background:transparent;color:var(--text-2);display:grid;place-items:center}
 .rchip button svg{width:14px;height:14px}
 .rchips select{width:auto;min-width:0;max-width:100%}
-.mmeta{display:grid;gap:4px;margin-top:12px;font-size:13px;color:var(--text-2)}
+.mmeta{display:grid;gap:8px;margin-top:12px;font-size:13px;color:var(--text-2)}
+.mmeta span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .warnline{font-size:13px;color:var(--warn);display:flex;gap:6px;align-items:flex-start}
 .warnline svg{width:14px;height:14px;margin-top:2px;flex:none}
 /* recipes */
@@ -550,8 +551,75 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 .timer{min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;color:var(--text);margin-top:6px}
 .timer.run{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .timer.end{background:var(--neg);color:#fff;border-color:var(--neg)}
-.cwine{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:15px;margin-top:8px}
+.cwine{border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;font-size:15px;margin-top:8px}
 .cwine .t2{font-size:13px}
+
+/* ===== v5: hierarquia, botões e alvos (acabamento) ===== */
+svg.i{width:20px;height:20px;stroke-width:2}
+.tabbar button svg{width:24px;height:24px}
+.badge svg,.bal .v svg,.okdot svg,.warnline svg,.course .wl svg,.wine .aw svg,.rchip button svg{width:16px;height:16px}
+.tabbar button{font-size:12px;line-height:1.2;padding:4px 2px;white-space:normal}
+@media(max-width:359px){.tabbar button{font-size:12px}.tabbar button svg{width:20px;height:20px}}
+.toptotal small,.donutbox .c small,.course .ct,.mx .dh{font-size:12px}
+.badge,.tag,.sim,.seal,.bottles,.hero .chip,.okdot{white-space:nowrap}
+.badge{flex:none}
+.badges{align-items:center;gap:8px}
+.ch{flex-wrap:wrap;row-gap:4px}
+.ch h2{min-width:0}
+.ch .meta{white-space:nowrap}
+#quickCard .ch h2{flex:1 1 100%}
+#quickCard .ch .meta{margin-left:0}
+.hero{padding:16px}
+.hero h1{margin:4px 0}
+.hero .chips{gap:8px;margin:8px 0}
+.hero .chip{gap:8px}
+.hbtn{min-height:48px;font-weight:600}
+.btn{min-height:48px;font-weight:600;border-radius:12px}
+.btn.sm{min-height:44px;font-size:15px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.btn.secondary{background:var(--accent-soft);color:var(--text);border-color:transparent}
+.btn.secondary:hover{background:color-mix(in srgb,var(--accent) 16%,var(--accent-soft))}
+.btn.text{background:transparent;color:var(--accent);border-color:transparent;min-height:44px;font-weight:600}
+.btn.text:hover{background:var(--accent-soft);color:var(--text)}
+.btn.danger{background:transparent;color:var(--neg);border-color:transparent;min-height:44px;font-weight:600}
+.btn.danger:hover{background:var(--neg-soft)}
+.btn:disabled,.btn.primary:disabled,.btn.secondary:disabled{opacity:1;background:var(--surface-2);color:var(--text-3);border:1px solid var(--border-strong);cursor:not-allowed;transform:none;box-shadow:none}
+.paybtn{min-height:48px;padding:0 16px;font-weight:600}
+.seal{display:inline-flex;align-items:center;gap:4px;height:24px;margin-left:8px;padding:0 8px;border-radius:999px;border:1px solid var(--text);background:var(--surface);color:var(--text);font-size:12px;font-weight:700;vertical-align:2px}
+.seal svg{width:16px;height:16px}
+.modebtn,.timer,.switch,.switchrow,.ghost{min-height:44px}
+.ghost{height:44px;font-size:16px}
+.switch{height:auto}
+.switch input{width:48px;height:28px;background:var(--border-strong);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 35%,var(--border-strong))}
+.switch input::after{width:22px;height:22px;top:3px;left:3px}
+.switch input:checked::after{transform:translateX(20px)}
+textarea.inp,#recPaste,#dSteps{font-size:16px!important;line-height:1.5!important}
+.course{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0}
+.course .dish{min-height:44px;display:flex;align-items:center;padding:8px 0}
+.swap{width:auto;min-width:44px;min-height:44px;padding:0 12px;display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:14px;color:var(--text)}
+.rchip{max-width:100%;min-height:44px;gap:8px;padding:4px 4px 4px 12px;flex-wrap:wrap;height:auto}
+.rchip .rname{min-width:0;flex:1 1 140px;overflow-wrap:anywhere}
+.rchip button{width:auto;height:auto;min-width:44px;min-height:44px;padding:0 8px;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;flex:none}
+.subnav{flex-wrap:nowrap}
+.subnav button{flex:1 1 0;padding:0 4px;white-space:nowrap}
+.exp{grid-template-columns:auto minmax(0,1fr) auto;align-items:start;column-gap:12px}
+.expfoot{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.rowacts{display:flex;flex-direction:column;gap:4px}
+.ingrow{grid-template-columns:minmax(0,1fr) 96px 88px auto}
+@container (max-width: 460px){.ingrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}}
+.ck{grid-template-columns:44px minmax(0,1fr)}
+.ck input{width:44px;height:44px}
+.toast .tbtn{min-height:44px;font-weight:600}
+.toast .tbtn::after{inset:0}
+#storeAlert:not(:empty){position:sticky;top:calc(56px + var(--sat));z-index:25}
+#storeAlert .alert{margin:8px 0 0;background:var(--neg-soft);color:var(--neg);border:1px solid color-mix(in srgb,var(--neg) 45%,var(--neg-soft))}
+.preview{gap:8px}
+.kgrid,.hero .acts,.sgacts,.actions{gap:8px}
+.xf2{gap:8px;padding:16px 0}
+.sg{padding:16px}
+.wine{gap:16px;padding:16px 0}
+.fstat,.rk{gap:12px}
+.mx{gap:4px}
 </style>
 </head>
 <body data-view="inicio">
@@ -589,15 +657,15 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
         <div class="ch"><h2 id="qTitle">Lançamento rápido</h2><span class="meta">escreva como no WhatsApp</span></div>
         <div class="quickrow">
           <label class="sr" for="quick">Lançamento rápido</label>
-          <input class="inp" id="quick" placeholder="Ex.: 80 gasolina família B sem nota" autocomplete="off" enterkeyhint="done">
+          <input class="inp" id="quick" placeholder="Ex.: 80 gasolina, família B" autocomplete="off" enterkeyhint="done">
           <button class="iconbtn mic" id="micBtn" type="button" aria-label="Ditar por voz" hidden><span data-i="mic"></span></button>
         </div>
-        <div class="preview" id="qPreview" aria-live="polite"></div>
-        <div class="actwrap" style="margin-top:12px"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+        <div class="actwrap" style="margin-top:8px"><div class="actions" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
           <button class="btn primary" id="qSave" disabled><span data-i="check"></span><span>Lançar</span></button>
           <button class="btn secondary" id="qMore"><span data-i="edit"></span><span>Completar</span></button>
         </div></div>
         <p class="qhint" id="qHint">Escreva o valor e quem pagou para lançar.</p>
+        <div class="preview" id="qPreview" aria-live="polite"></div>
       </section>
       <div id="pendCard"></div>
     </div>
@@ -620,12 +688,12 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
 <!-- ============ PLANEJAR ============ -->
 <section class="view" id="v-planejar" role="tabpanel" aria-labelledby="tab-planejar" hidden>
   <div class="subnav" id="subnav" role="tablist" aria-label="Planejamento">
-    <button role="tab" data-sub="cardapio" aria-selected="true">Cardápio</button>
-    <button role="tab" data-sub="receitas" aria-selected="false">Receitas</button>
-    <button role="tab" data-sub="compras" aria-selected="false">Compras</button>
-    <button role="tab" data-sub="pessoas" aria-selected="false">Pessoas</button>
+    <button role="tab" id="sub-cardapio" aria-controls="panel-cardapio" data-sub="cardapio" aria-selected="true">Cardápio</button>
+    <button role="tab" id="sub-receitas" aria-controls="panel-receitas" data-sub="receitas" aria-selected="false" tabindex="-1">Receitas</button>
+    <button role="tab" id="sub-compras" aria-controls="panel-compras" data-sub="compras" aria-selected="false" tabindex="-1">Compras</button>
+    <button role="tab" id="sub-pessoas" aria-controls="panel-pessoas" data-sub="pessoas" aria-selected="false" tabindex="-1">Pessoas</button>
   </div>
-  <div data-panel="cardapio">
+  <div id="panel-cardapio" role="tabpanel" aria-labelledby="sub-cardapio" data-panel="cardapio">
     <div class="grid">
       <div class="col">
         <section class="card" aria-labelledby="gTitle">
@@ -652,7 +720,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
       </div>
     </div>
   </div>
-  <div data-panel="receitas" hidden>
+  <div id="panel-receitas" role="tabpanel" aria-labelledby="sub-receitas" data-panel="receitas" hidden>
     <div class="grid">
       <div class="col">
         <section class="card" aria-labelledby="rlTitle">
@@ -666,7 +734,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
           <div class="ch"><h2 id="reTitle">Colar receita</h2><span class="meta" id="reMeta"></span></div>
           <div class="field">
             <label for="recPaste">Cole o texto como veio (WhatsApp, site…)</label>
-            <textarea class="inp" id="recPaste" style="min-height:140px;font:15px/1.5 var(--font);background:var(--surface)" placeholder="Bolo de cenoura&#10;Rende 8 porções&#10;Ingredientes:&#10;- 3 cenouras&#10;- 2 xícaras de açúcar&#10;Modo de preparo: …"></textarea>
+            <textarea class="inp" id="recPaste" style="min-height:140px;background:var(--surface)" placeholder="Bolo de cenoura&#10;Rende 8 porções&#10;Ingredientes:&#10;- 3 cenouras&#10;- 2 xícaras de açúcar&#10;Modo de preparo:"></textarea>
           </div>
           <button class="btn secondary block" id="recParse" style="margin-top:12px"><span data-i="sparkle"></span><span>Interpretar receita</span></button>
           <div id="recDraft"></div>
@@ -674,7 +742,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
       </div>
     </div>
   </div>
-  <div data-panel="compras" hidden>
+  <div id="panel-compras" role="tabpanel" aria-labelledby="sub-compras" data-panel="compras" hidden>
     <div class="grid">
       <div class="col">
         <section class="card shop" aria-labelledby="sTitle2">
@@ -699,7 +767,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
       </div>
     </div>
   </div>
-  <div data-panel="pessoas" hidden>
+  <div id="panel-pessoas" role="tabpanel" aria-labelledby="sub-pessoas" data-panel="pessoas" hidden>
     <section class="card" aria-labelledby="wTitle" style="margin-bottom:16px">
       <div class="ch"><h2 id="wTitle">Peso da porção</h2><span class="meta">adulto = 1</span></div>
       <div class="row2" id="weights"></div>
@@ -780,9 +848,10 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
               </div>
             </div>
           </details>
+          <p class="qhint" id="formHint">Informe o valor e quem pagou.</p>
           <div class="formactions">
-            <button class="btn primary block" type="submit" id="submitBtn"><span data-i="plus"></span><span>Adicionar despesa</span></button>
-            <button class="btn secondary" type="button" id="cancelEdit">Cancelar</button>
+            <button class="btn primary block" type="submit" id="submitBtn" disabled><span data-i="plus"></span><span>Adicionar despesa</span></button>
+            <button class="btn text" type="button" id="cancelEdit">Cancelar</button>
           </div>
         </form>
       </section>
@@ -809,6 +878,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
       </section>
       <section class="card" aria-labelledby="xfTitle">
         <div class="ch"><h2 id="xfTitle">Quem paga quem</h2><span class="meta" id="xferMeta"></span></div>
+        <p class="hint" style="margin:0 0 16px">É o acerto que vale. A caixinha, ao lado, não entra nesta conta.</p>
         <div class="list" id="xfers"></div>
       </section>
       <section class="card" aria-labelledby="balTitle">
@@ -820,7 +890,7 @@ dialog.brief::backdrop{background:rgba(0,0,0,.5)}
     <div class="col">
       <section class="card" aria-labelledby="kTitle">
         <div class="ch"><h2 id="kTitle">Caixinha</h2><span class="sim">Simulação</span></div>
-        <p class="hint" style="margin:-6px 0 14px">Só para acompanhar um fundo comum. Não muda o acerto: o que vale é “Quem paga quem”.</p>
+        <p class="hint" style="margin:0 0 16px">Simulação de um fundo comum. Não muda quem paga quem.</p>
         <div class="field">
           <label for="kitty">Contribuição por família</label>
           <div class="money"><span>R$</span><input class="inp" id="kitty" inputmode="decimal" placeholder="0,00"></div>
@@ -2077,7 +2147,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let qParsed = null;
   function renderQuick() {
     const txt = $('#quick').value, el = $('#qPreview');
-    if (!txt.trim()) { qParsed = null; el.innerHTML = '<span class="hint">Ex.: “churrasco 350 pago pela família D”, “~200 gasolina Marcos”, “gorjeta 30 Bia sem nota”.</span>'; $('#qSave').disabled = true; $('#qHint').hidden = false; $('#qHint').textContent = 'Escreva o valor e quem pagou para lançar.'; return; }
+    if (!txt.trim()) { qParsed = null; el.innerHTML = ''; $('#qSave').disabled = true; $('#qHint').hidden = false; $('#qHint').textContent = 'Escreva o valor e quem pagou para lançar.'; return; }
     const q = qParsed = parseQuick(txt, state.families), pi = q.payerId && personInfo(q.payerId), cat = CATEGORIES[q.category || 'food'];
     const b = (ok, html) => `<span class="badge ${ok ? 'acc' : 'warn'}">${html}</span>`;
     el.innerHTML = [
@@ -2204,10 +2274,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
       if (c.mode === 'casa') {
         const avail = state.recipes.filter(x => !cellRecipes(c).includes(x.id));
         const cost = recs.reduce((s, x) => s + recipeCost(state, x).perPortion * cp.portions, 0);
-        body = `<div class="rchips">${recs.map(x => `<span class="rchip">${esc(x.title)}<button data-rmrec="${x.id}" aria-label="Remover ${esc(x.title)}">${icon('x')}</button></span>`).join('')}
+        body = `<div class="rchips">${recs.map(x => `<span class="rchip"><span class="rname">${esc(x.title)}</span><button type="button" data-rmrec="${x.id}" aria-label="Remover ${esc(x.title)}">${icon('x')}<span>Remover</span></button></span>`).join('')}
           ${avail.length ? `<select class="inp sm" data-addrec aria-label="Adicionar receita ao ${MEALS[m]}"><option value="">+ Receita</option>${avail.map(x => `<option value="${x.id}">${esc(x.title)}</option>`).join('')}</select>` : ''}</div>
           <div class="mmeta"><span>${cp.people} pessoas · <b class="num">${fmtN(cp.portions)}</b> porções${cost ? ` · ~${brl(cost)} (${brl(cp.portions ? cost / cp.portions : 0)}/porção)` : ''}</span>
-          ${r ? `<span>${icon('chef').replace('class="i"', 'class="i" style="width:14px;height:14px;vertical-align:-2px"')} Cozinha <b>${esc(shortFam(famById(r.cook).name))}</b> · limpa <b>${esc(shortFam(famById(r.clean).name))}</b></span>` : ''}</div>
+          ${r ? `<span>${icon('chef')} Cozinha <b>${esc(shortFam(famById(r.cook).name))}</b> · limpa <b>${esc(shortFam(famById(r.clean).name))}</b></span>` : ''}</div>
           ${warns.map(w => `<div class="warnline">${icon('alert')}<span>${esc(w.member)} (${esc(w.issue)}) — ${esc(w.recipe)}</span></div>`).join('')}
           ${recs.length ? `<button class="btn text sm" data-cookm style="margin-top:8px;padding:0 8px">${icon('chef')}<span>Modo cozinha</span></button>` : ''}`;
       } else if (c.mode === 'fora') body = `<div class="mmeta"><span>${cp.people} pessoas · ${fmtN(cp.portions)} porções · restaurante ~${brl(cp.portions * restaurantPrice(state))}</span></div>`;
@@ -2262,7 +2332,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         <div style="min-width:0"><div class="t1">${esc(r.title)}</div>
           <div class="t2 num">Rende ${r.yield} · ${(r.ingredients || []).length} ingredientes · ~${brl(c.perPortion)}/porção · ${uses ? `${uses} ${uses > 1 ? 'refeições' : 'refeição'}` : 'fora do cardápio'}</div>
           <div class="badges">${recipeTags(r).map(t => `<span class="badge">contém ${t}</span>`).join('')}${rev ? `<span class="badge warn">${rev} para revisar</span>` : ''}</div></div>
-        <div style="display:flex;gap:4px"><button class="del" data-editrec aria-label="Editar ${esc(r.title)}">${icon('edit')}</button><button class="del" data-cookrec aria-label="Modo cozinha: ${esc(r.title)}">${icon('chef')}</button></div></div>`;
+        <div class="rowacts"><button type="button" class="btn text sm" data-editrec aria-label="Editar ${esc(r.title)}">${icon('edit')}<span>Editar</span></button><button type="button" class="btn text sm" data-cookrec aria-label="Modo cozinha: ${esc(r.title)}">${icon('chef')}<span>Cozinhar</span></button></div></div>`;
     }).join('');
   }
   let draft = null;
@@ -2302,10 +2372,10 @@ Corte as frutas e monte a mesa com pães e frios.`,
         <input class="inp sm nm" data-f="name" value="${esc(i.name)}" aria-label="Ingrediente" placeholder="Ingrediente">
         <input class="inp sm num" data-f="qty" inputmode="decimal" value="${i.qty == null ? '' : fmtN(i.qty, 1)}" placeholder="a gosto" aria-label="Quantidade">
         <select class="inp sm" data-f="unit" aria-label="Unidade">${['g', 'ml', 'un'].map(u => `<option ${u === i.unit ? 'selected' : ''}>${u}</option>`).join('')}</select>
-        <button class="del" data-rmi aria-label="Remover ingrediente">${icon('x')}</button>
+        <button type="button" class="btn text sm" data-rmi aria-label="Remover ingrediente">${icon('x')}<span>Tirar</span></button>
         <div class="src">${ingSrc(i)}</div></div>`).join('')}</div>
       <button class="btn text sm" id="addIng">${icon('plus')}<span>Ingrediente</span></button></div>
-      <div class="field"><label for="dSteps">Modo de preparo <span class="sub">(um passo por linha)</span></label><textarea class="inp" id="dSteps" style="min-height:120px;font:15px/1.5 var(--font);background:var(--surface)">${esc(draft.stepsText || '')}</textarea></div>
+      <div class="field"><label for="dSteps">Modo de preparo <span class="sub">(um passo por linha)</span></label><textarea class="inp" id="dSteps" style="min-height:120px;background:var(--surface)">${esc(draft.stepsText || '')}</textarea></div>
       <div class="actwrap" style="margin-top:0"><div class="actions" style="grid-template-columns:minmax(0,1fr) auto auto">
         <button class="btn primary" id="saveRec">${icon('check')}<span>Salvar receita</span></button>
         <button class="btn secondary" id="cancelRec">Cancelar</button>
@@ -2369,7 +2439,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         const done = r.toBuy <= 0;
         const need = r.aGosto ? 'a gosto' : `precisa ${fmtQty(r.need, r.unit)} → ${r.packs} × ${esc(r.packLabel)}`;
         const got = r.covered ? ' · já comprado' : r.bought > 0 ? ` · comprado ${fmtQty(r.bought, r.unit)}${done ? '' : `, falta ${fmtQty(r.toBuy, r.unit)}`}` : '';
-        return `<div class="li ${done ? 'done' : ''}"><div style="min-width:0"><div class="t1">${esc(r.name)}${r.custom ? ' <span class="badge" style="min-height:20px">novo</span>' : ''}${r.fresh && r.freshDays.length ? ` <span class="badge freshb" style="min-height:20px">dia ${r.freshDays.slice(0, 6).map(d => dObj(d).getDate()).join(', ')}${r.freshDays.length > 6 ? '…' : ''}</span>` : ''}</div><div class="t2 num">${need}${got}</div></div>
+        return `<div class="li ${done ? 'done' : ''}"><div style="min-width:0"><div class="t1">${esc(r.name)}${r.custom ? ' <span class="badge">novo</span>' : ''}${r.fresh && r.freshDays.length ? ` <span class="badge freshb">Comprar no dia</span>` : ''}</div><div class="t2 num">${need}${got}${r.fresh && r.freshDays.length ? ` · dias ${r.freshDays.map(d => dObj(d).getDate()).join(', ')}` : ''}</div></div>
           <div class="amt num" style="font-size:14px">${done ? '<span class="t2">comprado</span>' : brl(r.costLeft)}</div></div>`;
       }).join('') + '</div>';
     }
@@ -2528,9 +2598,16 @@ Corte as frutas e monte a mesa com pães e frios.`,
   }
   $('#payerSearch').addEventListener('input', renderPayers);
   const setErr = (inp, err, on) => { inp.setAttribute('aria-invalid', on ? 'true' : 'false'); err.classList.toggle('on', on); };
-  const updSubmit = () => { if (editingId) return; const v = round2(parseMoney($('#amt').value)); $('#submitBtn').innerHTML = icon('plus') + `<span>${v > 0 ? 'Adicionar ' + brl(v) : 'Adicionar despesa'}</span>`; };
+  const updSubmit = () => {
+    const v = round2(parseMoney($('#amt').value));
+    const ok = v > 0 && !!$('#payer').value;
+    $('#submitBtn').disabled = !ok;
+    const label = editingId ? 'Salvar alterações' : (v > 0 ? 'Adicionar ' + brl(v) : 'Adicionar despesa');
+    $('#submitBtn').innerHTML = icon(editingId ? 'check' : 'plus') + `<span>${label}</span>`;
+    if ($('#formHint')) $('#formHint').hidden = ok;
+  };
   $('#amt').addEventListener('input', () => { setErr($('#amt'), $('#amtErr'), false); updSubmit(); });
-  $('#payer').addEventListener('change', () => setErr($('#payer'), $('#payerErr'), false));
+  $('#payer').addEventListener('change', () => { setErr($('#payer'), $('#payerErr'), false); updSubmit(); });
   $('#amt').addEventListener('blur', () => { const v = parseMoney($('#amt').value); if (v > 0) $('#amt').value = fmtInput(round2(v)); });
   $('#expForm').onsubmit = e => {
     e.preventDefault();
@@ -2549,8 +2626,8 @@ Corte as frutas e monte a mesa com pães e frios.`,
     editingId = null; pendingPhoto = null; selProof = 'nf';
     ['#amt', '#desc', '#note', '#items', '#payerSearch', '#fKm', '#fKml', '#fPrice'].forEach(s => { $(s).value = ''; }); $('#estChk').checked = false;
     $('#addCard').classList.remove('editing'); $('#formTitle').textContent = 'Nova despesa';
-    $('#submitBtn').innerHTML = icon('plus') + '<span>Adicionar despesa</span>'; setErr($('#amt'), $('#amtErr'), false); setErr($('#payer'), $('#payerErr'), false);
-    $$('.exp.sel').forEach(x => x.classList.remove('sel')); renderProof(); renderPayers(); $('#payer').value = ''; $('#moreBox').open = false; fuelCalc();
+    setErr($('#amt'), $('#amtErr'), false); setErr($('#payer'), $('#payerErr'), false);
+    $$('.exp.sel').forEach(x => x.classList.remove('sel')); renderProof(); renderPayers(); $('#payer').value = ''; $('#moreBox').open = false; fuelCalc(); updSubmit();
   }
   function startEdit(id) {
     const e = state.expenses.find(x => x.id === id); if (!e) return;
@@ -2559,7 +2636,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#amt').value = fmtInput(e.amount); $('#desc').value = e.description || ''; $('#payer').value = e.payerId; $('#estChk').checked = !!e.estimated;
     $('#note').value = e.note || ''; $('#items').value = e.items || ''; $('#moreBox').open = !!(e.estimated || proofOf(e) !== 'nf' || e.items);
     $('#addCard').classList.add('editing'); $('#formTitle').textContent = 'Editar despesa';
-    $('#submitBtn').innerHTML = icon('check') + '<span>Salvar alterações</span>';
+    updSubmit();
     $$('.exp').forEach(x => x.classList.toggle('sel', x.dataset.id === id));
     $('#addCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -2581,12 +2658,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
           ${e.note ? `<div class="t2">“${esc(e.note)}”</div>` : ''}
           <div class="badges"><span class="badge">${esc(PROOF[pr].label)}</span>
             ${e.estimated ? '<span class="badge warn">Estimado</span>' : ''}
-            ${needsConfirm(e) ? `<span class="badge warn">Aguardando confirmação</span><button class="badge acc" data-confirm>${icon('check')}Confirmar</button>` : ''}
+            ${needsConfirm(e) ? `<span class="badge warn">Aguardando confirmação</span>` : ''}
             ${pr === 'none' && cf ? `<span class="badge ok">${icon('check')}Confirmado por ${esc(shortFam(cf.name))}</span>` : ''}
-            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto"><img src="${e.photo}" alt=""></button>` : ''}</div>
-          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('')}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}</div>
-        <div class="amt num">${e.estimated ? '~' : ''}${brl(e.amount)}</div>
-        <button class="del" data-del="${e.id}" aria-label="Excluir despesa">${icon('trash')}</button></div>`;
+            ${e.photo ? `<button class="thumb" data-photo aria-label="Ver foto de ${esc(e.description || c.label)}"><img src="${e.photo}" alt=""></button>` : ''}</div>
+          ${confirming === e.id ? `<div class="chooser"><span class="t2">Qual família confirma este gasto?</span>${others.map(f => `<button class="btn secondary sm" data-cf="${f.id}">${esc(shortFam(f.name))}</button>`).join('')}<button class="btn text sm" data-cfx>Cancelar</button></div>` : ''}
+          <div class="expfoot">${needsConfirm(e) ? `<button type="button" class="btn secondary sm" data-confirm>${icon('check')}<span>Confirmar</span></button>` : ''}<button type="button" class="btn danger sm" data-del="${e.id}">${icon('trash')}<span>Excluir</span></button></div></div>
+        <div class="amt num">${e.estimated ? '~' : ''}${brl(e.amount)}</div></div>`;
     }).join('');
   }
   $('#expFilter').onclick = e => { const b = e.target.closest('[data-ef]'); if (!b) return; ui.expFilter = b.dataset.ef; saveUi(); renderExpenses(); };
@@ -2610,7 +2687,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const MODE_HINT = { porcoes: 'Comida e mercado pelas porções que cada pessoa comeu (dias presentes × peso: criança 0,5, bebê 0). Álcool por dias de quem bebe. Combustível por pessoa.',
     pessoa: 'Comida, mercado e combustível igual por pessoa; álcool só entre quem bebe.', igual: 'Tudo dividido igualmente por pessoa, inclusive álcool.' };
   function balCell(net) { const z = Math.abs(net) < 0.005, cls = z ? 'zero' : net > 0 ? 'pos' : 'neg';
-    return `<div class="bal ${cls}"><span class="v num">${z ? brl(0) : icon(net > 0 ? 'dl' : 'ur') + (net > 0 ? '+' : '−') + brl(Math.abs(net))}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`; }
+    return `<div class="bal ${cls}"><span class="v num">${z ? brl(0) : icon(net > 0 ? 'ur' : 'dl') + (net > 0 ? '+' : '−') + brl(Math.abs(net))}</span><span class="k">${z ? 'quite' : net > 0 ? 'a receber' : 'a pagar'}</span></div>`; }
   function renderMode() {
     $('#modeSeg').innerHTML = Object.entries(SPLIT_MODES).map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${state.splitMode === k}">${esc(l)}</button>`).join('');
     $('#modeHint').textContent = MODE_HINT[state.splitMode];
@@ -2626,12 +2703,11 @@ Corte as frutas e monte a mesa com pães e frios.`,
   const isSettled = t => { const s = (state.settled || {})[t.from + '_' + t.to]; return !!s && Math.abs(s.amount - t.amount) < 0.01; };
   function renderXfers() {
     const xfers = C.xfers;
-    $('#xfTitle').textContent = 'Quem paga quem · é o acerto que vale';
     $('#xferMeta').textContent = xfers.length ? `${xfers.length} ${xfers.length > 1 ? 'transferências' : 'transferência'}` : '';
     if (!xfers.length) { $('#xfers').innerHTML = `<div class="empty ok"><span class="ic">${icon('check')}</span><b>Tudo acertado</b><p>Os saldos das famílias estão zerados.</p></div>`; return; }
     $('#xfers').innerHTML = xfers.map(t => { const done = isSettled(t);
-      return `<div class="xf2 ${done ? 'done' : ''}"><div class="say"><b>${esc(t.fromName)}</b> paga <span class="val num">${brl(t.amount)}</span> para <b>${esc(t.toName)}</b></div>
-        <div class="row"><span class="t2">${done ? 'Pago. Toque de novo para desmarcar.' : 'Marque quando o Pix for feito.'}</span><button class="paybtn" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${done}">${icon('check')}<span>${done ? 'Pago' : 'Marcar pago'}</span></button></div></div>`; }).join('')
+      return `<div class="xf2 ${done ? 'done' : ''}"><div class="say"><b>${esc(t.fromName)}</b> paga <span class="val num">${brl(t.amount)}</span> para <b>${esc(t.toName)}</b>${done ? `<span class="seal">${icon('check')}Pago</span>` : ''}</div>
+        <div class="row"><span class="t2">${done ? 'Pix marcado. Toque para desfazer.' : 'Marque quando o Pix for feito.'}</span><button class="btn ${done ? 'text' : 'secondary'} paybtn" data-settle="${t.from}_${t.to}" data-amt="${t.amount}" aria-pressed="${done}">${icon('check')}<span>${done ? 'Desmarcar' : 'Marcar pago'}</span></button></div></div>`; }).join('')
       + `<div class="sub" style="margin-top:16px">Menor número possível de transferências entre as famílias.</div>`;
   }
   $('#xfers').addEventListener('click', e => {
@@ -2661,7 +2737,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#kBody').innerHTML = `<div class="meter ${over ? 'over' : ''}" role="progressbar" aria-label="Caixinha usada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(k.pct * 100)}"><div style="width:${Math.min(100, k.pct * 100)}%"></div></div>
       <div class="meterrow num"><span>Gasto <b>${brl(k.spent)}</b> de ${brl(k.budget)}</span><span style="color:var(--${over ? 'neg' : 'pos'});font-weight:600">${over ? 'Faltam ' + brl(-k.left) : 'Sobram ' + brl(k.left)}</span></div>
       <div class="list" style="margin-top:16px">${k.families.map(f => `<div class="li" style="grid-template-columns:auto minmax(0,1fr) auto">${famAv(f)}<div style="min-width:0"><div class="t1">${esc(shortFam(f.name))}</div><div class="t2 w num">Colocou ${brl(f.contributed)} · parte ${brl(f.share)}</div></div>
-        <div class="bal ${Math.abs(f.back) < 0.005 ? 'zero' : f.back > 0 ? 'pos' : 'neg'}"><span class="v num">${Math.abs(f.back) < 0.005 ? brl(0) : (f.back > 0 ? '+' : '−') + brl(Math.abs(f.back))}</span><span class="k">${Math.abs(f.back) < 0.005 ? 'exato' : f.back > 0 ? 'recebe de volta' : 'completa'}</span></div></div>`).join('')}</div>`;
+        <div class="bal ${Math.abs(f.back) < 0.005 ? 'zero' : f.back > 0 ? 'pos' : 'neg'}"><span class="v num">${Math.abs(f.back) < 0.005 ? brl(0) : icon(f.back > 0 ? 'ur' : 'dl') + (f.back > 0 ? '+' : '−') + brl(Math.abs(f.back))}</span><span class="k">${Math.abs(f.back) < 0.005 ? 'exato' : f.back > 0 ? 'recebe de volta' : 'completa'}</span></div></div>`).join('')}</div>`;
     return k;
   }
   $('#kitty').addEventListener('input', () => { const v = parseMoney($('#kitty').value); state.kittyPerFamily = v > 0 ? round2(v) : 0; save(); render(); });
@@ -2674,9 +2750,12 @@ Corte as frutas e monte a mesa com pães e frios.`,
   let spinning = false;
   $('#spinBtn').onclick = () => {
     if (spinning) return; const ws = surpriseWeights(computeSplit(state)); if (!ws.length) return toast('Adicione pessoas primeiro', 'alert');
-    const win = weightedPick(ws), n = $('#sName'), fm = $('#sFam'); spinning = true; $('#spinBtn').disabled = true; n.className = 'name rolling'; let d = 60;
+    const win = weightedPick(ws), n = $('#sName'), fm = $('#sFam');
+    const finish = () => { n.className = 'name'; n.textContent = win.name; fm.textContent = `${win.familyName} paga a próxima`; spinning = false; $('#spinBtn').disabled = false; };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+    spinning = true; $('#spinBtn').disabled = true; n.className = 'name rolling'; let d = 60;
     const tick = () => { const p = ws[Math.floor(Math.random() * ws.length)]; n.textContent = p.name; fm.textContent = p.familyName; d *= 1.18;
-      if (d < 260) setTimeout(tick, d); else { n.className = 'name final'; n.textContent = win.name; fm.textContent = `${win.familyName} paga a próxima`; spinning = false; $('#spinBtn').disabled = false; } };
+      if (d < 260) setTimeout(tick, d); else finish(); };
     tick();
   };
   let lastText = '';
@@ -2878,7 +2957,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
           return `<div class="course"><div style="min-width:0"><div class="ct">${COURSES[c.course]} · ${sc.score}% afinidade</div><button class="dish" data-rec="${id}">${esc(c.title)}</button>
             <div class="badges">${isFreshRecipe(c) ? `<span class="badge freshb">Comprar no dia</span>` : ''}${c.ahead ? `<span class="badge warn">${esc(c.ahead)}</span>` : ''}<span class="badge">${c.time} min · ${c.diff}</span></div>
             ${w1 || w2 ? `<div class="wl">${icon('wine')}<span>${tier === 'alto' && w2 ? esc(wineName(w2)) : esc(wineName(w1 || w2))} <span class="t2">· ${esc(ws.estilo)}</span></span></div>` : ''}</div>
-            ${s.status !== 'accepted' ? `<button class="swap" data-swap="${j}" aria-label="Trocar ${COURSES[c.course].toLowerCase()}: ${esc(c.title)}">${icon('shuffle')}</button>` : '<span></span>'}</div>`; }).join('')}
+            ${s.status !== 'accepted' ? `<button type="button" class="swap" data-swap="${j}" aria-label="Trocar ${COURSES[c.course].toLowerCase()}: ${esc(c.title)}">${icon('shuffle')}<span>Trocar</span></button>` : ''}</div>`; }).join('')}
         <div class="sgacts">${s.status === 'accepted' ? `<button class="btn secondary sm" data-cookm="${k}">${icon('chef')}<span>Modo cozinha</span></button><button class="btn text sm" data-undo>Desfazer</button>`
           : s.status === 'rejected' ? `<button class="btn secondary sm" data-acc>${icon('check')}<span>Aceitar mesmo assim</span></button><span></span>` : `<button class="btn primary sm" data-acc>${icon('check')}<span>Aceitar</span></button><button class="btn text sm" data-rej>Recusar</button>`}</div></div>`;
     }).join('');
@@ -2910,13 +2989,13 @@ Corte as frutas e monte a mesa com pães e frios.`,
     $('#wineSeg').innerHTML = Object.entries(WINE_TIERS).map(([k, l]) => `<button type="button" data-wt="${k}" aria-pressed="${k === tier}">${l}</button>`).join('');
     const rows = list.length ? list : Object.entries(WINES).filter(([, w]) => w.tier === tier).map(([id]) => ({ id, bottles: 0, dishes: [] }));
     $('#wineMeta').textContent = list.length ? `~${list.reduce((s, x) => s + x.bottles, 0)} garrafas na viagem` : 'catálogo';
-    C.wineText = ['*Adega da viagem — Rateatouille*', `${WINE_TIERS[tier]} · preços aproximados`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `🍷 ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; })).concat(['', 'Beba com moderação.']).join('\n');
+    C.wineText = ['*Adega da viagem — Rateatouille*', `${WINE_TIERS[tier]} · preços aproximados`, ''].concat(rows.map(x => { const w = WINES[x.id]; return `- ${w.name} (${w.country})${x.bottles ? ` — ~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}` : ''} · ${w.price}${w.award ? `\n   ${w.award}` : ''}`; })).concat(['', 'Beba com moderação.']).join('\n');
     $('#wineWa').href = 'https://wa.me/?text=' + encodeURIComponent(C.wineText);
     $('#wineList').innerHTML = (list.length ? '' : `<p class="hint" style="margin-bottom:8px">Aceite o cardápio do Chef para calcular as garrafas. Enquanto isso, a seleção ${tier === 'alto' ? 'de alto' : 'de médio'} custo:</p>`) + rows.map(x => { const w = WINES[x.id];
       return `<div class="wine"><span class="gl">${icon('wine')}</span><div style="min-width:0"><div class="nm">${esc(w.name)}</div><div class="t2">${esc(w.type)} · ${esc(w.grape)} · ${esc(w.country)}</div>
         <div class="badges">${x.bottles ? `<span class="bottles">~${x.bottles} garrafa${x.bottles > 1 ? 's' : ''}</span>` : ''}<span class="price">${esc(w.price)} · preço aproximado</span></div>
         ${w.award ? `<div class="aw">${icon('sparkle')}<span>${esc(w.award)} · <a href="${esc(w.url)}" target="_blank" rel="noopener">fonte: ${esc(w.src)}</a></span></div>` : ''}
-        ${x.dishes.length ? `<div class="t2" style="margin-top:4px">Com: ${esc(x.dishes.slice(0, 3).join(', '))}${x.dishes.length > 3 ? '…' : ''}</div>` : ''}</div></div>`; }).join('')
+        ${x.dishes.length ? `<div class="t2" style="margin-top:4px">Com: ${esc(x.dishes.join(', '))}</div>` : ''}</div></div>`; }).join('')
       + `<p class="fine">Garrafas estimadas em ~2 taças por pessoa que bebe no prato principal e meia taça na entrada e na sobremesa. Prêmios e notas conferidos em fontes públicas em nov/2026 e valem para a safra indicada. Preços são faixas aproximadas: confira na loja. Beba com moderação; venda proibida para menores de 18 anos.</p>`;
   }
   $('#wineSeg').onclick = e => { const b = e.target.closest('[data-wt]'); if (!b) return; ui.wineTier = b.dataset.wt; saveUi(); render(); };
@@ -2956,6 +3035,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
     renderPayers(); renderExpenses();
     renderMode(); renderXfers(); renderBalances(); const k = renderKitty(); renderOdds(); renderShare(k);
     if (!allPeople(state).length) { $('#payerErrTxt').textContent = 'Adicione pelo menos uma pessoa nas famílias.'; setErr($('#payer'), $('#payerErr'), true); }
+    updSubmit();
   }
   window.App = { getState: () => JSON.parse(JSON.stringify(state)), setView, setSub, openCook, openBrief, render, toast, ui: () => ui };
   hydrate(document); renderSeg(); renderProof(); renderQuick();
