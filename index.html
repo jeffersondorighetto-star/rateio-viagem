@@ -641,6 +641,7 @@ dialog.pop p{margin:0 0 12px;font-size:15px;line-height:1.45}
 .hcitem .hcbody{grid-area:body;min-width:0}
 .hcitem .t2,.hcsvcbox{overflow-wrap:anywhere}
 .hcsvcbox{margin-top:4px}.hcsvcbox p{margin:0}
+.hojewarn{margin:2px 0 0;overflow-wrap:anywhere}.hcwarn{margin:0 0 4px}.hcwarn .hojewarn{margin:0}
 .hcacts{display:flex;flex-flow:row nowrap;align-items:center;gap:8px;margin-top:8px}
 .hcacts .btn{flex:0 0 auto;white-space:nowrap;min-height:44px;min-width:44px}
 @media (max-width:699px){
@@ -4880,6 +4881,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
         return `<div class="hcitem"><div class="ph" data-hc-ph="${esc(x.id)}" aria-hidden="true">${hcPhotos[x.id] ? `<img src="${hcPhotos[x.id]}" alt="">` : icon('wine')}</div>
           <div class="hctitle t1">${esc(cellarLabel(x))}</div>
           <div class="hcbody">
+          <div class="hcwarn"><p class="fine hojewarn" data-aviso="sulfitos">${esc(SULFITE_LINE)}</p><p class="fine hojewarn" data-aviso="18">${esc(AGE_LINE)}</p></div>
           <div class="t2">${esc(x.styleName || 'Estilo a definir')} · ${x.bottles} garrafa${x.bottles > 1 ? 's' : ''} · trazida por ${esc(x.famName)}</div>
           ${x.rating ? `<div class="t2">${esc(ratingTxt(x.rating))} · ficha do catálogo</div>` : (x.matchId ? '<div class="t2">Ficha do catálogo: Sem nota</div>' : '')}
           ${svc}${x.note ? `<div class="t2">Obs.: ${esc(x.note)}</div>` : ''}
@@ -5004,7 +5006,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
       <div class="mwhos"><span class="who"><span class="mav">${icon('chef')}</span><span>Chef</span></span>${minor ? '' : `<span class="who"><span class="mav">${icon('glass')}</span><span>Enólogo</span></span><span class="who"><span class="mav">${icon('cocktail')}</span><span>Drinks</span></span>`}</div>
       ${!minor && verdictTxt ? `<div class="mverdict">${icon('glass')}<p><b>Enólogo.</b> ${esc(verdictTxt)}</p></div>` : (lead ? `<p class="mbal"><b>Chef.</b> ${esc(lead)}</p>` : '')}
       <div class="hojeacts"><button type="button" class="btn primary" data-ver-mesa="${esc(k)}">${icon('arrow')}<span>Ver a mesa</span></button>${minor ? '' : `<button type="button" class="btn secondary" data-ver-adega>${icon('wine')}<span>Adega (${nAdega} rótulo${nAdega === 1 ? '' : 's'})</span></button>`}</div>
-      ${hc ? `<div class="hojehome">${icon('wine')}<div style="min-width:0"><p class="hojelabel">Da adega de casa, no lugar da compra</p><p class="t1"><b>${esc(hc.title)}</b></p><p class="t2">${esc(hc.prep)}</p><button type="button" class="btn text sm hojeserv" id="hojeServBtn" data-hoje-serv aria-expanded="${servOpen ? 'true' : 'false'}" aria-controls="hojeServ">${icon('chev')}<span>Como servir</span></button><div id="hojeServ" role="region" aria-labelledby="hojeServBtn" ${servOpen ? '' : 'hidden'}><p class="t2">${esc(hc.yield)}</p><p class="fine">${esc(SULFITE_LINE)} ${esc(AGE_LINE)}</p></div></div></div>` : ''}</div>`;
+      ${hc ? `<div class="hojehome">${icon('wine')}<div style="min-width:0"><p class="hojelabel">Da adega de casa, no lugar da compra</p><p class="t1"><b>${esc(hc.title)}</b></p><p class="fine hojewarn" data-aviso="sulfitos">${esc(SULFITE_LINE)}</p><p class="fine hojewarn" data-aviso="18">${esc(AGE_LINE)}</p><p class="t2">${esc(hc.prep)}</p><button type="button" class="btn text sm hojeserv" id="hojeServBtn" data-hoje-serv aria-expanded="${servOpen ? 'true' : 'false'}" aria-controls="hojeServ">${icon('chev')}<span>Como servir</span></button><div id="hojeServ" role="region" aria-labelledby="hojeServBtn" ${servOpen ? '' : 'hidden'}><p class="t2">${esc(hc.yield)}</p></div></div></div>` : ''}</div>`;
   }
   $('#hojeBody').addEventListener('click', e => {
     const serv = e.target.closest('[data-hoje-serv]');
@@ -5025,11 +5027,15 @@ Corte as frutas e monte a mesa com pães e frios.`,
   placeWineCard();
   matchMedia('(min-width: 920px)').addEventListener('change', placeWineCard);
   // Exemplo: cardápio do Chef já aceito, para a primeira impressão. Não grava respostas fictícias de pré-briefing.
+  // Só a prévia liga (preview.py): uma mesa de exemplo, fictícia, com duas falas na conversa (Enólogo + Drinks),
+  // para o Design testar a regra de colapso («Ver conversa» só com 2 falas ou mais).
+  const PREVIEW_EXEMPLOS = false;
   function demoBoot() {
     if (!state.demoChef) return; delete state.demoChef;
     state.chef = { seed: 0, sugg: {} }; generateMenu(false);
     for (const k of Object.keys(state.chef.sugg)) { const s = state.chef.sugg[k], [d, meal] = k.split('|'); setCell(d, meal, { mode: 'casa', recipes: s.ids.slice() }); s.status = 'accepted'; }
     for (const k of Object.keys(state.chef.sugg)) { const [d, meal] = k.split('|'); freezeRota(d, meal); }
+    if (PREVIEW_EXEMPLOS) { const k = Object.keys(state.chef.sugg).sort().find(x => x.endsWith('|jantar')); if (k) { const [d, meal] = k.split('|'), c = state.plan[d] && state.plan[d][meal]; if (c) c.bevReview = { prev: [], at: Date.now(), exemplo: true }; } }
     save();
   }
   // ---------- EVENTO COMPARTILHADO: status, entrada, aprovação, organizador, dados (export/import) ----------
