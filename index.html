@@ -1007,7 +1007,7 @@ const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
 function allPeople(state) {
   const out = [];
-  state.families.forEach(f => f.members.forEach(m => out.push({ ...m, familyId: f.id, familyName: f.name })));
+  state.families.forEach(f => f.members.forEach(m => out.push({ ...m, drinks: isDrinker(m), familyId: f.id, familyName: f.name })));
   return out;
 }
 
@@ -1199,6 +1199,9 @@ function tripDays(trip) {
 }
 const activeMeals = trip => MEAL_ORDER.filter(m => trip && trip.meals && trip.meals[m]);
 const typeOf = m => (m && MEMBER_TYPES[m.type]) ? m.type : 'adulto';
+// Álcool: só adulto (18+). Menor de 18 nunca bebe nem entra na conta de garrafas, mesmo que um dado antigo diga o contrário.
+const isAdult = m => typeOf(m) === 'adulto';
+const isDrinker = m => !!(m && m.drinks) && isAdult(m);
 const weightOf = (state, m) => { const t = typeOf(m), w = state.weights && state.weights[t]; return typeof w === 'number' && w >= 0 ? w : MEMBER_TYPES[t].w; };
 const cellOf = (state, day, meal) => (state.plan && state.plan[day] && state.plan[day][meal]) || { mode: 'casa', menu: DEFAULT_MENU[meal] };
 // Presence window: member override, else family override, else whole trip. Positions are day*4 + meal index.
@@ -1224,7 +1227,7 @@ function portions(state) {
         cell[key].portions += w; // casa: drives recipes/shopping; fora: restaurant estimate
         if (c.mode === 'casa') { p.casa += w; casaTotal += w; } else { p.fora += w; foraTotal += w; }
       }
-      if (here) { p.days++; if (m.drinks) p.drinkerDays++; }
+      if (here) { p.days++; if (isDrinker(m)) p.drinkerDays++; }
     });
   }
   return { days, meals, per, cell, casaTotal, foraTotal };
@@ -1234,7 +1237,7 @@ const SPLIT_MODES = { porcoes: 'Por porções (justo)', pessoa: 'Por pessoa', ig
 function splitWeights(state, category, people, P) {
   const mode = state.splitMode || 'pessoa', all = Object.fromEntries(people.map(p => [p.id, 1]));
   if (mode === 'igual') return { w: all };
-  const drinkers = people.filter(p => p.drinks);
+  const drinkers = people.filter(p => p.drinks && isAdult(p));
   if (CATEGORIES[category] && CATEGORIES[category].scope === 'drinkers') {
     if (!drinkers.length) return { w: all, warn: 'noDrinkers' };
     if (mode === 'porcoes' && P) { const w = Object.fromEntries(drinkers.map(p => [p.id, P.per[p.id] ? P.per[p.id].drinkerDays : 0])); if (Object.values(w).some(x => x > 0)) return { w }; }
@@ -1320,19 +1323,26 @@ function parseBought(state) {
   return got;
 }
 function shoppingList(state, opts) {
-  const P = portions(state), need = {}, defs = {}, gosto = {}, dishes = [], freshDays = {}, add = (k, q) => { need[k] = (need[k] || 0) + q; };
+  const P = portions(state), need = {}, defs = {}, gosto = {}, dishes = [], freshDays = {}, blocked = [], add = (k, q) => { need[k] = (need[k] || 0) + q; };
   const only = opts && opts.days ? new Set(opts.days) : null;
   for (const day of P.days) for (const meal of P.meals) {
     if (only && !only.has(day)) continue;
     const c = cellOf(state, day, meal), cp = P.cell[day + '|' + meal];
     if (c.mode !== 'casa' || !cp || !cp.portions) continue;
+    const blk = new Set(cellBlocked(state, day, meal).map(x => x.id)), sh = intolShares(state, day, meal);
     for (const id of cellRecipes(c)) {
       const r = getRecipe(state, id); if (!r) continue;
+      if (blk.has(id) && !r.builtin) { blocked.push({ day, meal, recipe: id, title: r.title }); continue; } // alergia de alguém presente: não compra
+      const drop = blk.has(id) ? new Set(allergyHits(state, r, presentMembers(state, day, meal))) : null; // modelo simples: só os itens com o alergênico saem
       const f = cp.portions / (r.yield || 1); let cost = 0;
       for (const ing of r.ingredients || []) {
+        if (drop && ingAllergens(state, ing).some(a => drop.has(a))) continue;
         const k = ingKey(ing); if (!ITEMS[k]) defs[k] = defs[k] || customDef(state, k, ing);
         if (ing.qty == null) { gosto[k] = true; continue; }
-        add(k, ing.qty * f); if (ITEMS[k] && ITEMS[k].fresh) (freshDays[k] = freshDays[k] || new Set()).add(day); const it = ITEMS[k] ? itemDef(state, k) : defs[k]; cost += ing.qty * f * it.price / it.pack;
+        let q = ing.qty * f, left = q;
+        for (const t of ['lactose', 'gluten']) { const v = INTOL_VARIANT[t][k]; if (!v || !sh[t] || left <= 0) continue; // intolerância: parte vai na versão adaptada
+          const mv = Math.min(left, q * Math.min(1, sh[t] / cp.portions)); add(v, mv); left -= mv; const iv = itemDef(state, v); cost += mv * iv.price / iv.pack; }
+        if (left > 1e-9) add(k, left); if (ITEMS[k] && ITEMS[k].fresh) (freshDays[k] = freshDays[k] || new Set()).add(day); const it = ITEMS[k] ? itemDef(state, k) : defs[k]; cost += left * it.price / it.pack;
       }
       dishes.push({ day, meal, recipe: r.id, title: r.title, portions: cp.portions, cost });
     }
@@ -1341,7 +1351,9 @@ function shoppingList(state, opts) {
   const dayFrac = only ? Math.min(1, only.size / Math.max(1, P.days.length)) : 1;
   for (const f of state.families) for (const m of f.members) { const p = P.per[m.id]; if (!p) continue; if (typeOf(m) !== 'bebe') personDays += p.days * dayFrac; drinkerDays += p.drinkerDays * dayFrac; }
   if (personDays) { add('agua', personDays * stapleQty(state, 'agua')); add('gelo', personDays * stapleQty(state, 'gelo')); }
-  if (drinkerDays) add('cerveja', drinkerDays * stapleQty(state, 'cerveja'));
+  // Álcool só entra com o aceite de um adulto organizador (state.alcoholOk), na quantidade dos adultos que bebem.
+  if (drinkerDays && state.alcoholOk) add('cerveja', drinkerDays * stapleQty(state, 'cerveja'));
+  if (typeof bevNeeds === 'function') for (const [k, q] of bevNeeds(state, P, only)) add(k, q);
   const bought = parseBought(state), rows = [];
   for (const k of [...Object.keys(ITEMS), ...Object.keys(defs)]) {
     if (!need[k] && !gosto[k]) continue;
@@ -1350,7 +1362,7 @@ function shoppingList(state, opts) {
     const g = !!gosto[k] && need[k] === 0;
     const packs = g ? 1 : Math.ceil(need[k] / it.pack - 1e-9), toBuy = b.covered ? 0 : (g ? (b.qty ? 0 : it.pack) : Math.max(0, need[k] - b.qty)), packsLeft = g ? (toBuy ? 1 : 0) : Math.ceil(toBuy / it.pack - 1e-9);
     rows.push({ key: k, name: it.name, section: it.section, unit: it.unit, need: need[k], packs, packLabel: it.packLabel, price: it.price, cost: packs * it.price,
-      bought: b.qty, covered: b.covered, toBuy, packsLeft, costLeft: packsLeft * it.price, alcohol: !!it.alcohol, aGosto: g, custom: !!it.custom, fresh: !!it.fresh, freshDays: freshDays[k] ? [...freshDays[k]].sort() : [] });
+      bought: b.qty, covered: b.covered, toBuy, packsLeft, costLeft: packsLeft * it.price, alcohol: !!it.alcohol, aGosto: g, custom: !!it.custom, fresh: !!it.fresh, adaptedOf: it.adaptedOf || null, bev: !!it.bev, freshDays: freshDays[k] ? [...freshDays[k]].sort() : [] });
   }
   const sum = (a, f) => a.reduce((s, r) => s + f(r), 0);
   const groceryTotal = sum(rows, r => r.cost), alcoholTotal = sum(rows.filter(r => r.alcohol), r => r.cost), foodTotal = groceryTotal - alcoholTotal;
@@ -1361,7 +1373,7 @@ function shoppingList(state, opts) {
   const stapleCost = sum(rows.filter(r => r.key === 'agua' || r.key === 'gelo'), r => r.cost), mealCost = foodTotal - stapleCost;
   const perFamily = famP.map(f => ({ ...f, cost: (P.casaTotal ? mealCost * f.casa / P.casaTotal : 0) + (personDays ? stapleCost * f.days / personDays : 0)
     + (drinkerDays ? alcoholTotal * f.dd / drinkerDays : 0) + (P.foraTotal ? foraTotal * f.fora / P.foraTotal : 0) }));
-  return { dishes, P, rows, groceryTotal, alcoholTotal, foodTotal, foraTotal, leftTotal: sum(rows, r => r.costLeft),
+  return { dishes, blocked, P, rows, groceryTotal, alcoholTotal, foodTotal, foraTotal, leftTotal: sum(rows, r => r.costLeft),
     costPerPortion: P.casaTotal ? mealCost / P.casaTotal : 0, personDays, drinkerDays, perFamily, total: groceryTotal + foraTotal };
 }
 const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocaleString('pt-BR')} un` : unit === 'g' ? (q >= 1000 ? `${(q / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg` : `${Math.round(q)} g`)
@@ -1369,7 +1381,7 @@ const fmtQty = (q, unit) => unit === 'un' ? `${(Math.round(q * 10) / 10).toLocal
 function shoppingText(state, S) {
   const L = ['*Lista de compras — Rateatouille*', `${S.P.days.length} dias · ${S.P.casaTotal.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} porções em casa`, ''];
   for (const sec of SECTIONS) { const rs = S.rows.filter(r => r.section === sec && (r.toBuy > 0)); if (!rs.length) continue;
-    L.push(`*${sec}*`); for (const r of rs) L.push(r.aGosto ? `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); L.push(''); }
+    L.push(`*${sec}*`); for (const r0 of rs) { const r = r0.adaptedOf ? { ...r0, name: `${ITEMS[r0.adaptedOf].name} (versão adaptada, detalhe no app)` } : r0; L.push(r.aGosto ? `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — a gosto (1 × ${r.packLabel}) · ~${brl(r.costLeft)}` : `☐ ${r.name}${r.fresh ? ' (comprar no dia)' : ''} — ${fmtQty(r.toBuy, r.unit)} (${r.packsLeft} × ${r.packLabel}) · ~${brl(r.costLeft)}`); } L.push(''); }
   L.push(`Estimativa a comprar: *~${brl(S.leftTotal)}* (preços estimados)`);
   return L.join('\n');
 }
@@ -1544,26 +1556,102 @@ function recipeCost(state, r) {
   for (const ing of r.ingredients || []) { if (ing.qty == null) continue; const k = ingKey(ing), it = ITEMS[k] ? itemDef(state, k) : customDef(state, k, ing); total += ing.qty * it.price / it.pack; }
   return { total, perPortion: r.yield ? total / r.yield : 0 };
 }
-// Diet: tags derived from ingredients, checked against member notes.
-const DIET = { veg: { label: 'vegetariano', words: ['carne', 'frango', 'peixe', 'linguica', 'bacon', 'feijoada', 'costela', 'presunto', 'camarao', 'atum', 'charque', 'calabresa', 'porco', 'picanha', 'file'] },
-  lactose: { label: 'sem lactose', words: ['leite', 'queijo', 'manteiga', 'creme de leite', 'requeijao', 'iogurte', 'mussarela', 'parmesao', 'nata'] },
-  gluten: { label: 'sem glúten', words: ['farinha de trigo', 'trigo', 'macarrao', 'espaguete', 'pao', 'massa', 'biscoito', 'cerveja', 'penne', 'farinha de rosca'] } };
+// ===================== Saúde à mesa: alergias (lista fechada) e intolerâncias. Ficam só neste aparelho. =====================
+// Fonte da lista: Anvisa, RDC nº 727/2022, Anexo III (os principais alimentos que causam alergias alimentares), conferida em 19/11/2026.
+// Moluscos não estão no Anexo III; entram como item extra por segurança (a própria Anvisa cita moluscos entre alergênicos reconhecidos fora do anexo).
+const ALLERGEN_SRC = { name: 'Anvisa · RDC nº 727/2022, Anexo III', url: 'https://anvisalegis.datalegis.net/action/ActionDatalegis.php?acao=abrirTextoAto&cod_menu=8542&cod_modulo=310&link=S&numeroAto=00000727&orgao=RDC%2FDC%2FANVISA%2FMS&seqAto=002&tipo=RDC&valorAno=2022', checkedOn: '2026-11-19' };
+const ALLERGENS = {
+  crustaceos: { label: 'Crustáceos', ex: 'camarão, lagosta, siri, caranguejo', words: ['camarao', 'lagosta', 'lagostim', 'siri', 'caranguejo', 'pitu', 'krill'] },
+  peixes: { label: 'Peixes', ex: 'qualquer peixe, inclusive bacalhau e atum', words: ['peixe', 'salmao', 'atum', 'bacalhau', 'sardinha', 'tilapia', 'robalo', 'pescada', 'anchova', 'tainha', 'linguado', 'merluza', 'aliche', 'molho de peixe'] },
+  leite: { label: 'Leite', ex: 'leite de qualquer mamífero e derivados', words: ['leite', 'queijo', 'manteiga', 'creme de leite', 'requeijao', 'iogurte', 'mussarela', 'parmesao', 'nata', 'coalho', 'burrata', 'bufala', 'ricota', 'cream cheese', 'chantilly', 'sorvete', 'doce de leite', 'leite condensado', 'soro de leite', 'caseina', 'ghee'],
+    not: ['leite de coco', 'leite de amendoa', 'leite de aveia', 'leite de soja', 'manteiga de cacau', 'sem leite'] },
+  ovo: { label: 'Ovos', ex: 'ovo, maionese, massas com ovo', words: ['ovo', 'ovos', 'maionese', 'gema', 'clara', 'merengue'] },
+  amendoim: { label: 'Amendoim', ex: 'amendoim, paçoca, pé de moleque', words: ['amendoim', 'pacoca', 'pe de moleque'] },
+  castanhas: { label: 'Castanhas e oleaginosas', ex: 'amêndoa, avelã, castanha-de-caju, castanha-do-pará, macadâmia, nozes, pecã, pistache, pinoli', words: ['castanha', 'amendoa', 'avela', 'nozes', 'noz', 'pecan', 'pistache', 'macadamia', 'pinoli', 'praline', 'marzipa'], not: ['noz moscada'] },
+  soja: { label: 'Soja', ex: 'soja, shoyu, tofu, óleo de soja', words: ['soja', 'shoyu', 'tofu', 'miso', 'edamame', 'oleo'] },
+  trigo: { label: 'Trigo, centeio, cevada e aveia (glúten)', ex: 'farinha, pão, massa, cerveja', words: ['trigo', 'farinha de rosca', 'macarrao', 'espaguete', 'penne', 'lasanha', 'massa', 'pao', 'torrada', 'biscoito', 'bolacha', 'cerveja', 'cevada', 'centeio', 'aveia', 'cuscuz marroquino', 'empanado', 'semolina', 'bulgur', 'malte', 'croissant', 'panko'],
+    not: ['massa de tomate', 'farinha de mandioca', 'farinha de milho', 'pao de queijo'] },
+  moluscos: { label: 'Moluscos (extra)', extra: true, ex: 'lula, polvo, mexilhão, ostra, vieira', words: ['lula', 'polvo', 'mexilhao', 'marisco', 'ostra', 'vieira', 'sururu', 'berbigao', 'vongole'] },
+};
+// Ingredientes do catálogo marcados um a um (o texto do nome é a segunda checagem).
+const ITEM_ALLERGENS = { camarao: ['crustaceos'], lula: ['moluscos'], mexilhao: ['moluscos'], polvo: ['moluscos'], peixe: ['peixes'], salmao: ['peixes'], bacalhau: ['peixes'],
+  leite: ['leite'], manteiga: ['leite'], queijo: ['leite'], creme_leite: ['leite'], requeijao: ['leite'], bufala: ['leite'], mussarela: ['leite'], coalho: ['leite'], leite_cond: ['leite'], sorvete: ['leite'], frios: ['leite'],
+  pao: ['trigo'], pao_italiano: ['trigo'], pao_alho: ['trigo', 'leite'], macarrao: ['trigo'], massa_lasanha: ['trigo', 'ovo'], farinha: ['trigo'], cerveja: ['trigo'], ovos: ['ovo'], oleo: ['soja'] };
+// Produtos prontos: o rótulo manda. Aviso de contaminação cruzada ("ALÉRGICOS: PODE CONTER").
+const LABEL_CHECK = new Set(['linguica', 'farofa', 'molho', 'frios', 'sorvete', 'pao_alho', 'leite_cond', 'pao', 'pao_italiano', 'massa_lasanha', 'macarrao', 'requeijao', 'creme_leite', 'parma', 'frutas_verm']);
+const INTOL = { lactose: { label: 'Lactose', adapt: 'sem lactose' }, gluten: { label: 'Glúten (sensibilidade)', adapt: 'sem glúten' }, alho_cebola: { label: 'Alho e cebola', adapt: 'porção separada antes de temperar' } };
+// Versões adaptadas para a lista de compras (intolerância não bloqueia o prato: adapta).
+const INTOL_VARIANT = { lactose: { leite: 'leite_sl', creme_leite: 'creme_leite_sl', manteiga: 'manteiga_sl', queijo: 'queijo_sl', mussarela: 'mussarela_sl', bufala: 'mussarela_sl', coalho: 'coalho_sl', leite_cond: 'leite_cond_sl', sorvete: 'sorvete_sl', requeijao: 'requeijao_sl', frios: 'frios_sl' },
+  gluten: { macarrao: 'macarrao_sg', massa_lasanha: 'massa_lasanha_sg', pao: 'pao_sg', pao_italiano: 'pao_sg', pao_alho: 'pao_sg', farinha: 'farinha_sg' } };
+const HEALTH_RETENTION_DAYS = 15; // apagamento automático até 15 dias depois do fim da viagem
+const allergenWordHit = (txt, a) => { let t = txt; for (const n of a.not || []) t = t.split(n).join(' '); return a.words.some(w => hasPhrase(t, w)); };
+// Lê o formato novo { veg, allergens:[], intol:[], consent } e o antigo { lactose, gluten, alergia:'texto' }.
+function healthOf(m) {
+  const d = (m && m.diet) || {}, al = new Set((d.allergens || []).filter(a => ALLERGENS[a])), it = new Set((d.intol || []).filter(a => INTOL[a]));
+  if (d.lactose) it.add('lactose'); if (d.gluten) it.add('gluten');
+  if (d.alergia) { const t = normTxt(d.alergia); for (const [id, a] of Object.entries(ALLERGENS)) if (allergenWordHit(t, a)) al.add(id); }
+  return { veg: !!d.veg, allergens: [...al], intol: [...it] };
+}
 const ingText = (state, ing) => normTxt(ing.name + ' ' + (ing.itemKey && ITEMS[ing.itemKey] ? ITEMS[ing.itemKey].name : ''));
+function ingAllergens(state, ing) {
+  const k = ing.itemKey && ITEMS[ing.itemKey] ? ing.itemKey : null, out = new Set(k && ITEM_ALLERGENS[k] ? ITEM_ALLERGENS[k] : []);
+  if (k && ITEMS[k].allergens) ITEMS[k].allergens.forEach(a => out.add(a));
+  if (!k || !ITEMS[k].noWordCheck) { const t = ingText(state, ing); for (const [id, a] of Object.entries(ALLERGENS)) if (allergenWordHit(t, a)) out.add(id); }
+  for (const a of ing.allergens || []) if (ALLERGENS[a]) out.add(a);
+  return [...out];
+}
+// Alergênicos por ingrediente de uma receita (marcação manual da receita soma).
+function recipeAllergens(state, r) {
+  const by = (r && r.ingredients || []).map(ing => ({ name: ing.name, ids: ingAllergens(state, ing), label: !!(ing.itemKey && LABEL_CHECK.has(ing.itemKey)) || /\bpront[oa]\b|maionese|cacau/.test(normTxt(ing.name)) }));
+  const ids = new Set(); by.forEach(x => x.ids.forEach(a => ids.add(a))); (r && r.allergens || []).forEach(a => ALLERGENS[a] && ids.add(a));
+  return { ids: [...ids], by, labelCheck: by.filter(x => x.label).map(x => x.name) };
+}
+const INTOL_TEST = { lactose: (st, ing) => ingAllergens(st, ing).includes('leite') && !(ing.itemKey && ITEMS[ing.itemKey] && ITEMS[ing.itemKey].sl),
+  gluten: (st, ing) => ingAllergens(st, ing).includes('trigo') && !(ing.itemKey && ITEMS[ing.itemKey] && ITEMS[ing.itemKey].sg),
+  alho_cebola: (st, ing) => ['alho', 'cebola'].some(w => hasPhrase(ingText(st, ing), w)) };
+const VEG_WORDS = ['carne', 'frango', 'peixe', 'linguica', 'bacon', 'feijoada', 'costela', 'presunto', 'camarao', 'atum', 'charque', 'calabresa', 'porco', 'picanha', 'file', 'lula', 'polvo', 'mexilhao', 'salmao', 'bacalhau', 'lombo'];
+// Conflitos de UMA pessoa com UMA receita. Não leva nome: quem chama decide o que mostrar (nunca em texto compartilhado).
 function dietConflicts(state, recipe, member) {
-  const d = member.diet || {}, out = [];
-  if (!recipe) return out;
-  for (const k of Object.keys(DIET)) if (d[k]) { const hit = (recipe.ingredients || []).find(ing => DIET[k].words.some(w => hasPhrase(ingText(state, ing), w))); if (hit) out.push(`${DIET[k].label}: ${hit.name}`); }
-  if (d.alergia) for (const w of normTxt(d.alergia).split(/[,;/]+|\s+e\s+/).map(x => x.trim()).filter(x => x.length >= 3)) {
-    const hit = (recipe.ingredients || []).find(ing => hasPhrase(ingText(state, ing), w) || ingText(state, ing).includes(w)); if (hit) out.push(`alergia (${w}): ${hit.name}`); }
+  const h = healthOf(member), out = []; if (!recipe) return out; const ings = recipe.ingredients || [];
+  if (h.veg) { const hit = ings.find(ing => VEG_WORDS.some(w => hasPhrase(ingText(state, ing), w))); if (hit) out.push(`vegetariano: ${hit.name}`); }
+  for (const a of h.allergens) { const hit = ings.find(ing => ingAllergens(state, ing).includes(a)) || ((recipe.allergens || []).includes(a) ? { name: 'marcado na receita' } : null); if (hit) out.push(`alergia (${ALLERGENS[a].label.toLowerCase()}): ${hit.name}`); }
+  for (const i of h.intol) { const hit = ings.find(ing => INTOL_TEST[i](state, ing)); if (hit) out.push(`adaptar ${INTOL[i].adapt}: ${hit.name}`); }
   return out;
 }
-function mealConflicts(state, day, meal) {
+function presentMembers(state, day, meal) {
   const days = tripDays(state.trip), i = days.indexOf(day), k = i * 4 + MEAL_ORDER.indexOf(meal), out = [];
-  const c = cellOf(state, day, meal); if (c.mode !== 'casa') return out;
-  for (const f of state.families) for (const m of f.members) {
-    const [a, b] = presenceRange(state, m, f, days); if (k < a || k > b) continue;
-    for (const id of cellRecipes(c)) { const r = getRecipe(state, id); for (const x of dietConflicts(state, r, m)) out.push({ member: m.name, recipe: r.title, issue: x }); }
-  }
+  for (const f of state.families) for (const m of f.members) { const [a, b] = presenceRange(state, m, f, days); if (i < 0 || (k >= a && k <= b)) out.push(m); }
+  return out;
+}
+// Alergênicos da receita que batem com alguém da lista de pessoas. Bloqueio duro.
+function allergyHits(state, r, members) {
+  if (!r) return []; const need = new Set(); members.forEach(m => healthOf(m).allergens.forEach(a => need.add(a))); if (!need.size) return [];
+  return recipeAllergens(state, r).ids.filter(a => need.has(a));
+}
+// Resumo do grupo sem nomes: tipos de alergia e intolerância presentes (para cozinha e avisos).
+function groupHealth(state, members) {
+  const al = new Set(), it = new Set(); let veg = 0;
+  (members || state.families.flatMap(f => f.members)).forEach(m => { const h = healthOf(m); h.allergens.forEach(a => al.add(a)); h.intol.forEach(a => it.add(a)); if (h.veg) veg++; });
+  return { allergens: [...al], intol: [...it], veg };
+}
+// Avisos de uma refeição SEM nome de pessoa: alergia (bloqueio), intolerância (adaptar), vegetariano.
+function mealConflicts(state, day, meal) {
+  const c = cellOf(state, day, meal), out = []; if (c.mode !== 'casa') return out;
+  const ms = presentMembers(state, day, meal), seen = new Set();
+  for (const id of cellRecipes(c)) { const r = getRecipe(state, id); if (!r) continue;
+    for (const m of ms) for (const x of dietConflicts(state, r, m)) { const key = r.title + '|' + x; if (seen.has(key)) continue; seen.add(key);
+      out.push({ recipe: r.title, recipeId: id, issue: x, kind: x.startsWith('alergia') ? 'alergia' : x.startsWith('adaptar') ? 'intol' : 'veg' }); } }
+  return out;
+}
+function cellBlocked(state, day, meal) {
+  const c = cellOf(state, day, meal); if (c.mode !== 'casa') return [];
+  const ms = presentMembers(state, day, meal);
+  return cellRecipes(c).map(id => ({ id, r: getRecipe(state, id) })).filter(x => x.r).map(x => ({ id: x.id, title: x.r.title, allergens: allergyHits(state, x.r, ms) })).filter(x => x.allergens.length);
+}
+// Fatias de intolerância por refeição: peso (porções) de quem precisa da versão adaptada.
+function intolShares(state, day, meal) {
+  const out = {}, ms = presentMembers(state, day, meal), c = cellOf(state, day, meal); if (c.mode === 'livre') return out;
+  for (const m of ms) for (const t of healthOf(m).intol) out[t] = (out[t] || 0) + weightOf(state, m);
   return out;
 }
 // Escala da cozinha: each "em casa" meal gets a cooking and a cleaning family, balanced by each family's share of portions.
@@ -1814,8 +1902,8 @@ function chefRecipe(id) {
 }
 // Pré-briefing: respostas por família (ficam só no aparelho). Afinidade 0–100 por prato.
 const BRIEF_VETO = { camarao: { label: 'Camarão', prot: ['camarao'] }, peixe: { label: 'Peixe', prot: ['peixe'] }, mar: { label: 'Frutos do mar', prot: ['camarao', 'frutos_mar'] },
-  porco: { label: 'Carne de porco', prot: ['porco'] }, boi: { label: 'Carne vermelha', prot: ['boi'] }, lactose: { label: 'Lactose', words: DIET.lactose.words },
-  gluten: { label: 'Glúten', words: DIET.gluten.words }, pimenta: { label: 'Pimenta', words: ['pimenta'] }, coentro: { label: 'Coentro', words: ['coentro', 'cheiro verde'] } };
+  porco: { label: 'Carne de porco', prot: ['porco'] }, boi: { label: 'Carne vermelha', prot: ['boi'] },
+  pimenta: { label: 'Pimenta', words: ['pimenta'] }, coentro: { label: 'Coentro', words: ['coentro', 'cheiro verde'] } };
 function briefVetoes(c, a) {
   if (!a) return [];
   const out = [], names = c.ing.map(([k]) => normTxt(k + ' ' + (ITEMS[k] ? ITEMS[k].name : '')));
@@ -1852,9 +1940,10 @@ function chefScores(state, brief) {
       if (r.vetos.length) vetos.push({ fam: x.f.name, what: r.vetos }); num += r.score * x.w; den += x.w; }
     const base = 58 + c.kids * 3 - Math.abs(c.level - 2) * 3 - (c.leftovers ? 6 : 0);
     let score = den ? Math.round(num / den) : base;
-    const diet = []; for (const f of state.families) for (const m of f.members) { const d = dietConflicts(state, chefRecipe(id), m); if (d.length) diet.push(m.name); }
+    const r = chefRecipe(id), everyone = state.families.flatMap(f => f.members), allergy = allergyHits(state, r, everyone);
+    const diet = []; for (const m of everyone) if (dietConflicts(state, r, m).some(x => x.startsWith('vegetariano'))) diet.push(1); // só contagem, sem nome
     if (diet.length) score = Math.max(0, score - 8);
-    out[id] = { id, score, vetos, per, diet, course: c.course, answered: answered.length };
+    out[id] = { id, score, vetos, per, diet, allergy, course: c.course, answered: answered.length };
   }
   return out;
 }
@@ -1872,12 +1961,18 @@ const SPECIAL = { '12-24|jantar': { label: 'Ceia de Natal', ids: ['c_parma_melao
 // Cardápio sugerido para as refeições "em casa" (almoço, lanche e jantar). Determinístico para o mesmo seed.
 function chefPlan(state, brief, seed) {
   const P = portions(state), sc = chefScores(state, brief), g = groupPrefs(state, brief), out = {};
-  const rank = course => Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers).sort((a, b) => (b.score - (b.vetos.length ? 60 : 0)) - (a.score - (a.vetos.length ? 60 : 0)) || (a.id < b.id ? -1 : 1));
+  // Veto de família = exclusão dura (com fallback só se não sobrar nada). Alergia de quem está presente = bloqueio sem fallback.
+  const rank = course => { const all = Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers).sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1)), ok = all.filter(x => !x.vetos.length); return ok.length ? ok : all; };
+  const blockCache = {}; let curBlock = new Set();
+  const blockFor = (d, meal) => { const ms = presentMembers(state, d, meal), sig = groupHealth(state, ms).allergens.sort().join(',');
+    if (!blockCache[sig]) blockCache[sig] = new Set(sig ? Object.keys(CHEF).filter(id => allergyHits(state, chefRecipe(id), ms).length) : []); return blockCache[sig]; };
+  const okId = id => id && CHEF[id] && !curBlock.has(id) && !(sc[id] && sc[id].vetos.length && rank(CHEF[id].course).some(x => x.id !== id));
   const R = { entrada: rank('entrada'), principal: rank('principal'), sobremesa: rank('sobremesa') };
   const last = {}; let prevLunchChurrasco = false, k = 0; const s0 = Number(seed) || 0, reserved = new Set();
   P.days.forEach(d => ['almoco', 'jantar'].forEach(m => { const sp = SPECIAL[d.slice(5) + '|' + m]; if (sp) reserved.add(sp.ids[1]); }));
   const pick = (course, day, avoid, pred) => {
-    let list = R[course].filter(x => !avoid.has(x.id) && (pred ? pred(CHEF[x.id]) : true));
+    let list = R[course].filter(x => !avoid.has(x.id) && !curBlock.has(x.id) && (pred ? pred(CHEF[x.id]) : true));
+    if (!list.length && pred) list = R[course].filter(x => !avoid.has(x.id) && !curBlock.has(x.id));
     if (list.some(x => !reserved.has(x.id))) list = list.filter(x => !reserved.has(x.id));
     const fresh = list.filter(x => last[x.id] == null || day - last[x.id] >= (course === 'principal' ? 4 : 3));
     const pool = (fresh.length ? fresh : list).slice(0, Math.max(1, Math.min(4, (fresh.length ? fresh : list).length)));
@@ -1889,27 +1984,51 @@ function chefPlan(state, brief, seed) {
     for (const meal of P.meals) {
       if (meal === 'cafe') continue;
       const c = cellOf(state, d, meal), cp = P.cell[d + '|' + meal]; if (c.mode !== 'casa' || !cp || !cp.portions) continue;
-      const sp = SPECIAL[md + '|' + meal]; let ids = [], label = '';
-      if (sp) { ids = sp.ids.slice(); label = sp.label; }
+      const sp = SPECIAL[md + '|' + meal]; let ids = [], label = '', swapped = false; curBlock = blockFor(d, meal);
+      if (sp) { label = sp.label; ids = sp.ids.map(id => { if (okId(id)) return id; swapped = true; return pick(CHEF[id].course, i, dayCh, x => x.level >= 2); }).filter(Boolean); }
       else if (meal === 'lanche') { if (g.entradas >= 0.4) { const e = pick('entrada', i, dayCh, x => x.kids >= 1 && x.time <= 30); if (e) ids = [e]; label = 'Petisco'; } }
       else {
         let p = null;
-        if (meal === 'almoco' && prevLunchChurrasco && sc.c_arroz_churrasco && !sc.c_arroz_churrasco.vetos.length) { p = 'c_arroz_churrasco'; label = 'Aproveitamento'; }
-        else if (meal === 'almoco' && (wd === 0 || wd === 6) && sc.c_churrasco.score >= 40 && !sc.c_churrasco.vetos.length && (last.c_churrasco == null || i - last.c_churrasco >= 3)) { p = 'c_churrasco'; label = 'Churrasco'; }
+        if (meal === 'almoco' && prevLunchChurrasco && sc.c_arroz_churrasco && okId('c_arroz_churrasco')) { p = 'c_arroz_churrasco'; label = 'Aproveitamento'; }
+        else if (meal === 'almoco' && (wd === 0 || wd === 6) && sc.c_churrasco.score >= 40 && okId('c_churrasco') && (last.c_churrasco == null || i - last.c_churrasco >= 3)) { p = 'c_churrasco'; label = 'Churrasco'; }
         else p = pick('principal', i, dayCh, meal === 'jantar' ? (x => !x.heavy) : (x => x.cat !== 'massa' || i % 2 === 0));
         const stages = meal === 'jantar' && (g.nivel >= 2 || g.entradas >= 0.6);
         const e = stages ? pick('entrada', i, dayCh, x => !(p && CHEF[p].cat === 'mar' && x.cat === 'mar' && x.level < 3)) : null;
-        const s = (meal === 'jantar' && (g.nivel >= 2.3 || i % 2 === 1)) || p === 'c_churrasco' ? (p === 'c_churrasco' ? 'c_abacaxi_grelhado' : pick('sobremesa', i, dayCh)) : null;
+        const s = (meal === 'jantar' && (g.nivel >= 2.3 || i % 2 === 1)) || p === 'c_churrasco' ? (p === 'c_churrasco' && okId('c_abacaxi_grelhado') ? 'c_abacaxi_grelhado' : pick('sobremesa', i, dayCh)) : null;
         ids = [e, p, s].filter(Boolean); if (!label) label = stages ? 'Jantar em etapas' : '';
       }
       if (!ids.length) continue;
       ids.forEach(x => { last[x] = i; dayCh.add(x); });
       if (meal === 'almoco') prevLunchChurrasco = ids.includes('c_churrasco');
-      out[d + '|' + meal] = { ids, label, portions: cp.portions, people: cp.people };
+      out[d + '|' + meal] = { ids, label, portions: cp.portions, people: cp.people, ...(swapped ? { swapped: true } : {}) };
     }
     if (!P.meals.includes('almoco') || cellOf(state, d, 'almoco').mode !== 'casa') prevLunchChurrasco = false;
   });
   return { sugg: out, scores: sc, prefs: g };
+}
+// Alergia em qualquer lugar: troca pratos do Chef (e de receitas) que tenham alergênico de alguém presente.
+// Modelos simples (café, lanche) não são trocados: os itens com o alergênico saem da lista de compras e a refeição mostra o aviso.
+function safeAlt(state, sc, id, ms, taken) {
+  const course = CHEF[id] ? CHEF[id].course : 'principal';
+  const all = Object.values(sc).filter(x => x.course === course && !CHEF[x.id].leftovers && !taken.includes(x.id) && !allergyHits(state, chefRecipe(x.id), ms).length);
+  return all.sort((a, b) => (a.vetos.length - b.vetos.length) || b.score - a.score)[0] || null;
+}
+function enforceAllergies(state, brief) {
+  const changes = [], sc = chefScores(state, brief), days = tripDays(state.trip), meals = activeMeals(state.trip);
+  for (const d of days) for (const meal of meals) {
+    const bl = cellBlocked(state, d, meal).filter(b => { const r = getRecipe(state, b.id); return r && !r.builtin; }); if (!bl.length) continue;
+    const c = cellOf(state, d, meal), ids = cellRecipes(c).slice(), ms = presentMembers(state, d, meal);
+    for (const b of bl) { const j = ids.indexOf(b.id); if (j < 0) continue; const alt = safeAlt(state, sc, b.id, ms, ids);
+      if (alt) ids[j] = alt.id; else ids.splice(j, 1);
+      changes.push({ day: d, meal, from: b.title, to: alt ? CHEF[alt.id].title : null, allergens: b.allergens }); }
+    state.plan = state.plan || {}; state.plan[d] = state.plan[d] || {}; state.plan[d][meal] = { ...c, mode: 'casa', recipes: ids };
+    const sg = state.chef && state.chef.sugg && state.chef.sugg[d + '|' + meal]; if (sg && sg.status === 'accepted') sg.ids = ids.filter(x => CHEF[x]);
+  }
+  if (state.chef && state.chef.sugg) for (const [k, sg] of Object.entries(state.chef.sugg)) { if (sg.status === 'accepted') continue;
+    const [d, meal] = k.split('|'), ms = presentMembers(state, d, meal);
+    sg.ids = sg.ids.map(id => { if (!CHEF[id] || !allergyHits(state, chefRecipe(id), ms).length) return id; const alt = safeAlt(state, sc, id, ms, sg.ids);
+      changes.push({ day: d, meal, from: CHEF[id].title, to: alt ? CHEF[alt.id].title : null, allergens: allergyHits(state, chefRecipe(id), ms), pending: true }); return alt ? alt.id : null; }).filter(Boolean); }
+  return changes;
 }
 // Contagem de refeições: por dia e total, em casa × fora × livre, com porções.
 function mealCounts(state) {
@@ -2455,9 +2574,269 @@ async function purgeEventPhotos(client, eventId) {
   const st = await client.rpc('event_photo_status', { p_event: eventId }); if (st.error) throw st.error;
   return { found: paths.length, removed, remaining: st.data.remaining, clearedRefs: (r.data && r.data.cleared_refs) || 0 };
 }
+// ===================== Mesa de especialistas: catálogo de bebidas (vinho, cerveja, drinks e sem álcool) =====================
+// Regras do catálogo: IDs fixos; item aposentado ganha `retired` e nunca é apagado; nota só de crítico ou concurso independente,
+// com link e data da conferência (sem texto de resenha: só a nota, o nome e o link). Sem fonte independente: "Sem nota".
+// Preço é faixa aproximada com o mês de referência. Sem patrocínio, sem afiliado, sem link de compra.
+const CATALOG_VERSION = '2026-11-19.1';
+const PRICE_MONTH = 'nov/2026';
+const CHECKED = '2026-11-19';
+const DEC = 'https://www.decanter.com/wine-reviews/', DW = 'https://awards.decanter.com/DWWA/', EBS = y => `https://www.european-beer-star.com/ebs-wAssets/docs/gewinnerliste-en/Gewinner_${y}.pdf`;
+const r100 = (points, critic, url, vintage, extra) => ({ points, scale: 100, critic, url, vintage, checkedOn: CHECKED, independent: true, ...(extra || {}) });
+const medal = (medal, comp, url, vintage, extra) => ({ medal, critic: comp, url, vintage, checkedOn: CHECKED, independent: true, ...(extra || {}) });
+const BEV_TIERS = { entrada: 'Entrada', medio: 'Médio', alto: 'Alto' };
+const BEV_KINDS = { wine: 'Vinho', beer: 'Cerveja', drink: 'Drinks' };
+const BEV_STYLES = {
+  st_malbec: { kind: 'wine', name: 'Malbec argentino', abv: [13.5, 14.5], why: 'fruta escura e taninos macios seguram a gordura da carne na brasa' },
+  st_tannat: { kind: 'wine', name: 'Tannat uruguaio', abv: [13.5, 15], why: 'taninos firmes limpam a boca entre um corte e outro' },
+  st_chablis: { kind: 'wine', name: 'Chablis (Chardonnay sem madeira)', abv: [12, 13], why: 'acidez alta e servido gelado: refresca o calor e não briga com a sobremesa gelada' },
+  st_espumante: { kind: 'wine', name: 'Espumante brut', abv: [11.5, 12.5], why: 'bolha e acidez cortam fritura e sal' },
+  st_branco_fresco: { kind: 'wine', name: 'Branco fresco (Sauvignon Blanc, Alvarinho)', abv: [12, 13.5], why: 'cítrico e mineral, acompanha limão, ervas e frutos do mar' },
+  st_rose: { kind: 'wine', name: 'Rosé seco', abv: [12, 13], why: 'leve, gelado e versátil para entradas e almoço' },
+  st_sangiovese: { kind: 'wine', name: 'Sangiovese (Chianti)', abv: [13, 14], why: 'acidez do tomate pede um tinto também ácido' },
+  st_tinto_br: { kind: 'wine', name: 'Tinto brasileiro (Syrah, Merlot)', abv: [13, 14.5], why: 'fruta madura e corpo médio para molhos e carnes' },
+  st_chard_madeira: { kind: 'wine', name: 'Chardonnay com madeira', abv: [13, 14], why: 'textura cremosa acompanha manteiga, risoto e peixes gordos' },
+  st_moscatel: { kind: 'wine', name: 'Espumante moscatel', abv: [7, 8], why: 'doce e leve: a sobremesa não deixa o vinho amargo' },
+  st_cabernet: { kind: 'wine', name: 'Cabernet Sauvignon', abv: [13.5, 14.5], why: 'estrutura para carnes vermelhas' },
+  st_pilsen: { kind: 'beer', name: 'Pilsen', abv: [4.5, 5], why: 'leve e gelada, para o calor' },
+  st_dark_lager: { kind: 'beer', name: 'Lager escura (Schwarzbier, Dunkel)', abv: [4.5, 5.5], why: 'malte tostado combina com a crosta do churrasco' },
+  st_weiss: { kind: 'beer', name: 'Weiss (trigo)', abv: [5, 5.5], why: 'notas de banana e cravo vão bem com frutos do mar e saladas' },
+  st_ipa: { kind: 'beer', name: 'IPA e Session IPA', abv: [4.5, 7], why: 'amargor e lúpulo cítrico cortam gordura e tempero' },
+  st_stout: { kind: 'beer', name: 'Stout', abv: [4, 6], why: 'café e chocolate conversam com sobremesas' },
+  st_zero_vinho: { kind: 'wine', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'mesma taça, mesmo brinde' },
+  st_zero_cerveja: { kind: 'beer', zero: true, name: 'Sem álcool', abv: [0, 0.5], why: 'gelada como as outras' },
+};
+// kind: wine | beer | drink | zero. price em R$, faixa aproximada (mês em PRICE_MONTH). abv.basis: rotulo | concurso | tipico
+const BEVERAGES = {
+  // vinhos antigos (IDs mantidos do catálogo 1)
+  miolo_cuvee: { kind: 'wine', style: 'st_espumante', tier: 'entrada', name: 'Miolo Cuvée Tradition Brut', country: 'Brasil', price: [70, 120], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Ouro', '9º Concurso do Espumante Brasileiro', 'https://www.meuvinho.com.br/news/583/miolo-cuvee-tradition2c-um-brinde-a-tudo-que-e-brilhante21', 'NV', { via: 'Meu Vinho (imprensa)', year: 2015 })] },
+  geisse_brut: { kind: 'wine', style: 'st_espumante', tier: 'medio', name: 'Cave Geisse Brut', country: 'Brasil', price: [150, 200], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [r100(91, 'Decanter (Steven Spurrier)', DEC + 'brazil/serra-gaucha/pinto-bandeira-cave-geisse-brut-serra-gaucha-brazil-5580/', 'NV')] },
+  geisse_terroir: { kind: 'wine', style: 'st_espumante', tier: 'alto', name: 'Cave Geisse Terroir Nature', country: 'Brasil', price: [250, 400], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [r100(95, 'Guia Descorchados 2024', 'https://exame.com/casual/melhores-espumantes-do-brasil-metodo-tradicional/', 2020, { via: 'Exame (imprensa)' })] },
+  leopoldina: { kind: 'wine', style: 'st_chard_madeira', tier: 'medio', name: 'Casa Valduga Leopoldina Chardonnay', country: 'Brasil', price: [120, 180], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards', DW + 'any/wines/530227', 2015)] },
+  mcc_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'medio', name: 'Marques de Casa Concha Chardonnay', country: 'Chile', price: [120, 180], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+    note: 'Nota citada só pelo produtor: fica "Sem nota".' },
+  mcc_cab: { kind: 'wine', style: 'st_cabernet', tier: 'medio', name: 'Marques de Casa Concha Cabernet Sauvignon', country: 'Chile', price: [120, 180], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+    note: 'Nota citada só pelo produtor: fica "Sem nota".' },
+  catena_app: { kind: 'wine', style: 'st_malbec', tier: 'medio', name: 'Catena Appellation Lunlunta Malbec', country: 'Argentina', price: [150, 250], abv: { value: 13.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Prata, 92 pontos', 'Decanter World Wine Awards', DW + 'any/wines/540015', 2017)] },
+  ruffino: { kind: 'wine', style: 'st_sangiovese', tier: 'medio', name: 'Ruffino Riserva Ducale Chianti Classico', country: 'Itália', price: [180, 280], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1, ratings: [],
+    note: 'A nota da Wine Spectator aparece só no produtor e em lojas (página do crítico fechada): fica "Sem nota".' },
+  ponto_nero: { kind: 'wine', style: 'st_moscatel', tier: 'entrada', name: 'Ponto Nero Moscatel', country: 'Brasil', price: [50, 90], abv: { value: 7.5, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Prata, 90 pontos', 'Decanter World Wine Awards', DW + 'any/wines/533471', 'NV')] },
+  soalheiro: { kind: 'wine', style: 'st_branco_fresco', tier: 'medio', name: 'Soalheiro Primeiras Vinhas Alvarinho', country: 'Portugal', price: [200, 330], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Ouro, 95 pontos', 'Decanter World Wine Awards', DW + 'any/wines/705502', 2020)] },
+  cloudy: { kind: 'wine', style: 'st_branco_fresco', tier: 'alto', name: 'Cloudy Bay Sauvignon Blanc', country: 'Nova Zelândia', price: [300, 450], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [r100(92, 'Decanter (David Williams)', DEC + 'new-zealand/marlborough/cloudy-bay-sauvignon-blanc-marlborough-new-zealand-2024-97362/', 2024)] },
+  whispering: { kind: 'wine', style: 'st_rose', tier: 'alto', name: 'Whispering Angel', country: 'França', price: [250, 350], abv: { value: 13, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Ouro', 'Decanter World Wine Awards', DW + 'any/wines/631177', 2014)] },
+  guaspari: { kind: 'wine', style: 'st_tinto_br', tier: 'medio', name: 'Guaspari Vista do Chá Syrah', country: 'Brasil', price: [250, 350], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [medal('Ouro, 95 pontos', 'Decanter World Wine Awards', 'https://results.decanter.com/DWWA/any/wines/560182', 2012)] },
+  pizzato_dna: { kind: 'wine', style: 'st_tinto_br', tier: 'alto', name: 'Pizzato DNA99 Merlot', country: 'Brasil', price: [350, 500], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [r100(95, 'Decanter (Steven Spurrier)', DEC + 'brazil/vale-dos-vinhedos/pizzato-dna99-vale-dos-vinhedos-serra-gaucha-brazil-5581/', 's/ safra na página')] },
+  catena_zapata: { kind: 'wine', style: 'st_malbec', tier: 'alto', name: 'Catena Zapata Malbec Argentino', country: 'Argentina', price: [700, 1200], abv: { value: 14, basis: 'rotulo' }, unit: 'garrafa 750 ml', since: 1,
+    ratings: [r100(95, 'Decanter (Inés Salpico)', DEC + 'argentina/mendoza/catena-zapata-malbec-argentino-mendoza-argentina-2022-102590/', 2022)] },
+  // vinhos novos (catálogo 2)
+  w_alamos_malbec: { kind: 'wine', style: 'st_malbec', tier: 'entrada', name: 'Alamos Malbec', country: 'Argentina', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_adrianna_river: { kind: 'wine', style: 'st_malbec', tier: 'icone', name: 'Catena Zapata Adrianna Vineyard River Stones Malbec', country: 'Argentina', price: [2000, 3500], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [r100(97, 'Decanter (Alejandro Iglesias)', DEC + 'argentina/mendoza/catena-zapata-adrianna-vineyard-river-malbec-uco-valley-tupungato-mendoza-argentina-2022-113784/', 2022)] },
+  w_donpascual_tannat: { kind: 'wine', style: 'st_tannat', tier: 'entrada', name: 'Don Pascual Reserve Tannat', country: 'Uruguai', price: [70, 110], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_garzon_tannat: { kind: 'wine', style: 'st_tannat', tier: 'medio', name: 'Bodega Garzón Reserva Tannat', country: 'Uruguai', price: [150, 230], abv: { value: 14, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [medal('Ouro, 96 pontos', 'Decanter World Wine Awards', DW + 'any/wines/775513', 2023)] },
+  w_bouza_tannat: { kind: 'wine', style: 'st_tannat', tier: 'alto', name: 'Bouza Tannat', country: 'Uruguai', price: [300, 450], abv: { value: 15, basis: 'concurso' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [medal('Prata, 91 pontos', 'Decanter World Wine Awards 2026', DW + '2026/wines/793909', 2023), r100(92, 'James Suckling', 'https://www.jamessuckling.com/wine-tasting-reports/great-value-wines-tannat-40', 2017, { label: 'Bouza Tannat (Montevideo)' })] },
+  w_bouza_b6: { kind: 'wine', style: 'st_tannat', tier: 'icone', name: 'Bouza Parcela Única B6 Tannat', country: 'Uruguai', price: [550, 900], abv: { value: 15, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [r100(93, 'Wine Enthusiast', 'https://www.wineenthusiast.com/buying-guide/bouza-2018-b6-parcela-unica-las-violetas-tannat-canelones/', 2016)] },
+  w_aurora_chard: { kind: 'wine', style: 'st_chablis', tier: 'entrada', name: 'Aurora Reserva Chardonnay', country: 'Brasil', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_fevre_chablis: { kind: 'wine', style: 'st_chablis', tier: 'medio', name: 'William Fèvre Chablis', country: 'França', price: [280, 400], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [r100(93, 'Decanter (Andy Howard MW)', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
+  w_fevre_mdt: { kind: 'wine', style: 'st_chablis', tier: 'alto', name: 'William Fèvre Chablis 1er Cru Montée de Tonnerre', country: 'França', price: [600, 900], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [r100(95, 'Decanter (Andy Howard MW)', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
+  w_laroche_fourchaume: { kind: 'wine', style: 'st_chablis', tier: 'icone', name: 'Domaine Laroche Chablis 1er Cru Vieilles Vignes Fourchaume', country: 'França', price: [500, 800], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2,
+    ratings: [r100(94, 'Decanter', 'https://www.decanter.com/chablis-2022-score-table/', 2022)] },
+  w_casillero_sb: { kind: 'wine', style: 'st_branco_fresco', tier: 'entrada', name: 'Casillero del Diablo Sauvignon Blanc', country: 'Chile', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_casillero_rose: { kind: 'wine', style: 'st_rose', tier: 'entrada', name: 'Casillero del Diablo Rosé', country: 'Chile', price: [50, 80], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_miolo_rose: { kind: 'wine', style: 'st_rose', tier: 'medio', name: 'Miolo Seleção Rosé', country: 'Brasil', price: [50, 90], abv: { value: 12, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_ruffino_chianti: { kind: 'wine', style: 'st_sangiovese', tier: 'entrada', name: 'Ruffino Chianti', country: 'Itália', price: [90, 140], abv: { value: 12.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_ducale_oro: { kind: 'wine', style: 'st_sangiovese', tier: 'alto', name: 'Ruffino Riserva Ducale Oro Gran Selezione', country: 'Itália', price: [400, 600], abv: { value: 14, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_aurora_merlot: { kind: 'wine', style: 'st_tinto_br', tier: 'entrada', name: 'Aurora Reserva Merlot', country: 'Brasil', price: [50, 80], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_sc_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'entrada', name: 'Santa Carolina Reservado Chardonnay', country: 'Chile', price: [40, 70], abv: { value: 13, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_catena_alta_chard: { kind: 'wine', style: 'st_chard_madeira', tier: 'alto', name: 'Catena Alta Chardonnay', country: 'Argentina', price: [400, 600], abv: { value: 13.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_salton_moscatel: { kind: 'wine', style: 'st_moscatel', tier: 'medio', name: 'Salton Moscatel Espumante', country: 'Brasil', price: [45, 80], abv: { value: 7.5, basis: 'tipico' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+  w_nivole: { kind: 'wine', style: 'st_moscatel', tier: 'alto', name: "Michele Chiarlo Nivole Moscato d'Asti", country: 'Itália', price: [150, 250], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 375 ml', since: 2, ratings: [] },
+  // cervejas (concurso: European Beer Star, lista oficial de vencedores em PDF)
+  b_eisenbahn_pilsen: { kind: 'beer', style: 'st_pilsen', tier: 'entrada', name: 'Eisenbahn Pilsen', country: 'Brasil', price: [5, 8], abv: { value: 4.8, basis: 'tipico' }, unit: 'long neck 355 ml', since: 2, ratings: [] },
+  b_bitburger: { kind: 'beer', style: 'st_pilsen', tier: 'medio', name: 'Bitburger Premium Pils', country: 'Alemanha', price: [8, 13], abv: { value: 4.8, basis: 'tipico' }, unit: 'long neck 330 ml', since: 2, ratings: [] },
+  b_urquell: { kind: 'beer', style: 'st_pilsen', tier: 'alto', name: 'Pilsner Urquell', country: 'Tchéquia', price: [10, 16], abv: { value: 4.4, basis: 'tipico' }, unit: 'garrafa 330 ml', since: 2, ratings: [] },
+  b_therezopolis_ebenholz: { kind: 'beer', style: 'st_dark_lager', tier: 'entrada', name: 'Therezópolis Ebenholz', country: 'Brasil', price: [12, 20], abv: { value: 4.9, basis: 'tipico' }, unit: 'garrafa 600 ml', since: 2,
+    ratings: [medal('Prata · German-Style Dunkel', 'European Beer Star 2024', EBS(2024), 2024)] },
+  b_bamberg_schwarz: { kind: 'beer', style: 'st_dark_lager', tier: 'medio', name: 'Bamberg Schwarzbier', country: 'Brasil', price: [15, 25], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 600 ml', since: 2,
+    ratings: [medal('Prata · Bohemian-Style Dark Lager', 'European Beer Star 2023', EBS(2023), 2023)] },
+  b_brotas_schwarz: { kind: 'beer', style: 'st_dark_lager', tier: 'alto', name: 'Brotas Beer Schwarzbier', country: 'Brasil', price: [18, 28], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Ouro · Bohemian-Style Dark Lager', 'European Beer Star 2025', EBS(2025), 2025)] },
+  b_eisenbahn_weizen: { kind: 'beer', style: 'st_weiss', tier: 'entrada', name: 'Eisenbahn Weizenbier', country: 'Brasil', price: [6, 10], abv: { value: 5, basis: 'tipico' }, unit: 'long neck 355 ml', since: 2, ratings: [] },
+  b_weihenstephaner: { kind: 'beer', style: 'st_weiss', tier: 'medio', name: 'Weihenstephaner Hefeweissbier', country: 'Alemanha', price: [18, 28], abv: { value: 5.4, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Bronze · South German-Style Hefeweizen Hell', 'European Beer Star 2023', EBS(2023), 2023)] },
+  b_tap7: { kind: 'beer', style: 'st_weiss', tier: 'alto', name: 'Schneider Weisse TAP7 Original', country: 'Alemanha', price: [22, 35], abv: { value: 5.4, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Bronze · Hefeweizen Bernsteinfarben', 'European Beer Star 2023', EBS(2023), 2023)] },
+  b_berggren_session: { kind: 'beer', style: 'st_ipa', tier: 'entrada', name: 'Berggren Session IPA', country: 'Brasil', price: [12, 20], abv: { value: 4.5, basis: 'tipico' }, unit: 'lata 473 ml', since: 2,
+    ratings: [medal('Prata · Session IPA', 'European Beer Star 2023', EBS(2023), 2023)] },
+  b_leopoldina_session: { kind: 'beer', style: 'st_ipa', tier: 'medio', name: 'Leopoldina Session IPA', country: 'Brasil', price: [15, 25], abv: { value: 4.5, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Ouro · Session IPA', 'European Beer Star 2025', EBS(2025), 2025)] },
+  b_leopoldina_ipa: { kind: 'beer', style: 'st_ipa', tier: 'alto', name: 'Leopoldina IPA', country: 'Brasil', price: [18, 28], abv: { value: 6.5, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Ouro · India Pale Ale', 'European Beer Star 2025', EBS(2025), 2025)] },
+  b_guinness: { kind: 'beer', style: 'st_stout', tier: 'entrada', name: 'Guinness Draught', country: 'Irlanda', price: [12, 18], abv: { value: 4.2, basis: 'tipico' }, unit: 'lata 440 ml', since: 2, ratings: [] },
+  b_dama_stout: { kind: 'beer', style: 'st_stout', tier: 'medio', name: 'Dama Bier Stout', country: 'Brasil', price: [15, 25], abv: { value: 5, basis: 'tipico' }, unit: 'garrafa 600 ml', since: 2,
+    ratings: [medal('Prata · Stout', 'European Beer Star 2023', EBS(2023), 2023)] },
+  b_brotas_stout: { kind: 'beer', style: 'st_stout', tier: 'alto', name: 'Brotas Beer Dry Stout', country: 'Brasil', price: [18, 28], abv: { value: 4.5, basis: 'tipico' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Ouro · Stout', 'European Beer Star 2023', EBS(2023), 2023)] },
+  // sem álcool (mesmo peso visual)
+  z_heineken00: { kind: 'zero', style: 'st_zero_cerveja', tier: 'entrada', name: 'Heineken 0.0', country: 'Holanda', price: [5, 8], abv: { value: 0, basis: 'rotulo' }, unit: 'long neck 330 ml', since: 2, ratings: [] },
+  z_erdinger_af: { kind: 'zero', style: 'st_zero_cerveja', tier: 'medio', name: 'Erdinger Alkoholfrei', country: 'Alemanha', price: [12, 18], abv: { value: 0.5, basis: 'rotulo' }, unit: 'garrafa 500 ml', since: 2, ratings: [] },
+  z_franziskaner_af: { kind: 'zero', style: 'st_zero_cerveja', tier: 'alto', name: 'Franziskaner Weissbier Alkoholfrei', country: 'Alemanha', price: [14, 22], abv: { value: 0.5, basis: 'rotulo' }, unit: 'garrafa 500 ml', since: 2,
+    ratings: [medal('Prata · Non-alcoholic Hefeweizen', 'European Beer Star 2024', EBS(2024), 2024)] },
+  z_suco_uva: { kind: 'zero', style: 'st_zero_vinho', tier: 'entrada', name: 'Suco de uva integral tinto (Aurora)', country: 'Brasil', price: [15, 25], abv: { value: 0, basis: 'rotulo' }, unit: 'garrafa 1,5 L', serves: 7, since: 2, ratings: [] },
+  z_freixenet00: { kind: 'zero', style: 'st_zero_vinho', tier: 'medio', name: 'Freixenet 0,0% (espumante sem álcool)', country: 'Espanha', price: [60, 100], abv: { value: 0, basis: 'rotulo' }, unit: 'garrafa 750 ml', since: 2, ratings: [] },
+};
+// Drinks por momento: 3 opções, sempre uma sem álcool. Receita por jarra alimenta a lista de compras.
+const DRINK_MOMENTS = { beira: 'Beira-mar', aperitivo: 'Aperitivo', pos: 'Pós-jantar' };
+const DRINKS = {
+  d_caipirinha: { moment: 'beira', name: 'Caipirinha de limão', abv: { value: 15, basis: 'receita' }, jar: 8, ing: [['cachaca', 400], ['limao', 8], ['acucar', 120], ['gelo', 1000]], how: 'Amasse limão e açúcar na jarra, junte a cachaça e o gelo e mexa.' },
+  d_clerico: { moment: 'beira', name: 'Clericot de espumante com frutas', abv: { value: 8, basis: 'receita' }, jar: 8, ing: [['espumante_drink', 1500], ['frutas', 600], ['acucar', 40], ['gelo', 800]], how: 'Frutas picadas e açúcar no fundo, espumante bem gelado por cima.' },
+  z_limonada: { moment: 'beira', zero: true, name: 'Limonada suíça', abv: { value: 0, basis: 'receita' }, jar: 8, ing: [['limao', 6], ['acucar', 160], ['agua', 1500], ['gelo', 800]], how: 'Bata limão com casca, água e açúcar por 10 segundos, coe e sirva com gelo.' },
+  d_spritz: { moment: 'aperitivo', name: 'Spritz', abv: { value: 8, basis: 'receita' }, jar: 8, ing: [['aperitivo_bitter', 480], ['espumante_drink', 750], ['agua_gas', 480], ['laranja', 2], ['gelo', 1000]], how: 'Gelo, 3 partes de espumante, 2 de aperitivo e 1 de água com gás. Rodela de laranja.' },
+  d_gin_tonica: { moment: 'aperitivo', name: 'Gin tônica com pepino', abv: { value: 9, basis: 'receita' }, jar: 8, ing: [['gin', 400], ['tonica', 1600], ['limao', 2], ['pepino', 1], ['gelo', 1200]], how: 'Muito gelo, gin, tônica gelada e fatias de pepino.' },
+  z_soda_maracuja: { moment: 'aperitivo', zero: true, name: 'Soda de maracujá', abv: { value: 0, basis: 'receita' }, jar: 8, ing: [['maracuja', 4], ['acucar', 120], ['agua_gas', 2000], ['gelo', 1000]], how: 'Polpa de maracujá com açúcar no fundo, água com gás gelada por cima.' },
+  d_rabo_galo: { moment: 'pos', name: 'Rabo de galo', abv: { value: 20, basis: 'receita' }, jar: 8, ing: [['cachaca', 320], ['vermute', 320], ['gelo', 600]], how: 'Partes iguais de cachaça e vermute tinto, mexidos com gelo.' },
+  d_espresso_martini: { moment: 'pos', name: 'Espresso martini', abv: { value: 15, basis: 'receita' }, jar: 8, ing: [['vodka', 320], ['licor_cafe', 160], ['cafe', 50], ['acucar', 30], ['gelo', 800]], how: 'Café forte frio, vodka e licor batidos com gelo até espumar.' },
+  z_hibisco: { moment: 'pos', zero: true, name: 'Chá gelado de hibisco com laranja', abv: { value: 0, basis: 'receita' }, jar: 8, ing: [['hibisco', 20], ['laranja', 2], ['acucar', 80], ['agua', 2000], ['gelo', 1000]], how: 'Infusão de hibisco por 5 min, adoce, gele e sirva com laranja.' },
+};
+Object.assign(ITEMS, {
+  leite_sl: { name: 'Leite sem lactose', section: 'Mercearia', unit: 'ml', pack: 1000, packLabel: '1 L', price: 6.99, sl: true, adaptedOf: 'leite' },
+  creme_leite_sl: { name: 'Creme de leite sem lactose', section: 'Mercearia', unit: 'g', pack: 200, packLabel: 'caixinha 200 g', price: 5.49, sl: true, adaptedOf: 'creme_leite' },
+  manteiga_sl: { name: 'Manteiga sem lactose', section: 'Mercearia', unit: 'g', pack: 200, packLabel: '200 g', price: 16.9, sl: true, adaptedOf: 'manteiga' },
+  queijo_sl: { name: 'Queijo ralado sem lactose', section: 'Mercearia', unit: 'g', pack: 50, packLabel: '50 g', price: 9.9, sl: true, adaptedOf: 'queijo' },
+  mussarela_sl: { name: 'Mussarela sem lactose', section: 'Mercearia', unit: 'g', pack: 150, packLabel: '150 g', price: 12.9, sl: true, adaptedOf: 'mussarela' },
+  coalho_sl: { name: 'Queijo coalho sem lactose', section: 'Mercearia', unit: 'g', pack: 400, packLabel: '400 g', price: 32.9, sl: true, adaptedOf: 'coalho' },
+  leite_cond_sl: { name: 'Leite condensado sem lactose', section: 'Mercearia', unit: 'g', pack: 395, packLabel: 'lata 395 g', price: 10.9, sl: true, adaptedOf: 'leite_cond' },
+  sorvete_sl: { name: 'Sorvete sem lactose', section: 'Mercearia', unit: 'ml', pack: 1500, packLabel: 'pote 1,5 L', price: 36.9, sl: true, adaptedOf: 'sorvete' },
+  requeijao_sl: { name: 'Requeijão sem lactose', section: 'Mercearia', unit: 'g', pack: 200, packLabel: 'pote 200 g', price: 10.9, sl: true, adaptedOf: 'requeijao' },
+  frios_sl: { name: 'Frios sem lactose (queijo/presunto)', section: 'Padaria', unit: 'g', pack: 200, packLabel: '200 g', price: 14.9, sl: true, adaptedOf: 'frios' },
+  macarrao_sg: { name: 'Macarrão sem glúten', section: 'Mercearia', unit: 'g', pack: 500, packLabel: '500 g', price: 12.9, sg: true, noWordCheck: true, adaptedOf: 'macarrao' },
+  massa_lasanha_sg: { name: 'Massa de lasanha sem glúten', section: 'Mercearia', unit: 'g', pack: 300, packLabel: '300 g', price: 16.9, sg: true, noWordCheck: true, allergens: ['ovo'], adaptedOf: 'massa_lasanha' },
+  pao_sg: { name: 'Pão sem glúten', section: 'Padaria', unit: 'un', pack: 10, packLabel: 'pacote ~10 un', price: 22.9, sg: true, noWordCheck: true, adaptedOf: 'pao' },
+  farinha_sg: { name: 'Mistura para farinha sem glúten', section: 'Mercearia', unit: 'g', pack: 1000, packLabel: '1 kg', price: 19.9, sg: true, noWordCheck: true, adaptedOf: 'farinha' },
+  cachaca: { name: 'Cachaça', section: 'Bebidas', unit: 'ml', pack: 700, packLabel: 'garrafa 700 ml', price: 45, alcohol: true },
+  vodka: { name: 'Vodka', section: 'Bebidas', unit: 'ml', pack: 1000, packLabel: 'garrafa 1 L', price: 60, alcohol: true },
+  gin: { name: 'Gin', section: 'Bebidas', unit: 'ml', pack: 750, packLabel: 'garrafa 750 ml', price: 90, alcohol: true },
+  aperitivo_bitter: { name: 'Aperitivo bitter (para spritz)', section: 'Bebidas', unit: 'ml', pack: 750, packLabel: 'garrafa 750 ml', price: 55, alcohol: true },
+  vermute: { name: 'Vermute tinto', section: 'Bebidas', unit: 'ml', pack: 750, packLabel: 'garrafa 750 ml', price: 45, alcohol: true },
+  licor_cafe: { name: 'Licor de café', section: 'Bebidas', unit: 'ml', pack: 700, packLabel: 'garrafa 700 ml', price: 80, alcohol: true },
+  espumante_drink: { name: 'Espumante brut (para drinks)', section: 'Bebidas', unit: 'ml', pack: 750, packLabel: 'garrafa 750 ml', price: 45, alcohol: true },
+  tonica: { name: 'Água tônica', section: 'Bebidas', unit: 'ml', pack: 2100, packLabel: '6 latas 350 ml', price: 21 },
+  agua_gas: { name: 'Água com gás', section: 'Bebidas', unit: 'ml', pack: 1500, packLabel: 'garrafa 1,5 L', price: 5.5 },
+  laranja: { name: 'Laranja', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 1.2 },
+  pepino: { name: 'Pepino', section: 'Hortifruti', unit: 'un', pack: 1, packLabel: 'un', price: 2.5 },
+  hibisco: { name: 'Chá de hibisco', section: 'Mercearia', unit: 'g', pack: 50, packLabel: 'pacote 50 g', price: 9.9 },
+});
+// Rótulos viram itens da lista de compras (unidade = garrafa/lata). Preço = meio da faixa.
+for (const [id, b] of Object.entries(BEVERAGES)) ITEMS['bv_' + id] = { name: b.name, section: 'Bebidas', unit: 'un', pack: 1, packLabel: b.unit, price: Math.round((b.price[0] + b.price[1]) / 2 * 100) / 100, alcohol: b.kind !== 'zero', bev: true, noWordCheck: true };
+const bevAlcoholic = b => !!b && b.kind !== 'zero' && !b.zero && !(b.abv && b.abv.value <= 0.5);
+const priceTxt = b => `R$ ${b.price[0].toLocaleString('pt-BR')}–${b.price[1].toLocaleString('pt-BR')} · faixa aproximada, ${PRICE_MONTH}`;
+const ratingTxt = r => r ? (r.points ? `${r.points} pontos · ${r.critic}` : `${r.medal} · ${r.critic}`) + (r.vintage ? ` · safra ${r.vintage}` : '') : 'Sem nota';
+// Nota que vale: crítico ou concurso independente, com link e data de conferência.
+const validRating = r => !!(r && r.independent && r.url && /^https:\/\//.test(r.url) && r.checkedOn && (r.points || r.medal) && !/loja|shop|store|importadora|produtor/i.test(r.critic));
+const bestRating = b => (b.ratings || []).filter(validRating).sort((x, y) => (y.points || 90) - (x.points || 90))[0] || null;
+// Pareamento por perfil do prato (camada 1): 3 estilos com álcool + um card sem álcool do mesmo tipo.
+function pairKey(c) {
+  if (!c) return 'leve';
+  if (c.course === 'sobremesa') return 'doce';
+  if (c.cat === 'churrasco' || c.cat === 'sobras' || (c.prot || []).includes('boi')) return 'churrasco';
+  if (c.cat === 'mar') return c.course === 'entrada' ? 'mar_leve' : 'mar';
+  if (c.cat === 'massa') return 'massa';
+  if ((c.prot || []).some(p => p === 'porco' || p === 'frango')) return 'ave_porco';
+  return 'leve';
+}
+const PAIRINGS = {
+  wine: { churrasco: ['st_malbec', 'st_tannat', 'st_chablis'], mar: ['st_chard_madeira', 'st_branco_fresco', 'st_espumante'], mar_leve: ['st_espumante', 'st_branco_fresco', 'st_chablis'],
+    leve: ['st_rose', 'st_espumante', 'st_branco_fresco'], massa: ['st_sangiovese', 'st_tinto_br', 'st_rose'], ave_porco: ['st_rose', 'st_chard_madeira', 'st_tinto_br'], doce: ['st_moscatel', 'st_espumante', 'st_rose'] },
+  beer: { churrasco: ['st_dark_lager', 'st_ipa', 'st_pilsen'], mar: ['st_weiss', 'st_pilsen', 'st_ipa'], mar_leve: ['st_weiss', 'st_pilsen', 'st_ipa'], leve: ['st_weiss', 'st_pilsen', 'st_ipa'],
+    massa: ['st_dark_lager', 'st_pilsen', 'st_ipa'], ave_porco: ['st_pilsen', 'st_weiss', 'st_ipa'], doce: ['st_stout', 'st_weiss', 'st_dark_lager'] },
+  zero: { wine: 'st_zero_vinho', beer: 'st_zero_cerveja' },
+};
+// A refeição: prato principal (ou o único) e sobremesa.
+const mealMain = ids => { const cs = (ids || []).filter(id => CHEF[id]); return cs.find(id => CHEF[id].course === 'principal') || cs.find(id => CHEF[id].course === 'entrada') || cs[0] || null; };
+const mealDessert = ids => (ids || []).find(id => CHEF[id] && CHEF[id].course === 'sobremesa') || null;
+function pairStyles(ids, kind) { const m = mealMain(ids); return m ? PAIRINGS[kind][pairKey(CHEF[m])].slice() : []; }
+// Camada 2: até 3 rótulos do estilo, um por faixa (entrada/médio/alto), cada faixa com o de maior nota.
+function styleLabels(style) {
+  const all = Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired).map(([id, b]) => ({ id, b, r: bestRating(b) }));
+  const out = []; for (const t of Object.keys(BEV_TIERS)) { const xs = all.filter(x => x.b.tier === t).sort((x, y) => ((y.r && (y.r.points || 90)) || 0) - ((x.r && (x.r.points || 90)) || 0)); if (xs[0]) out.push(xs[0]); }
+  return out;
+}
+const styleExtras = style => Object.entries(BEVERAGES).filter(([, b]) => b.style === style && !b.retired && b.tier === 'icone').map(([id, b]) => ({ id, b, r: bestRating(b) }));
+function momentFor(meal) { return meal === 'almoco' || meal === 'lanche' ? 'beira' : 'aperitivo'; }
+const drinksFor = moment => Object.entries(DRINKS).filter(([, d]) => d.moment === moment).map(([id, d]) => ({ id, d }));
+// Camada 3: o Enólogo comenta a sugestão de uma família.
+function bevVerdict(bevId, ids) {
+  const b = BEVERAGES[bevId], d = DRINKS[bevId]; if (d) return 'Combina';
+  if (!b) return null; if (!bevAlcoholic(b)) return 'Combina';
+  const kind = b.kind === 'beer' ? 'beer' : 'wine', main = pairStyles(ids, kind), des = mealDessert(ids);
+  if (main.includes(b.style)) return 'Combina';
+  if (des && PAIRINGS[kind].doce.includes(b.style)) return 'Melhor com a sobremesa';
+  return 'Não combina';
+}
+// Conversa da mesa: frases por regra, sem IA externa. Nunca fala de criança, saúde, gestação nem de quem bebe ou não bebe; nunca insiste.
+const CHEF_TIPS = { churrasco: 'Tire a carne da geladeira 30 minutos antes e sal grosso só na hora de ir para a brasa.', mar: 'Peixe e frutos do mar vêm do mercado no dia e ficam no gelo até a panela.',
+  mar_leve: 'Tudo bem gelado até a hora de servir.', massa: 'Água bem salgada e a massa sai um minuto antes do ponto, termina no molho.', ave_porco: 'Deixe a carne descansar 5 minutos antes de fatiar.',
+  leve: 'Tempere só na hora de servir, para as folhas não murcharem.', doce: 'Sobremesa gelada pede pelo menos 4 horas de geladeira.' };
+function mesaTalk(state, key, ids, bev) {
+  const main = mealMain(ids), des = mealDessert(ids); if (!main) return [];
+  const c = CHEF[main], pk = pairKey(c), meal = key.split('|')[1], w = pairStyles(ids, 'wine').map(s => BEV_STYLES[s]), br = pairStyles(ids, 'beer').map(s => BEV_STYLES[s]);
+  const mo = momentFor(meal), dr = drinksFor(mo), zero = dr.find(x => x.d.zero);
+  const lines = [{ who: 'chef', text: `Hoje sai ${c.title}${des ? `, e de sobremesa ${CHEF[des].title.toLowerCase()}` : ''}. ${CHEF_TIPS[pk]}` }];
+  if (bev && bev.swapped) lines.push({ who: 'enologo', text: 'O prato mudou, então revi a harmonização. Confiram as opções abaixo.' });
+  lines.push({ who: 'enologo', text: `No vinho, eu iria de ${w[0].name.toLowerCase()}: ${w[0].why}. ${w[1].name} e ${w[2].name.toLowerCase()} também funcionam${des && pk === 'churrasco' ? ', e o Chablis aguenta até a sobremesa gelada' : ''}. ${zero ? `Para a mesma taça sem álcool, tem ${BEV_STYLES.st_zero_vinho.name.toLowerCase()} na lista.` : ''}`.trim() });
+  lines.push({ who: 'bar', text: `Na cerveja, ${br[0].name.toLowerCase()} (${br[0].why}). ${DRINK_MOMENTS[mo]}: ${dr.map(x => x.d.name.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' ou $1')}. A jarra rende ${dr[0].d.jar} copos.` });
+  return lines;
+}
+// Lista de compras das bebidas aceitas. Álcool só com aceite de adulto organizador (okBy) e só para adultos que bebem.
+function bevNeeds(state, P, only) {
+  const out = [], days = P.days;
+  for (const d of days) for (const meal of P.meals) {
+    if (only && !only.has(d)) continue;
+    const c = cellOf(state, d, meal); if (!c.bev || !c.bev.length || c.mode === 'livre') continue;
+    const ms = presentMembers(state, d, meal), drinkers = ms.filter(isDrinker).length, everyone = ms.filter(m => typeOf(m) !== 'bebe').length;
+    for (const pk of c.bev) {
+      const b = BEVERAGES[pk.id], dr = DRINKS[pk.id];
+      if (b) { const alc = bevAlcoholic(b); if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
+        const per = b.kind === 'beer' || b.style === 'st_zero_cerveja' ? (meal === 'jantar' ? 1.5 : 2) : (b.serves ? 1 / b.serves : (meal === 'jantar' ? 2 : 1) / 5);
+        out.push(['bv_' + pk.id, n * per]); }
+      else if (dr) { const alc = !dr.zero; if (alc && !pk.okBy) continue; const n = alc ? drinkers : everyone; if (!n) continue;
+        const jars = n * 1.5 / dr.jar; for (const [k, q] of dr.ing) out.push([k, q * jars]); }
+    }
+  }
+  return out;
+}
+// Métricas do evento, sem nome de pessoa e sem dado de saúde (famílias viram F1, F2…).
+function eventMetrics(state) {
+  const fIdx = Object.fromEntries(state.families.map((f, i) => [f.id, 'F' + (i + 1)])), pFam = {}; state.families.forEach(f => f.members.forEach(m => { pFam[m.id] = f.id; }));
+  const byFamDay = {}; for (const e of state.expenses) { const f = fIdx[pFam[e.payerId]] || 'sem família', d = e.ts ? new Date(e.ts).toISOString().slice(0, 10) : 'sem data'; (byFamDay[f] = byFamDay[f] || {})[d] = (byFamDay[f][d] || 0) + 1; }
+  const m = state.metrics || {}, famMap = o => Object.fromEntries(Object.entries(o || {}).map(([k, v]) => [fIdx[k] || k, v]));
+  let chefMeals = 0, bevAccepted = 0; for (const day of Object.values(state.plan || {})) for (const c of Object.values(day || {})) { if (c && c.mode === 'casa' && (c.recipes || []).some(id => CHEF[id])) chefMeals++; bevAccepted += (c && c.bev ? c.bev.length : 0); }
+  return { catalogVersion: CATALOG_VERSION, lancamentosPorFamiliaEDia: byFamDay, aberturasDaMesa: m.mesaOpens || 0, sugestoesPorFamilia: famMap(m.sugg), curtidasPorFamilia: famMap(m.likes), harmonizacoesAceitas: bevAccepted, refeicoesDoChef: chefMeals };
+}
+// Catálogo 1 (WINES) passa a ler nota e preço do catálogo unificado: uma fonte só.
+for (const [id, w] of Object.entries(WINES)) { const b = BEVERAGES[id]; if (!b) continue; const r = bestRating(b);
+  w.award = r ? ratingTxt(r) : ''; w.src = r ? (r.via || r.critic) : ''; w.url = r ? r.url : ''; w.price = `R$ ${b.price[0]}–${b.price[1]}`; }
 // ===== LOGIC-END =====
 if (typeof module !== 'undefined' && typeof window === 'undefined') {
-  module.exports = {  genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF ,  CHEF, WINES, chefRecipe, chefScores, chefPlan, groupPrefs, mealCounts, wineList, famAffinity };
+  module.exports = {  genEventCode, normCode, validCode, CODE_ALPHABET, stateToRows, rowsToState, computeEdits, mergeBase, pickRow, rowKey, splitSettleKey, createSync, importCheck, SYNC_TABLES, SYNC_PK, parseRecipe, parseIngredient, getRecipe, recipeCost, dietConflicts, mealConflicts, kitchenRota, portions, shoppingList, shoppingText, parseBought, tripDays, splitWeights, SPLIT_MODES, CATEGORIES, computeSplit, settle, kitty, surpriseWeights, weightedPick, summaryText, brl, parseQuick, pendingInfo, fuelCost, PROOF ,  CHEF, WINES, chefRecipe, chefScores, chefPlan, groupPrefs, mealCounts, wineList, famAffinity,
+    ALLERGENS, ALLERGEN_SRC, ITEM_ALLERGENS, INTOL, healthOf, ingAllergens, recipeAllergens, allergyHits, presentMembers, cellBlocked, enforceAllergies, groupHealth, intolShares, isDrinker,
+    CATALOG_VERSION, BEVERAGES, BEV_STYLES, DRINKS, PAIRINGS, pairStyles, styleLabels, bestRating, validRating, bevVerdict, mesaTalk, bevNeeds, bevAlcoholic, eventMetrics, ITEMS, SPECIAL, BRIEF_VETO, HEALTH_RETENTION_DAYS };
 }
 </script>
 <script>
@@ -2927,7 +3306,7 @@ Corte as frutas e monte a mesa com pães e frios.`,
   $('#mealToggles').onclick = e => { const b = e.target.closest('[data-mt]'); if (!b) return; state.trip.meals[b.dataset.mt] = !state.trip.meals[b.dataset.mt]; save(); render(); };
 
   // ---------- PLANEJAR: receitas ----------
-  const recipeTags = r => Object.entries(DIET).filter(([k, d]) => (r.ingredients || []).some(ing => d.words.some(w => hasPhrase(ingText(state, ing), w)))).map(([k]) => ({ veg: 'carne/peixe', lactose: 'lactose', gluten: 'glúten' })[k]);
+  const recipeTags = r => recipeAllergens(state, r).ids.map(a => 'contém ' + ALLERGENS[a].label.replace(/ \(.*\)/, '').toLowerCase());
   const recipeUses = id => { let n = 0; for (const d of C.days) for (const m of C.meals) if (cellRecipes(cellOf(state, d, m)).includes(id)) n++; return n; };
   function renderRecipes() {
     $('#rlMeta').textContent = `${state.recipes.length} ${state.recipes.length === 1 ? 'receita' : 'receitas'}`;

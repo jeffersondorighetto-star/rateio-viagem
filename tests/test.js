@@ -93,7 +93,9 @@ assert(o('c1') < o('a1'), 'late arrival pays less'); assert(near(o('a2') - 18, (
 s1.splitMode = 'igual'; const eq = L3.computeSplit(s1); eq.persons.forEach(p => assert(near(p.owed, 110)));
 s1.splitMode = 'pessoa'; const pp = L3.computeSplit(s1); assert(near(pp.persons.find(p => p.id === 'a2').owed, 72 + 18)); // groceries/5 + gas/5, no alcohol
 // shopping aggregation
-const q2 = base(); q2.plan = { '2026-12-01': { almoco: { mode: 'casa', menu: 'churrasco' }, jantar: { mode: 'fora' }, cafe: { mode: 'livre' } } };
+const q2 = base(); q2.alcoholOk = { by: 'Ad', at: 1 }; // álcool só com aceite de adulto organizador
+assert(!L3.shoppingList({ ...q2, alcoholOk: null, plan: {} }).rows.some(r => r.key === 'cerveja'), 'sem aceite, sem cerveja');
+q2.plan = { '2026-12-01': { almoco: { mode: 'casa', menu: 'churrasco' }, jantar: { mode: 'fora' }, cafe: { mode: 'livre' } } };
 const S = L3.shoppingList(q2), row = k => S.rows.find(r => r.key === k);
 // portions on 12-01 almoço: a1 1 + a2 .5 + b1 1 + b2 0 = 2.5 (C not yet arrived) -> carne 1000 g
 assert(near(row('carne').need, 1000)); assert.equal(row('carne').packs, 1); assert(near(row('carvao').need, 1250)); assert.equal(row('carvao').packs, 1);
@@ -107,7 +109,7 @@ assert(/☐ Carne bovina/.test(L3.shoppingText(q2, QS2)));
 console.log('PLANNING TESTS PASSED (portions, late arrival, kid weights, scenarios, shopping, bought items)');
 
 // ---- recipe parser, scaling, diet, rota
-const R = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {parseRecipe,parseIngredient,shoppingList,recipeCost,dietConflicts,kitchenRota,portions};')();
+const R = new Function(src.replace(/^[^\n]*\n/, '') + '\nreturn {parseRecipe,parseIngredient,shoppingList,shoppingText,recipeCost,dietConflicts,kitchenRota,portions};')();
 const I = t => R.parseIngredient(t);
 const chk = (t, exp) => { const r = I(t); for (const k in exp) { const got = r[k]; const ok = typeof exp[k] === 'number' ? Math.abs(got - exp[k]) < 1e-6 : got === exp[k]; assert(ok, `"${t}" ${k}: expected ${exp[k]} got ${got}`); } };
 chk('500 g de carne moída', { qty: 500, unit: 'g', itemKey: 'carne_moida', name: 'carne moída', status: 'ok' });
@@ -156,16 +158,17 @@ assert.equal(R.parseRecipe('Bolo simples\n2 ovos\n1 xícara de leite\nMisture tu
 const rb = R.parseRecipe('Bolo simples\n2 ovos\n1 xícara de leite\nMisture tudo e asse.'); assert.equal(rb.ingredients.length, 2); assert.equal(rb.steps.length, 1);
 assert.equal(R.parseRecipe('Feijoada (serve 10 pessoas)\n1 kg de feijão').yield, 10);
 // scaling + aggregation exactness: recipe for 4 cooked for 2.5 weighted portions
-const rs = { splitMode: 'porcoes', families: [{ id: 'A', name: 'A', members: [{ id: 'a', name: 'Ad' }, { id: 'k', name: 'Kid', type: 'crianca', diet: { lactose: true } }] }, { id: 'B', name: 'B', members: [{ id: 'b', name: 'Bd', diet: { veg: true, alergia: 'tomate' } }] }],
+const rs = { splitMode: 'porcoes', families: [{ id: 'A', name: 'A', members: [{ id: 'a', name: 'Ad' }, { id: 'k', name: 'Kid', type: 'crianca', diet: { lactose: true } }] }, { id: 'B', name: 'B', members: [{ id: 'b', name: 'Bd', diet: { veg: true } }] }],
   trip: { start: '2026-12-01', end: '2026-12-01', meals: { almoco: true } }, recipes: [{ id: 'r1', title: 'Teste', yield: 4, ingredients: [R.parseIngredient('400 g de carne moída'), R.parseIngredient('1 lata de molho de tomate'), R.parseIngredient('200 ml de leite'), R.parseIngredient('sal a gosto'), R.parseIngredient('2 xícaras de grão misterioso')] }],
   plan: { '2026-12-01': { almoco: { mode: 'casa', recipes: ['r1', 'r1'] } } }, expenses: [] };
 const SS = R.shoppingList(rs), rr = k => SS.rows.find(x => x.key === k);
-assert(near(rr('carne_moida').need, 2 * 400 * 2.5 / 4)); assert(near(rr('molho').need, 2 * 340 * 2.5 / 4)); assert(near(rr('leite').need, 2 * 200 * 2.5 / 4));
+assert(near(rr('carne_moida').need, 2 * 400 * 2.5 / 4)); assert(near(rr('molho').need, 2 * 340 * 2.5 / 4)); assert(near(rr('leite').need + rr('leite_sl').need, 2 * 200 * 2.5 / 4)); assert(near(rr('leite_sl').need, 2 * 200 * 0.5 / 4), 'intolerância: versão adaptada na proporção de quem precisa');
+assert(!/lactose/i.test(R.shoppingText(rs, SS)), 'texto do WhatsApp não nomeia a adaptação');
 assert(rr('sal').aGosto && rr('sal').packs === 1); assert(SS.rows.some(x => x.custom && /Grão misterioso/i.test(x.name)));
-assert.equal(SS.dishes.length, 2); assert(near(SS.dishes.reduce((x, d) => x + d.cost, 0), SS.rows.filter(x => !x.aGosto && ['carne_moida', 'molho', 'leite'].includes(x.key) || x.custom).reduce((x, r) => x + r.need * r.price / (r.custom ? 1000 : ({ carne_moida: 500, molho: 340, leite: 1000 })[r.key]), 0)));
+assert.equal(SS.dishes.length, 2); assert(near(SS.dishes.reduce((x, d) => x + d.cost, 0), SS.rows.filter(x => !x.aGosto && ['carne_moida', 'molho', 'leite', 'leite_sl'].includes(x.key) || x.custom).reduce((x, r) => x + r.need * r.price / (r.custom ? 1000 : ({ carne_moida: 500, molho: 340, leite: 1000, leite_sl: 1000 })[r.key]), 0)));
 const rcst = R.recipeCost(rs, rs.recipes[0]); assert(near(rcst.perPortion * 4, rcst.total));
 assert.deepStrictEqual(R.dietConflicts(rs, rs.recipes[0], rs.families[0].members[1]).length, 1);
-assert.equal(R.dietConflicts(rs, rs.recipes[0], rs.families[1].members[0]).length, 2); // veg + tomate allergy
+assert.equal(R.dietConflicts(rs, rs.recipes[0], { id: 'z', name: 'Z', diet: { veg: true, allergens: ['leite'] } }).length, 2); // veg + alergia a leite (lista fechada)
 const rot = R.kitchenRota({ ...rs, trip: { start: '2026-12-01', end: '2026-12-04', meals: { almoco: true, jantar: true } }, plan: {} });
 const cooks = Object.values(rot.rota).map(x => x.cook); assert.equal(cooks.length, 8); assert(cooks.includes('A') && cooks.includes('B'));
 assert(Object.values(rot.rota).every(x => x.cook !== x.clean));
