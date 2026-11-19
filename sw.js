@@ -1,9 +1,10 @@
 // Rateatouille: abre sem internet. Guarda o app (index.html) e a biblioteca do Supabase no cache do aparelho.
 // Os dados (cardápio, alergias, gastos) já ficam no localStorage; aqui só o "casco" do app.
-const CACHE = 'rateatouille-v2026-11-19';
+const PREFIX = 'rateatouille-app-'; // cada cópia do app (principal, prévias) usa o próprio prefixo: o cache é do domínio inteiro
+const CACHE = PREFIX + '2026-11-19';
 const SHELL = ['./', './index.html'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('rateatouille-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
